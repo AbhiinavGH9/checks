@@ -4,8 +4,13 @@
   "description": "A sleek, dark-themed task management app built with plain HTML, CSS, and JavaScript. No frameworks, no build step — just static files.",
   "main": "script.js",
   "scripts": {
+    "build": "tailwindcss -i input.css -o output.raw.css --minify && postcss output.raw.css -o output.css",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "browserslist": [
+    "Android >= 4.4",
+    "Chrome >= 40"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AbhiinavGH9/checks.git"
@@ -18,6 +23,9 @@
   },
   "homepage": "https://github.com/AbhiinavGH9/checks#readme",
   "devDependencies": {
+    "postcss": "^8.5.19",
+    "postcss-cli": "^11.0.1",
+    "postcss-preset-env": "^11.3.2",
     "tailwindcss": "^3.4.19"
   }
 }
