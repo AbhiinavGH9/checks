@@ -81,7 +81,13 @@
             el.style.left = '-9999px';
             el.style.maxHeight = '';
             el.style.overflowY = '';
-            el.style.width = ''; // Reset any inline width overrides
+            el.style.zIndex = '250';
+
+            if (el.classList.contains('w-full') || options.matchWidth) {
+                el.style.width = `${anchorRect.width}px`;
+            } else {
+                el.style.width = ''; // Reset any inline width overrides
+            }
 
             // Measure dimensions
             const menuWidth = el.offsetWidth;
@@ -146,6 +152,7 @@
             el.style.maxHeight = '';
             el.style.overflowY = '';
             el.style.width = '';
+            el.style.zIndex = '';
             if (activeFloatingElement === el) {
                 activeFloatingElement = null;
             }
@@ -1917,6 +1924,10 @@
             const backdrop = document.getElementById('task-modal-backdrop');
             const container = document.getElementById('task-modal-container');
             
+            hideFloatingElement(document.getElementById('new-task-project-options'));
+            hideFloatingElement(document.getElementById('new-task-group-options'));
+            hideFloatingElement(document.getElementById('new-task-autodelete-options'));
+            
             const customOptionsPanel = document.getElementById('new-task-project-options');
             customOptionsPanel.innerHTML = '';
 
@@ -2077,6 +2088,10 @@
             const backdrop = document.getElementById('task-modal-backdrop');
             const container = document.getElementById('task-modal-container');
             
+            hideFloatingElement(document.getElementById('new-task-project-options'));
+            hideFloatingElement(document.getElementById('new-task-group-options'));
+            hideFloatingElement(document.getElementById('new-task-autodelete-options'));
+            
             backdrop.classList.add('opacity-0');
             container.classList.add('scale-95');
             setTimeout(() => { backdrop.classList.add('hidden'); }, 150);
@@ -2220,8 +2235,8 @@
                 const isHidden = targetMenu.classList.contains('hidden');
                 if (isHidden) {
                     targetMenu.classList.remove('hidden');
-                    const triggerBtn = event.currentTarget;
-                    const rect = triggerBtn.getBoundingClientRect();
+                    const triggerBtn = (event && event.currentTarget) || (event && event.target && event.target.closest('button'));
+                    const rect = triggerBtn ? triggerBtn.getBoundingClientRect() : { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
                     positionFloatingElement(targetMenu, rect);
                 } else {
                     hideFloatingElement(targetMenu);
