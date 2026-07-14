@@ -1,904 +1,3 @@
-<!DOCTYPE html>
-<html lang="en" class="h-full">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ClipBoard | To-Do</title>
-    <link rel="icon" type="image/x-icon" href="./favicon.ico">
-    <link rel="apple-touch-icon" href="./favicon.png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <style>
-        body {
-            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-            letter-spacing: -0.02em;
-            -webkit-font-smoothing: antialiased;
-            background-color: #0A0A0A;
-            color: #ffffff;
-        }
-        
-        @supports not (display: grid) {
-            .grid { display: flex; flex-wrap: wrap; }
-        }
-        @supports not (backdrop-filter: blur(1px)) {
-            .backdrop-blur-md { background: rgba(0, 0, 0, 0.95) !important; }
-        }
-        
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0A0A0A;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 9999px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .btn-scale {
-            transition: transform 0.1s ease, background-color 0.15s ease, opacity 0.15s ease;
-        }
-        .btn-scale:active {
-            transform: scale(0.96);
-        }
-
-        .resize-handle {
-            width: 4px;
-            transition: background-color 0.2s ease;
-        }
-        .resize-handle:hover, .resize-handle.active {
-            background-color: #2997ff !important;
-            cursor: col-resize;
-        }
-
-        .warp-text {
-            word-wrap: break-word;
-            word-break: break-all;
-            white-space: normal;
-        }
-
-        .dragging {
-            opacity: 0.4;
-            border: 2px dashed #2997ff !important;
-        }
-
-        .drag-over {
-            background-color: rgba(41, 151, 255, 0.05) !important;
-            border-color: #2997ff !important;
-        }
-
-        .tick-animation {
-            animation: tick-scale-pop 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards;
-        }
-        @keyframes tick-scale-pop {
-            0% { transform: scale(0.4); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-
-        #selection-marquee {
-            position: absolute;
-            border: 1.5px solid #2997ff;
-            background-color: rgba(41, 151, 255, 0.12);
-            pointer-events: none;
-            z-index: 1000;
-            border-radius: 4px;
-            box-shadow: 0 0 10px rgba(41, 151, 255, 0.15);
-        }
-
-        @media (max-width: 767px) {
-            input, textarea, select {
-                font-size: 16px !important;
-            }
-
-            #sidebar-panel {
-                position: fixed !important;
-                top: 53px;
-                bottom: 0;
-                left: 0;
-                z-index: 45;
-                height: calc(100% - 53px) !important;
-                transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important;
-            }
-            #sidebar-panel {
-                transform: translateX(-100%) !important;
-                width: 0px !important;
-                opacity: 0;
-                pointer-events: none;
-            }
-            #sidebar-panel:not([style*="width: 0px"]):not([style*="width:0px"]) {
-                transform: translateX(0) !important;
-                width: 280px !important;
-                max-width: 85vw !important;
-                opacity: 1;
-                pointer-events: auto;
-                box-shadow: 10px 0 30px rgba(0, 0, 0, 0.6);
-            }
-            #sidebar-resizer {
-                display: none !important;
-            }
-
-            #inspector-panel {
-                position: fixed !important;
-                top: 53px;
-                bottom: 0;
-                right: 0;
-                z-index: 45;
-                height: calc(100% - 53px) !important;
-                transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important;
-            }
-            #inspector-panel {
-                transform: translateX(100%) !important;
-                width: 0px !important;
-                opacity: 0;
-                pointer-events: none;
-            }
-            #inspector-panel:not([style*="width: 0px"]):not([style*="width:0px"]) {
-                transform: translateX(0) !important;
-                width: 100% !important;
-                max-width: 100vw !important;
-                opacity: 1;
-                pointer-events: auto;
-                box-shadow: -10px 0 30px rgba(0, 0, 0, 0.6);
-            }
-            #inspector-resizer {
-                display: none !important;
-            }
-
-            #custom-calendar-popup {
-                position: fixed !important;
-                top: 50% !important;
-                left: 50% !important;
-                transform: translate(-50%, -50%) !important;
-                width: 90% !important;
-                max-width: 320px !important;
-                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8) !important;
-                border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            }
-
-            #context-menu, #group-context-menu, #feed-context-menu, #counter-context-menu {
-                position: fixed !important;
-                bottom: 0 !important;
-                top: auto !important;
-                left: 0 !important;
-                right: 0 !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                transform: translateY(0) !important;
-                border-radius: 20px 20px 0 0 !important;
-                border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
-                background-color: #141414 !important;
-                padding-bottom: env(safe-area-inset-bottom, 16px) !important;
-                box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5) !important;
-                animation: slide-up 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
-            }
-            @keyframes slide-up {
-                from { transform: translateY(100%); }
-                to { transform: translateY(0); }
-            }
-
-            #task-modal-container {
-                flex-direction: column !important;
-                max-height: 90vh !important;
-                overflow-y: auto !important;
-                max-width: 95vw !important;
-            }
-            #task-modal-container > div:first-child {
-                width: 100% !important;
-                flex-shrink: 1 !important;
-            }
-            #new-task-customization-panel {
-                width: 100% !important;
-                border-left: none !important;
-                border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
-            }
-            #new-task-customization-panel > div {
-                width: 100% !important;
-            }
-
-            #project-modal-container, #group-modal-container, #delete-modal-container {
-                max-width: 92% !important;
-                margin-left: auto !important;
-                margin-right: auto !important;
-            }
-        }
-
-        @media (min-width: 768px) {
-            input, textarea, select {
-                font-size: 0.75rem !important;
-            }
-        }
-    </style>
-</head>
-<body class="h-full overflow-hidden select-none bg-[#0A0A0A]">
-
-    <div id="auth-guard-screen" class="fixed inset-0 bg-[#0A0A0A] z-[300] flex items-center justify-center hidden">
-        <div class="bg-[#121212] border border-white/5 rounded-2xl w-full max-w-sm p-6 shadow-2xl space-y-4">
-            <div class="text-center space-y-1">
-                <h2 class="text-base font-bold text-white tracking-tight">Sync Authorization Required</h2>
-                <p class="text-xs text-gray-500">Log in to safely download or balance cloud device files.</p>
-            </div>
-            <form onsubmit="executeLoginValidation(event)" class="space-y-3">
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-400">User Identification ID</label>
-                    <input type="text" id="auth-username-field" required class="w-full bg-white/5 border border-white/5 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff]">
-                </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Security Key Phrase</label>
-                    <input type="password" id="auth-password-field" required class="w-full bg-white/5 border border-white/5 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff]">
-                </div>
-                <div id="auth-failure-error" class="hidden text-red-400 text-[11px] bg-red-500/10 p-2.5 rounded-lg text-center font-medium">
-                    Credentials rejected. Verification access unauthorized.
-                </div>
-                <button type="submit" class="btn-scale w-full py-2.5 bg-[#2997ff] text-black text-xs font-bold rounded-xl transition hover:bg-[#0066cc] hover:text-white">Verify Account & Sync</button>
-            </form>
-        </div>
-    </div>
-
-    <div class="h-full flex flex-col overflow-hidden relative">
-
-        <nav class="bg-[#0D0D0D] border-b border-white/[0.04] px-4 md:px-6 py-3 flex items-center justify-between z-40 flex-shrink-0 relative">
-            <div class="flex items-center space-x-3">
-                <button onclick="toggleSidebarCollapse()" class="btn-scale md:hidden p-1.5 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition" title="Menu">
-                    <i data-lucide="menu" class="w-5 h-5"></i>
-                </button>
-                <h1 class="text-sm font-bold tracking-tight text-white mr-1">ClipBoard</h1>
-                <span id="active-tab-badge" oncontextmenu="handleCounterContextMenu(event)" class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full transition-all duration-350 cursor-pointer select-none">0 items</span>
-            </div>
-            <div class="flex items-center space-x-2 relative">
-                <button onclick="toggleCustomDropdown('nav-menu-dropdown-options', event)" class="btn-scale p-2 bg-white/5 text-white hover:bg-white/10 rounded-lg transition" title="More Options">
-                    <i data-lucide="more-horizontal" class="w-4 h-4"></i>
-                </button>
-                <div id="nav-menu-dropdown-options" class="hidden absolute right-2 top-11 mt-0 w-44 bg-[#141414] rounded-xl shadow-2xl z-50 py-1 border border-white/[0.05]">
-                    <button type="button" onclick="openProfileCustomizerModal()" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                        <i data-lucide="user" class="w-3.5 h-3.5 text-gray-400"></i>
-                        <span>Account Options</span>
-                    </button>
-                    <div class="border-t border-white/[0.04] my-1"></div>
-                    <button type="button" onclick="triggerImport()" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                        <i data-lucide="upload" class="w-3.5 h-3.5 text-gray-400"></i>
-                        <span>Import Backup</span>
-                    </button>
-                    <button type="button" onclick="exportData()" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                        <i data-lucide="download" class="w-3.5 h-3.5 text-gray-400"></i>
-                        <span>Export Backup</span>
-                    </button>
-                    <div class="border-t border-white/[0.04] my-1"></div>
-                    <button type="button" onclick="executeLogoutAction()" class="w-full text-left px-4 py-2 text-xs text-red-400 hover:bg-red-500/10 transition flex items-center space-x-2">
-                        <i data-lucide="log-out" class="w-3.5 h-3.5 text-red-400"></i>
-                        <span>Disconnect Session</span>
-                    </button>
-                </div>
-                <input type="file" id="import-file-input" class="hidden" accept=".json" onchange="handleImportFile(event)">
-            </div>
-        </nav>
-
-        <main class="flex-1 flex overflow-hidden relative bg-[#0A0A0A]">
-            
-            <aside id="sidebar-panel" class="bg-[#0F0F0F] flex flex-col justify-between flex-shrink-0 relative overflow-hidden transition-[width] duration-200" style="width: 280px;">
-                <div class="p-4 flex-1 overflow-y-auto space-y-6">
-                    
-                    <div class="flex items-center space-x-2">
-                        <button onclick="toggleSidebarCollapse()" class="btn-scale p-2 bg-white/5 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition flex-shrink-0" title="Collapse Sidebar">
-                            <i data-lucide="sidebar" class="w-4 h-4"></i>
-                        </button>
-                        <div class="relative flex-1">
-                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4"></i>
-                            <input type="text" id="global-search" oninput="handleSearch(this.value)" placeholder="Search tasks..." class="w-full bg-white/5 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition border border-white/20">
-                        </div>
-                    </div>
-
-                    <div class="space-y-1">
-                        <h3 class="text-[10px] font-bold tracking-widest uppercase text-gray-500 px-3 mb-2">Workspace</h3>
-                        
-                        <button onclick="switchTab('inbox')" id="tab-inbox" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition text-xs font-semibold text-left btn-scale hover:bg-white/5 relative group">
-                            <span class="flex items-center space-x-3">
-                                <span class="p-1.5 rounded-lg bg-white/5 text-white group-hover:bg-white/10 group-hover:scale-105 transition duration-150"><i data-lucide="inbox" class="w-4 h-4"></i></span>
-                                <span class="text-gray-300 group-hover:text-white transition">Inbox</span>
-                            </span>
-                            <span id="badge-inbox" class="text-[10px] font-mono font-bold px-2.5 py-0.5 bg-white/5 border border-white/[0.04] text-gray-400 rounded-full group-hover:border-white/10 group-hover:text-white transition-all shadow-inner">0</span>
-                        </button>
-
-                        <button onclick="switchTab('today')" id="tab-today" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition text-xs font-semibold text-left btn-scale hover:bg-white/5 relative group">
-                            <span class="flex items-center space-x-3">
-                                <span class="p-1.5 rounded-lg bg-white/5 text-white group-hover:bg-white/10 group-hover:scale-105 transition duration-150"><i data-lucide="calendar" class="w-4 h-4"></i></span>
-                                <span class="text-gray-300 group-hover:text-white transition">Today</span>
-                            </span>
-                            <span id="badge-today" class="text-[10px] font-mono font-bold px-2.5 py-0.5 bg-white/5 border border-white/[0.04] text-gray-400 rounded-full group-hover:border-white/10 group-hover:text-white transition-all shadow-inner">0</span>
-                        </button>
-
-                        <button onclick="switchTab('done')" id="tab-done" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition text-xs font-semibold text-left btn-scale hover:bg-white/5 relative group">
-                            <span class="flex items-center space-x-3">
-                                <span class="p-1.5 rounded-lg bg-white/5 text-white group-hover:bg-white/10 group-hover:scale-105 transition duration-150"><i data-lucide="check-square" class="w-4 h-4"></i></span>
-                                <span class="text-gray-300 group-hover:text-white transition">Done Archive</span>
-                            </span>
-                            <span id="badge-done" class="text-[10px] font-mono font-bold px-2.5 py-0.5 bg-white/5 border border-white/[0.04] text-gray-400 rounded-full group-hover:border-white/10 group-hover:text-white transition-all shadow-inner">0</span>
-                        </button>
-
-                        <button onclick="switchTab('manage')" id="tab-manage" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition text-xs font-semibold text-left btn-scale hover:bg-white/5 relative group">
-                            <span class="flex items-center space-x-3">
-                                <span class="p-1.5 rounded-lg bg-white/5 text-white group-hover:bg-white/10 group-hover:scale-105 transition duration-150"><i data-lucide="settings" class="w-4 h-4"></i></span>
-                                <span class="text-gray-300 group-hover:text-white transition">Manage Studio</span>
-                            </span>
-                        </button>
-                    </div>
-
-                    <div class="space-y-2">
-                        <div class="flex items-center justify-between px-3 mb-1">
-                            <h3 class="text-[10px] font-bold tracking-widest uppercase text-gray-500">Collections</h3>
-                            <button onclick="openNewProjectModal()" class="text-[#2997ff] hover:opacity-85 transition btn-scale p-1 rounded bg-white/5 hover:bg-white/10" title="Add collection">
-                                <i data-lucide="folder-plus" class="w-3.5 h-3.5"></i>
-                            </button>
-                        </div>
-                        
-                        <div id="projects-list-container" class="space-y-1"></div>
-                    </div>
-
-                </div>
-
-                <div class="p-4 bg-[#0B0B0B] border-t border-white/[0.02] space-y-4">
-                    
-                    <div class="bg-[#111111] border border-white/[0.03] rounded-[24px] p-4 space-y-4 transition-all duration-200 overflow-hidden">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-2">
-                                <span class="text-[10px] font-bold tracking-widest uppercase text-gray-500">Workspace Metrics</span>
-                            </div>
-                            <button onclick="toggleMetricCardCollapse(event)" class="text-gray-400 hover:text-white p-1 hover:bg-white/5 rounded-lg transition" title="Toggle metrics display">
-                                <i id="metrics-collapse-chevron" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200"></i>
-                            </button>
-                        </div>
-
-                        <div id="metrics-expandable-area" class="hidden space-y-4 pt-1 transition-all duration-200">
-                            <div class="flex items-center justify-center py-2">
-                                <div class="relative flex items-center justify-center">
-                                    <div class="absolute inset-0 bg-orange-600/30 blur-lg rounded-full"></div>
-                                    <svg class="w-9 h-9 relative filter drop-shadow-[0_0_8px_rgba(255,69,0,0.8)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <defs>
-                                            <linearGradient id="flameGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                <stop offset="0%" stop-color="#FF3B30"/>
-                                                <stop offset="60%" stop-color="#FF9500"/>
-                                                <stop offset="100%" stop-color="#FFCC00"/>
-                                            </linearGradient>
-                                        </defs>
-                                        <path d="M12 2C12 2 17 6.5 17 11.5C17 15.5 14.5 19 12 21C9.5 19 7 15.5 7 11.5C7 6.5 12 2 12 2Z" fill="url(#flameGrad)"/>
-                                        <path d="M12 8C12 8 15 11 15 14C15 16.5 13.5 18.5 12 19.5C10.5 18.5 9 16.5 9 14C9 11 12 8 12 8Z" fill="#FFFFFF"/>
-                                    </svg>
-                                </div>
-                            </div>
-                            <div class="h-[1px] bg-white/[0.05]"></div>
-                            <div class="grid grid-cols-7 gap-1 text-center">
-                                <div id="week-circle-0" class="flex flex-col items-center space-y-1.5"></div>
-                                <div id="week-circle-1" class="flex flex-col items-center space-y-1.5"></div>
-                                <div id="week-circle-2" class="flex flex-col items-center space-y-1.5"></div>
-                                <div id="week-circle-3" class="flex flex-col items-center space-y-1.5"></div>
-                                <div id="week-circle-4" class="flex flex-col items-center space-y-1.5"></div>
-                                <div id="week-circle-5" class="flex flex-col items-center space-y-1.5"></div>
-                                <div id="week-circle-6" class="flex flex-col items-center space-y-1.5"></div>
-                            </div>
-                        </div>
-
-                        <div class="space-y-1.5 pt-1">
-                            <div class="flex items-center justify-between text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-                                <span>TASKS</span>
-                                <span id="streak-tasks-percentage" class="text-gray-400 font-mono font-bold">0%</span>
-                            </div>
-                            <div id="metrics-expandable-total-row" class="hidden items-baseline space-x-1">
-                                <span id="streak-tasks-done" class="text-base font-black text-white">0</span>
-                                <span class="text-xs font-semibold text-gray-500">/</span>
-                                <span id="streak-tasks-total" class="text-xs font-semibold text-gray-500">0</span>
-                            </div>
-                            <div class="h-2 bg-white/5 rounded-full relative overflow-hidden">
-                                <div id="streak-progress-fill" class="h-full bg-gradient-to-r from-emerald-500 to-green-400 rounded-full transition-all duration-300 w-0" style="box-shadow: 0 0 10px rgba(52, 211, 153, 0.6)"></div>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <div class="flex items-center justify-between text-[10px] text-gray-500 px-1">
-                        <span>AnvCore v3.0</span>
-                        <span id="storage-status" class="flex items-center text-emerald-400 font-medium"><i data-lucide="shield-check" class="w-3 h-3 mr-1"></i> Autosaved</span>
-                    </div>
-                </div>
-            </aside>
-
-            <div id="sidebar-resizer" class="resize-handle w-1 bg-white/[0.03] hover:bg-[#2997ff] active:bg-[#2997ff] z-10 flex-shrink-0"></div>
-
-            <section class="flex-1 flex flex-col bg-[#0A0A0A] relative overflow-hidden" id="task-feed-scroll" ondblclick="handleFeedDoubleClick(event)" oncontextmenu="handleFeedContextMenu(event)">
-                
-                <div class="px-4 py-3 md:px-6 md:py-4 bg-[#0E0E0E] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-shrink-0 border-b border-white/[0.03]">
-                    <div class="flex items-center space-x-2">
-                        <button id="sidebar-uncollapse-btn" onclick="toggleSidebarCollapse()" class="hidden btn-scale p-1.5 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition mr-1" title="Open Sidebar">
-                            <i data-lucide="sidebar" class="w-5 h-5"></i>
-                        </button>
-                        <span id="feed-current-title" class="text-sm font-bold text-white tracking-tight">Inbox Feed</span>
-                    </div>
-                    
-                    <div class="flex flex-wrap items-center gap-2 relative">
-                        <button onclick="openAddTaskModal()" class="btn-scale flex items-center space-x-1 px-3 py-1.5 text-xs font-bold bg-[#2997ff] text-black hover:bg-[#0066cc] hover:text-white rounded-lg transition" title="Create a new task">
-                            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                            <span>New Task</span>
-                        </button>
-
-                        <button onclick="openAddGroupModal()" class="btn-scale flex items-center space-x-1 px-3 py-1.5 text-xs font-semibold bg-white/5 hover:bg-white/10 text-white rounded-lg transition" title="Add custom Group column">
-                            <i data-lucide="plus" class="w-3.5 h-3.5 text-[#2997ff]"></i>
-                            <span>Add Group</span>
-                        </button>
-
-                        <span class="text-xs text-gray-500 ml-1">Sort:</span>
-                        
-                        <div class="relative inline-block text-left animate-fade-in" id="sort-dropdown-wrapper">
-                            <button onclick="toggleCustomDropdown('sort-dropdown-options', event)" class="flex items-center space-x-2 bg-white/5 rounded-lg px-3 py-1.5 text-xs text-white hover:bg-white/10 transition">
-                                <span id="selected-sort-label">Date created</span>
-                                <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-400"></i>
-                            </button>
-                            <div id="sort-dropdown-options" class="hidden absolute right-0 mt-2 w-44 bg-[#141414] rounded-xl shadow-2xl z-50 py-1 border border-white/[0.05]">
-                                <button type="button" onclick="selectSortOption('created', 'Date created')" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center justify-between">
-                                    <span>Date created</span>
-                                    <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-created"><i data-lucide="check-square" class="w-3.5 h-3.5"></i></span>
-                                </button>
-                                <button type="button" onclick="selectSortOption('due', 'Due date')" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center justify-between">
-                                    <span>Due date</span>
-                                    <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-due"><i data-lucide="check-square" class="w-3.5 h-3.5"></i></span>
-                                </button>
-                                <button type="button" onclick="selectSortOption('priority', 'Priority level')" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center justify-between">
-                                    <span>Priority level</span>
-                                    <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-priority"><i data-lucide="check-square" class="w-3.5 h-3.5"></i></span>
-                                </button>
-                                <button type="button" onclick="selectSortOption('alphabetical', 'Alphabetical')" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center justify-between">
-                                    <span>Alphabetical</span>
-                                    <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-alphabetical"><i data-lucide="check-square" class="w-3.5 h-3.5"></i></span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-6 relative">
-                    
-                    <div id="tasks-list" class="space-y-6"></div>
-
-                    <div id="empty-state-screen" class="hidden flex-col items-center justify-center text-center py-24 px-4 absolute inset-0 bg-[#0A0A0A] z-10 transition-opacity duration-150">
-                        <div class="w-20 h-20 mb-5 flex items-center justify-center relative text-[#2997ff]">
-                            <svg viewBox="0 0 100 100" class="w-full h-full opacity-80" fill="none" stroke="currentColor">
-                                <rect x="25" y="25" width="50" height="50" rx="8" stroke-width="2.5" />
-                                <path d="M38 50 L46 58 L62 42" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                        </div>
-                        <h3 class="text-base font-bold text-white mb-1.5">No tasks in this view</h3>
-                        <p class="text-xs text-gray-500 max-w-xs leading-relaxed">
-                            Organize your daily workflows, align goals, or click below to populate a new item.
-                        </p>
-                        <button onclick="openAddTaskModal()" class="btn-scale mt-5 inline-flex items-center space-x-1.5 bg-[#2997ff] text-black text-xs font-bold px-6 py-2.5 rounded-full transition hover:bg-[#0066cc] hover:text-white shadow-lg">
-                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                            <span>Create task</span>
-                        </button>
-                    </div>
-
-                </div>
-
-            </section>
-
-            <div id="inspector-resizer" class="resize-handle w-1 bg-white/[0.03] hover:bg-[#2997ff] active:bg-[#2997ff] z-10 flex-shrink-0" style="display: none;"></div>
-
-            <section id="inspector-panel" class="bg-[#0F0F0F] flex flex-col justify-between flex-shrink-0 transition-[width] duration-200 overflow-hidden" style="width: 0px;">
-                
-                <div id="inspector-content" class="flex-1 overflow-y-auto p-4 space-y-6 hidden">
-                    
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <span class="text-[10px] uppercase font-bold tracking-widest text-[#2997ff] flex items-center">
-                                <i data-lucide="sliders" class="w-3.5 h-3.5 mr-1.5"></i> Task details
-                            </span>
-                            <button onclick="closeInspector()" class="text-gray-400 hover:text-white btn-scale p-1 bg-white/5 hover:bg-white/10 rounded-md">
-                                <i data-lucide="x" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                        
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Title</label>
-                            <input type="text" id="ins-task-title" onchange="updateInspectorField('title', this.value)" class="w-full bg-white/5 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition font-semibold border border-white/5">
-                        </div>
-
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Description</label>
-                            <textarea id="ins-task-desc" rows="3" onchange="updateInspectorField('description', this.value)" onkeydown="handleDescriptionKeydown(event)" placeholder="Write descriptions... (Shift+Enter for • bullets)" class="w-full bg-white/5 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition leading-relaxed resize-none border border-white/5"></textarea>
-                        </div>
-                    </div>
-
-                    <div class="space-y-4 border-t border-b border-white/[0.03] py-4">
-                        
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block">Priority Color (Slide Right for more)</label>
-                            <div class="flex items-center overflow-x-auto space-x-2 py-1.5 no-scrollbar" id="ins-task-priority-options"></div>
-                        </div>
-
-                        <div class="space-y-1 relative" id="project-dropdown-container">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Collection Folder</label>
-                            <button type="button" onclick="toggleCustomDropdown('ins-project-dropdown-options', event)" class="w-full flex items-center justify-between bg-white/5 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] text-left border border-white/5">
-                                <span id="ins-selected-project-label" class="flex items-center space-x-2">None / Inbox</span>
-                                <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
-                            </button>
-                            <div id="ins-project-dropdown-options" class="hidden absolute left-0 right-0 mt-1 bg-[#141414] rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto py-1 border border-white/[0.05]"></div>
-                        </div>
-
-                        <div class="space-y-1 relative">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Deadline</label>
-                            <div class="flex items-center space-x-1">
-                                <button type="button" onclick="openCustomCalendar('ins-task-date', event)" id="ins-task-date-btn" class="flex-1 bg-white/5 rounded-xl px-3 py-2 text-xs text-white border border-white/5 hover:bg-white/10 text-left flex items-center justify-between">
-                                    <span id="ins-task-date-label">No Deadline</span>
-                                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-400"></i>
-                                </button>
-                                <button type="button" onclick="clearDeadline('ins-task-date', event)" class="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition" title="Clear Deadline">
-                                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
-                                </button>
-                            </div>
-                            <input type="hidden" id="ins-task-date" onchange="updateInspectorField('dueDate', this.value)">
-                        </div>
-
-                    </div>
-
-                    <div class="space-y-3">
-                        <div class="flex items-center justify-between">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Subtask list</label>
-                            <span id="subtask-fraction" class="text-xs text-[#2997ff] font-mono font-bold">0 / 0</span>
-                        </div>
-                        
-                        <div id="inspector-subtasks-list" class="space-y-1.5 max-h-60 overflow-y-auto pr-1"></div>
-
-                        <form onsubmit="handleAddSubtask(event)" class="flex items-center space-x-1.5 mt-2">
-                            <input type="text" id="new-subtask-input" placeholder="Create new subtask..." class="flex-1 bg-white/5 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
-                            <button type="submit" class="btn-scale bg-[#2997ff] hover:bg-[#0066cc] text-black hover:text-white p-2 rounded-lg transition">
-                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                            </button>
-                        </form>
-                    </div>
-
-                </div>
-
-                <div id="inspector-footer" class="p-4 bg-[#0B0B0B] border-t border-white/[0.02] hidden">
-                    <div class="flex items-center justify-between space-x-3">
-                        <button onclick="handleDeleteTaskTrigger()" class="btn-scale flex items-center justify-center space-x-1.5 bg-red-500/10 text-red-400 px-4 py-2 rounded-xl text-xs font-semibold hover:bg-red-500/20 transition">
-                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                            <span>Delete</span>
-                        </button>
-                        <button onclick="closeInspector()" class="btn-scale flex-1 bg-white text-black px-4 py-2 rounded-xl text-xs font-bold transition hover:bg-gray-200">
-                            Close
-                        </button>
-                    </div>
-                </div>
-
-                <div id="inspector-placeholder" class="flex-1 flex flex-col items-center justify-center text-center p-8 text-gray-500">
-                    <div class="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-4 text-[#2997ff]">
-                        <i data-lucide="layout-panel-left" class="w-5 h-5"></i>
-                    </div>
-                    <h4 class="text-xs font-semibold text-white mb-1">Details Panel</h4>
-                    <p class="text-[11px] text-gray-500 max-w-xs leading-relaxed">
-                        Select an existing task card from the Workspace list views to edit specifications, checklists, subtasks, or priority classifications.
-                    </p>
-                </div>
-
-            </section>
-
-        </main>
-
-    </div>
-
-    <div id="profile-customizer-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[150] flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
-        <div id="profile-customizer-container" class="bg-[#121212] rounded-2xl max-w-md w-full mx-4 p-5 shadow-2xl border border-white/[0.04] transform scale-95 transition-transform duration-150 ease-out">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-bold text-white flex items-center"><i data-lucide="user-cog" class="text-[#2997ff] mr-2 w-4.5 h-4.5"></i> Profile Configuration</h3>
-                <button onclick="closeProfileCustomizerModal()" class="text-gray-400 hover:text-white btn-scale p-1 bg-white/5 rounded-md">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
-            </div>
-            <form onsubmit="handleProfileUpdates(event)" class="space-y-4">
-                <div class="flex flex-col items-center space-y-2">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Avatar Stamp Symbol</label>
-                    <div class="flex items-center space-x-2">
-                        <button type="button" onclick="rotateProfileGlyphIcon(-1)" class="p-2 bg-white/5 text-gray-400 hover:text-white rounded-xl"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-                        <div id="profile-customizer-dp-preview" class="w-16 h-16 rounded-full bg-[#2997ff]/10 text-[#2997ff] border border-[#2997ff]/20 flex items-center justify-center text-xl font-bold uppercase tracking-tight"></div>
-                        <button type="button" onclick="rotateProfileGlyphIcon(1)" class="p-2 bg-white/5 text-gray-400 hover:text-white rounded-xl"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
-                    </div>
-                </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Public Display Name</label>
-                    <input type="text" id="profile-customizer-name-field" required class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
-                </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Account Access ID</label>
-                    <input type="text" id="profile-customizer-user-field" required class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
-                </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Secret Security Password</label>
-                    <input type="password" id="profile-customizer-pass-field" required class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
-                </div>
-                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-white/5">
-                    <button type="button" onclick="closeProfileCustomizerModal()" class="btn-scale bg-white/5 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-white/10 transition">Cancel</button>
-                    <button type="submit" class="btn-scale bg-[#2997ff] text-black px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-[#0066cc] hover:text-white transition">Apply Changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Toggling task counter parameter context window -->
-    <div id="counter-context-menu" class="hidden fixed bg-[#141414] border border-white/[0.05] rounded-xl shadow-2xl z-[100] py-1.5 w-48 text-xs text-gray-300 animate-fade-in">
-        <button onclick="changeCounterTargetPolicy('tasks')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between">
-            <span>Quantify Parent Tasks</span>
-            <span id="counter-policy-tasks-marker" class="text-[#2997ff] hidden"><i data-lucide="check" class="w-3.5 h-3.5"></i></span>
-        </button>
-        <button onclick="changeCounterTargetPolicy('subtasks')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between">
-            <span>Quantify Subtasks Only</span>
-            <span id="counter-policy-subtasks-marker" class="text-[#2997ff] hidden"><i data-lucide="check" class="w-3.5 h-3.5"></i></span>
-        </button>
-    </div>
-
-    <div id="context-menu" class="hidden fixed bg-[#141414] border border-white/[0.05] rounded-xl shadow-2xl z-[100] py-1.5 w-48 text-xs text-gray-300 animate-fade-in"></div>
-
-    <div id="group-context-menu" class="hidden fixed bg-[#141414] border border-white/[0.05] rounded-xl shadow-2xl z-[100] py-1.5 w-48 text-xs text-gray-300 animate-fade-in">
-        <button onclick="openEditGroupModalTrigger()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-            <i data-lucide="edit" class="w-3.5 h-3.5"></i>
-            <span>Edit Group settings</span>
-        </button>
-        <div class="border-t border-white/[0.03] my-1"></div>
-        <button onclick="contextDeleteGroupTrigger()" class="w-full text-left px-4 py-2 hover:bg-red-500/10 hover:text-red-400 transition flex items-center space-x-2">
-            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-            <span>Delete Group Column</span>
-        </button>
-    </div>
-
-    <div id="feed-context-menu" class="hidden fixed bg-[#141414] border border-white/[0.05] rounded-xl shadow-2xl z-[100] py-1.5 w-48 text-xs text-gray-300 animate-fade-in">
-        <button onclick="bulkCompleteAllFiltered()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-            <i data-lucide="check-square" class="w-3.5 h-3.5"></i>
-            <span>Complete all</span>
-        </button>
-        <button onclick="bulkSelectAllFiltered()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex-shrink-0 flex items-center space-x-2">
-            <i data-lucide="check" class="w-3.5 h-3.5"></i>
-            <span>Select all</span>
-        </button>
-        <div class="border-t border-white/[0.03] my-1"></div>
-        <div class="relative group/sub">
-            <button class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between">
-                <span class="flex items-center space-x-2">
-                    <i data-lucide="plus" class="w-3.5 h-3.5 text-[#2997ff]"></i>
-                    <span>Create</span>
-                </span>
-                <i data-lucide="chevron-right" class="w-3 h-3 text-gray-500"></i>
-            </button>
-            <div class="hidden group-hover/sub:block absolute left-full top-0 mt-[-6px] ml-[2px] w-48 bg-[#141414] border border-white/[0.05] rounded-xl shadow-2xl py-1.5 z-[110]">
-                <button onclick="openAddTaskModal(); hideFeedContextMenu();" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                    <i data-lucide="plus-circle" class="w-3.5 h-3.5 text-gray-400"></i>
-                    <span>Create Task</span>
-                </button>
-                <button onclick="openAddGroupModal(); hideFeedContextMenu();" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                    <i data-lucide="plus-square" class="w-3.5 h-3.5 text-gray-400"></i>
-                    <span>Create Group</span>
-                </button>
-                <button onclick="openNewProjectModal(); hideFeedContextMenu();" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                    <i data-lucide="folder-plus" class="w-3.5 h-3.5 text-gray-400"></i>
-                    <span>Create Collection</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div id="task-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
-        <div id="task-modal-container" class="bg-[#121212] rounded-2xl w-full mx-4 shadow-2xl border border-white/[0.04] transform scale-95 transition-all duration-200 ease-out flex flex-row overflow-hidden" style="max-width: 440px;">
-            
-            <div class="w-[440px] p-5 flex flex-col justify-between flex-shrink-0">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-sm font-bold text-white flex items-center"><i data-lucide="plus-circle" class="text-[#2997ff] mr-2 w-4.5 h-4.5"></i> Create Task</h3>
-                    <button onclick="closeAddTaskModal(true)" class="text-gray-400 hover:text-white btn-scale p-1 bg-white/5 rounded-md">
-                        <i data-lucide="x" class="w-4 h-4"></i>
-                    </button>
-                </div>
-
-                <form onsubmit="handleAddTaskForm(event)" class="space-y-4">
-                    <div class="space-y-3">
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Task Title</label>
-                            <input type="text" id="new-task-title" required placeholder="Enter task title..." class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition border border-white/5">
-                        </div>
-
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Description</label>
-                            <textarea id="new-task-desc" rows="2" onkeydown="handleDescriptionKeydown(event)" placeholder="Optional notes... (Shift+Enter for • bullets)" class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition resize-none border border-white/5"></textarea>
-                        </div>
-                    </div>
-
-                    <hr class="border-white/[0.04] my-1">
-
-                    <div class="grid grid-cols-2 gap-3 items-end">
-                        <div class="space-y-1 relative" id="new-task-project-container">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block mb-1">Collection Folder</label>
-                            <button type="button" onclick="toggleNewTaskProjectDropdown(event)" class="w-full h-11 flex items-center justify-between bg-white/5 rounded-xl px-3.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] text-left border border-white/5">
-                                <span id="new-task-project-label" class="flex items-center space-x-2">None / Inbox</span>
-                                <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
-                            </button>
-                            <div id="new-task-project-options" class="hidden absolute left-0 right-0 mt-1 bg-[#141414] rounded-xl shadow-2xl z-50 max-h-40 overflow-y-auto py-1 border border-white/[0.05]"></div>
-                            <input type="hidden" id="new-task-project" value="">
-                        </div>
-
-                        <div class="space-y-1 relative">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Deadline</label>
-                            <div class="flex items-center space-x-1 h-11">
-                                <button type="button" onclick="openCustomCalendar('new-task-date', event)" id="new-task-date-btn" class="flex-1 bg-white/5 rounded-xl px-3 text-xs text-white border border-white/5 hover:bg-white/10 h-full text-left flex items-center justify-between">
-                                    <span id="new-task-date-label">No Deadline</span>
-                                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-400"></i>
-                                </button>
-                                <button type="button" onclick="clearDeadline('new-task-date', event)" class="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition h-full flex items-center justify-center" title="Clear Deadline">
-                                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
-                                </button>
-                            </div>
-                            <input type="hidden" id="new-task-date" value="">
-                        </div>
-                    </div>
-
-                    <div class="space-y-1 relative" id="new-task-group-container">
-                        <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block mb-1">Target Group Column</label>
-                        <button type="button" onclick="toggleNewTaskGroupDropdown(event)" class="w-full h-11 flex items-center justify-between bg-white/5 rounded-xl px-3.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] text-left border border-white/5">
-                            <span id="new-task-group-label" class="flex items-center space-x-2">Select Group Column</span>
-                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
-                        </button>
-                        <div id="new-task-group-options" class="hidden absolute left-0 right-0 mt-1 bg-[#141414] rounded-xl shadow-2xl z-50 max-h-40 overflow-y-auto py-1 border border-white/[0.05]"></div>
-                        <input type="hidden" id="new-task-group-id" value="">
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3 items-end">
-                        <div class="space-y-1 relative" id="new-task-autodelete-container">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block mb-1">Auto-Deletion Policy</label>
-                            <button type="button" onclick="toggleNewTaskAutodeleteDropdown(event)" class="w-full h-11 flex items-center justify-between bg-white/5 rounded-xl px-3.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] text-left border border-white/5">
-                                <span id="new-task-autodelete-label" class="flex items-center space-x-2">Do not delete</span>
-                                <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
-                            </button>
-                            <div id="new-task-autodelete-options" class="hidden absolute left-0 right-0 mt-1 bg-[#141414] rounded-xl shadow-2xl z-50 py-1 border border-white/[0.05]">
-                                <button type="button" onclick="selectNewTaskAutodelete('never', 'Do not delete')" class="w-full text-left px-4 py-2 text-xs text-white hover:bg-white/5 transition">Do not delete</button>
-                                <button type="button" onclick="selectNewTaskAutodelete('1day', '1 Day after')" class="w-full text-left px-4 py-2 text-xs text-white hover:bg-white/5 transition">1 Day after</button>
-                                <button type="button" onclick="selectNewTaskAutodelete('1week', '1 Week after')" class="w-full text-left px-4 py-2 text-xs text-white hover:bg-white/5 transition">1 Week after</button>
-                                <button type="button" onclick="selectNewTaskAutodelete('custom', 'Custom duration')" class="w-full text-left px-4 py-2 text-xs text-white hover:bg-white/5 transition">Custom duration</button>
-                            </div>
-                            <input type="hidden" id="new-task-autodelete" value="never">
-                        </div>
-                        <div id="custom-autodelete-container" class="space-y-1 hidden">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Duration (Hours)</label>
-                            <input type="number" id="new-task-autodelete-custom" min="1" max="8760" value="24" class="w-full h-11 bg-white/5 text-xs text-white rounded-xl px-3.5 border border-white/5 focus:outline-none focus:ring-1 focus:ring-[#2997ff]">
-                        </div>
-                    </div>
-
-                    <div class="flex items-center justify-between pt-3 border-t border-white/5">
-                        <button type="button" onclick="toggleTaskCustomizationPanel()" class="btn-scale flex items-center space-x-1.5 bg-white/5 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-white/10 transition">
-                            <i id="toggle-customization-icon" data-lucide="chevron-right" class="w-4 h-4 text-[#2997ff]"></i>
-                            <span id="toggle-customization-text">Customize Design</span>
-                        </button>
-                        <div class="flex items-center space-x-2">
-                            <button type="button" onclick="closeAddTaskModal(true)" class="btn-scale bg-white/5 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-white/10 transition">Cancel</button>
-                            <button type="submit" class="btn-scale bg-[#2997ff] text-black px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-[#0066cc] hover:text-white transition">Create Task</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-
-            <div id="new-task-customization-panel" class="w-0 bg-[#0E0E0E] flex flex-col border-l border-white/5 transition-all duration-300" style="display: none;">
-                <div class="p-5 space-y-4 h-full overflow-y-auto no-scrollbar" style="width: 320px;">
-                    <div>
-                        <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block mb-2">Vibrant Priority Color</label>
-                        <div id="new-task-color-grid" class="grid grid-cols-6 gap-2"></div>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block mb-2">Select Icon Glyph</label>
-                        <div id="new-task-icon-grid" class="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1.5 bg-[#141414] rounded-xl border border-white/5"></div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <div id="project-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
-        <div id="project-modal-container" class="bg-[#121212] rounded-2xl max-w-md w-full mx-4 p-5 shadow-2xl border border-white/[0.04] transform scale-95 transition-transform duration-150 ease-out">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-bold text-white flex items-center" id="project-modal-title"><i data-lucide="folder-plus" class="text-[#2997ff] mr-2 w-4.5 h-4.5"></i> Configure Collection</h3>
-                <button onclick="closeProjectModal()" class="text-gray-400 hover:text-white btn-scale p-1 bg-white/5 rounded-md">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
-            </div>
-
-            <form onsubmit="handleProjectCreation(event)" class="space-y-4">
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Collection Name</label>
-                    <input type="text" id="new-project-title" required placeholder="Enter collection folder name..." class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition border border-white/5">
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block">Vibrant Colors Palette</label>
-                    <div class="grid grid-cols-6 gap-2" id="project-color-options"></div>
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block">Collection Glyph</label>
-                    <div class="grid grid-cols-6 gap-2 p-2 bg-[#1A1A1A] rounded-xl border border-white/5" id="project-icon-options"></div>
-                </div>
-                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-white/5">
-                    <button type="button" onclick="closeProjectModal()" class="btn-scale bg-white/5 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-white/10 transition">Cancel</button>
-                    <button type="submit" id="project-submit-btn" class="btn-scale bg-[#2997ff] text-black px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-[#0066cc] hover:text-white transition">Create Collection</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="group-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
-        <div id="group-modal-container" class="bg-[#121212] rounded-2xl max-w-md w-full mx-4 p-5 shadow-2xl border border-white/[0.04] transform scale-95 transition-transform duration-150 ease-out">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-bold text-white flex items-center" id="group-modal-title-text"><i data-lucide="plus-square" class="text-[#2997ff] mr-2 w-4.5 h-4.5"></i> Create Group Column</h3>
-                <button onclick="closeAddGroupModal()" class="text-gray-400 hover:text-white btn-scale p-1 bg-white/5 rounded-md">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
-            </div>
-
-            <form onsubmit="handleAddGroupForm(event)" class="space-y-4">
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Group Name</label>
-                    <input type="text" id="new-group-title" required placeholder="Enter group column title..." class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition border border-white/5">
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block">Accent Color Palette</label>
-                    <div class="grid grid-cols-6 gap-2" id="group-color-options"></div>
-                </div>
-                <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block">Group Glyph</label>
-                    <div class="grid grid-cols-6 gap-2 p-2 bg-[#1A1A1A] rounded-xl border border-white/5" id="group-icon-options"></div>
-                </div>
-                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-white/5">
-                    <button type="button" onclick="closeAddGroupModal()" class="btn-scale bg-white/5 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-white/10 transition">Cancel</button>
-                    <button type="submit" id="group-submit-btn" class="btn-scale bg-[#2997ff] text-black px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-[#0066cc] hover:text-white transition">Create Group</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="delete-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[60] flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
-        <div id="delete-modal-container" class="bg-[#121212] rounded-2xl max-w-sm w-full mx-4 p-5 shadow-2xl border border-white/[0.04] transform scale-95 transition-transform duration-150 ease-out">
-            <div class="flex items-center space-x-3 text-red-400 mb-3">
-                <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
-                <h3 class="text-sm font-bold text-white">Confirm Deletion</h3>
-            </div>
-            <p class="text-xs text-gray-400 mb-5 leading-relaxed" id="delete-modal-message">Are you sure you want to proceed with this deletion? This action cannot be undone.</p>
-            <div class="flex items-center justify-end space-x-2">
-                <button onclick="closeDeleteModal()" class="btn-scale bg-white/5 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-white/10 transition">Cancel</button>
-                <button id="delete-confirm-btn" class="btn-scale bg-red-500 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-600 transition">Proceed</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="custom-calendar-popup" class="hidden absolute bg-[#141414] border border-white/[0.05] rounded-xl shadow-2xl z-[120] p-4 w-72 text-xs text-gray-300">
-        <div class="flex items-center justify-between mb-3">
-            <button type="button" onclick="navigateCalendarMonth(-1)" class="p-1 hover:bg-white/5 rounded text-gray-400 hover:text-white transition">
-                <i data-lucide="chevron-left" class="w-4 h-4"></i>
-            </button>
-            <span id="calendar-header-title" class="font-bold text-white tracking-tight">June 2026</span>
-            <button type="button" onclick="navigateCalendarMonth(1)" class="p-1 hover:bg-white/5 rounded text-gray-400 hover:text-white transition">
-                <i data-lucide="chevron-right" class="w-4 h-4"></i>
-            </button>
-        </div>
-        <div class="grid grid-cols-7 gap-1 text-center font-bold text-gray-500 mb-2">
-            <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
-        </div>
-        <div id="calendar-grid-cells" class="grid grid-cols-7 gap-1"></div>
-    </div>
-
-    <div id="toast-container" class="fixed bottom-6 right-6 z-[200] space-y-2.5 pointer-events-none"></div>
-
-    <script>
         const SYSTEM_COLORS = [
             '#FF3B30', '#FF9500', '#FFCC00', '#34C759', '#5AC8FA', '#007AFF',
             '#5856D6', '#FF2D55', '#AF52DE', '#A2845E', '#8E8E93', '#E4A3A1'
@@ -965,6 +64,408 @@
             const cleaned = str.trim();
             if (cleaned.length === 0) return '';
             return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
+        }
+
+        let activeFloatingElement = null;
+
+        function positionFloatingElement(el, anchorRect, options = {}) {
+            if (!el) return;
+            const margin = options.margin || 8;
+
+            // Make the element visible off-screen so we can measure it
+            el.classList.add('floating-positioned');
+            el.style.position = 'fixed';
+            el.style.visibility = 'hidden';
+            el.style.display = 'block';
+            el.style.top = '-9999px';
+            el.style.left = '-9999px';
+            el.style.maxHeight = '';
+            el.style.overflowY = '';
+            el.style.width = ''; // Reset any inline width overrides
+
+            // Measure dimensions
+            const menuWidth = el.offsetWidth;
+            const menuHeight = el.offsetHeight;
+
+            // Decide vertical placement
+            let top = anchorRect.bottom + margin;
+            let fitsBelow = top + menuHeight + margin <= window.innerHeight;
+            let fitsAbove = anchorRect.top - menuHeight - margin >= 0;
+
+            if (!fitsBelow && fitsAbove) {
+                top = anchorRect.top - menuHeight - margin;
+            } else if (!fitsBelow && !fitsAbove) {
+                // Doesn't fit either direction, clamp height and add scroll
+                const spaceBelow = window.innerHeight - anchorRect.bottom - margin * 2;
+                const spaceAbove = anchorRect.top - margin * 2;
+                if (spaceBelow >= spaceAbove) {
+                    top = anchorRect.bottom + margin;
+                    el.style.maxHeight = `${spaceBelow}px`;
+                } else {
+                    top = margin;
+                    el.style.maxHeight = `${spaceAbove}px`;
+                }
+                el.style.overflowY = 'auto';
+            }
+
+            // Decide horizontal placement
+            let left = anchorRect.left;
+            let fitsLeft = left + menuWidth + margin <= window.innerWidth;
+            let fitsRight = anchorRect.right - menuWidth >= margin;
+
+            if (!fitsLeft && fitsRight) {
+                left = anchorRect.right - menuWidth;
+            } else if (!fitsLeft && !fitsRight) {
+                left = margin;
+                el.style.width = `${window.innerWidth - margin * 2}px`;
+            }
+
+            // Clamp positions to stay inside viewport
+            left = Math.max(margin, Math.min(left, window.innerWidth - el.offsetWidth - margin));
+            top = Math.max(margin, Math.min(top, window.innerHeight - el.offsetHeight - margin));
+
+            el.style.left = `${left}px`;
+            el.style.top = `${top}px`;
+            el.style.visibility = 'visible';
+
+            // Keep track of the active floating element so we can reposition on resize or close on scroll
+            activeFloatingElement = el;
+            activeFloatingElement.anchorRect = anchorRect;
+            activeFloatingElement.positionOptions = options;
+        }
+
+        function hideFloatingElement(el) {
+            if (!el) return;
+            el.classList.add('hidden');
+            el.classList.remove('floating-positioned');
+            el.style.display = '';
+            el.style.visibility = '';
+            el.style.position = '';
+            el.style.top = '';
+            el.style.left = '';
+            el.style.maxHeight = '';
+            el.style.overflowY = '';
+            el.style.width = '';
+            if (activeFloatingElement === el) {
+                activeFloatingElement = null;
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            if (activeFloatingElement && !activeFloatingElement.classList.contains('hidden')) {
+                if (window.innerWidth < 768) {
+                    hideFloatingElement(activeFloatingElement);
+                } else if (activeFloatingElement.anchorRect) {
+                    positionFloatingElement(activeFloatingElement, activeFloatingElement.anchorRect, activeFloatingElement.positionOptions);
+                }
+            }
+        });
+
+        window.addEventListener('scroll', (e) => {
+            if (activeFloatingElement && !activeFloatingElement.classList.contains('hidden')) {
+                if (!activeFloatingElement.contains(e.target)) {
+                    hideFloatingElement(activeFloatingElement);
+                }
+            }
+        }, true);
+
+        // Mobile Bottom Drawer stack state
+        let drawerStack = [];
+        let drawerMenuDefinition = null;
+
+        function openMobileDrawer(menuDef) {
+            drawerMenuDefinition = menuDef;
+            drawerStack = ['root'];
+
+            const backdrop = document.getElementById('mobile-drawer-backdrop');
+            const drawer = document.getElementById('mobile-drawer');
+
+            backdrop.classList.remove('hidden');
+            drawer.classList.remove('hidden');
+
+            // Force layout reflow
+            void drawer.offsetHeight;
+
+            backdrop.classList.add('opacity-100');
+            drawer.classList.remove('translate-y-full');
+
+            renderDrawerScreen('root');
+        }
+
+        function renderDrawerScreen(screenId) {
+            const screen = drawerMenuDefinition.screens[screenId];
+            const header = document.getElementById('mobile-drawer-header');
+            const titleEl = document.getElementById('mobile-drawer-title');
+            const body = document.getElementById('mobile-drawer-body');
+
+            if (drawerStack.length > 1) {
+                header.classList.remove('hidden');
+                header.classList.add('flex');
+                titleEl.textContent = screen.title || 'Back';
+            } else {
+                header.classList.add('hidden');
+                header.classList.remove('flex');
+            }
+
+            body.innerHTML = '';
+            
+            const listContainer = document.createElement('div');
+            listContainer.className = 'py-2 px-4 space-y-1';
+
+            screen.items.forEach(item => {
+                if (item.type === 'divider') {
+                    const div = document.createElement('div');
+                    div.className = 'border-t border-white/[0.04] my-2';
+                    listContainer.appendChild(div);
+                    return;
+                }
+
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left py-3 px-4 rounded-xl hover:bg-white/5 transition flex items-center justify-between text-sm text-gray-300 hover:text-white';
+                
+                let iconHTML = '';
+                if (item.icon) {
+                    if (item.icon.startsWith('#') || item.icon.startsWith('rgb')) {
+                        iconHTML = `<span class="w-3 h-3 rounded-full mr-3 flex-shrink-0" style="background-color: ${item.icon}"></span>`;
+                    } else {
+                        iconHTML = `<i data-lucide="${item.icon}" class="w-4 h-4 mr-3 text-gray-400"></i>`;
+                    }
+                }
+
+                let badgeHTML = '';
+                if (item.badge) {
+                    badgeHTML = `<span class="bg-white/10 text-white text-xs px-2 py-0.5 rounded-full ml-2">${item.badge}</span>`;
+                }
+
+                btn.innerHTML = `
+                    <span class="flex items-center">
+                        ${iconHTML}
+                        <span>${item.label}</span>
+                        ${badgeHTML}
+                    </span>
+                    ${item.chevron ? '<i data-lucide="chevron-right" class="w-4 h-4 text-gray-500"></i>' : ''}
+                `;
+
+                btn.onclick = (e) => {
+                    if (item.submenu) {
+                        pushDrawerScreen(item.submenu);
+                    } else if (item.action) {
+                        item.action(e);
+                        closeMobileDrawer();
+                    }
+                };
+
+                listContainer.appendChild(btn);
+            });
+
+            body.appendChild(listContainer);
+            lucide.createIcons();
+        }
+
+        function pushDrawerScreen(submenuId) {
+            const body = document.getElementById('mobile-drawer-body');
+            const currentHTML = body.innerHTML;
+            drawerStack.push(submenuId);
+
+            body.innerHTML = `
+                <div class="drawer-screen-container" style="display: flex; width: 200%; transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);">
+                    <div class="drawer-screen" style="width: 50%; flex-shrink: 0;">
+                        ${currentHTML}
+                    </div>
+                    <div id="drawer-new-screen-slot" class="drawer-screen" style="width: 50%; flex-shrink: 0;"></div>
+                </div>
+            `;
+
+            renderDrawerScreenIntoSlot('drawer-new-screen-slot', submenuId);
+            
+            const container = body.querySelector('.drawer-screen-container');
+            void container.offsetHeight;
+            container.style.transform = 'translateX(-50%)';
+
+            setTimeout(() => {
+                renderDrawerScreen(submenuId);
+            }, 220);
+        }
+
+        function popDrawerScreen() {
+            if (drawerStack.length <= 1) return;
+            const currentScreenId = drawerStack.pop();
+            const prevScreenId = drawerStack[drawerStack.length - 1];
+
+            const body = document.getElementById('mobile-drawer-body');
+            const currentHTML = body.innerHTML;
+
+            body.innerHTML = `
+                <div class="drawer-screen-container" style="display: flex; width: 200%; transform: translateX(-50%); transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);">
+                    <div id="drawer-prev-screen-slot" class="drawer-screen" style="width: 50%; flex-shrink: 0;"></div>
+                    <div class="drawer-screen" style="width: 50%; flex-shrink: 0;">
+                        ${currentHTML}
+                    </div>
+                </div>
+            `;
+
+            renderDrawerScreenIntoSlot('drawer-prev-screen-slot', prevScreenId);
+            
+            const container = body.querySelector('.drawer-screen-container');
+            void container.offsetHeight;
+            container.style.transform = 'translateX(0)';
+
+            setTimeout(() => {
+                renderDrawerScreen(prevScreenId);
+            }, 220);
+        }
+
+        function renderDrawerScreenIntoSlot(slotId, screenId) {
+            const screen = drawerMenuDefinition.screens[screenId];
+            const slot = document.getElementById(slotId);
+            slot.innerHTML = '';
+            
+            const listContainer = document.createElement('div');
+            listContainer.className = 'py-2 px-4 space-y-1';
+
+            screen.items.forEach(item => {
+                if (item.type === 'divider') {
+                    const div = document.createElement('div');
+                    div.className = 'border-t border-white/[0.04] my-2';
+                    listContainer.appendChild(div);
+                    return;
+                }
+
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left py-3 px-4 rounded-xl hover:bg-white/5 transition flex items-center justify-between text-sm text-gray-300 hover:text-white';
+                
+                let iconHTML = '';
+                if (item.icon) {
+                    if (item.icon.startsWith('#')) {
+                        iconHTML = `<span class="w-3 h-3 rounded-full mr-3 flex-shrink-0" style="background-color: ${item.icon}"></span>`;
+                    } else {
+                        iconHTML = `<i data-lucide="${item.icon}" class="w-4 h-4 mr-3 text-gray-400"></i>`;
+                    }
+                }
+
+                let badgeHTML = '';
+                if (item.badge) {
+                    badgeHTML = `<span class="bg-white/10 text-white text-xs px-2 py-0.5 rounded-full ml-2">${item.badge}</span>`;
+                }
+
+                btn.innerHTML = `
+                    <span class="flex items-center">
+                        ${iconHTML}
+                        <span>${item.label}</span>
+                        ${badgeHTML}
+                    </span>
+                    ${item.chevron ? '<i data-lucide="chevron-right" class="w-4 h-4 text-gray-500"></i>' : ''}
+                `;
+
+                btn.onclick = (e) => {
+                    if (item.submenu) {
+                        pushDrawerScreen(item.submenu);
+                    } else if (item.action) {
+                        item.action(e);
+                        closeMobileDrawer();
+                    }
+                };
+
+                listContainer.appendChild(btn);
+            });
+
+            slot.appendChild(listContainer);
+            lucide.createIcons();
+        }
+
+        function closeMobileDrawer() {
+            const backdrop = document.getElementById('mobile-drawer-backdrop');
+            const drawer = document.getElementById('mobile-drawer');
+
+            if (!backdrop || !drawer) return;
+
+            backdrop.classList.remove('opacity-100');
+            drawer.classList.add('translate-y-full');
+
+            setTimeout(() => {
+                backdrop.classList.add('hidden');
+                drawer.classList.add('hidden');
+                drawerStack = [];
+                drawerMenuDefinition = null;
+            }, 300);
+        }
+
+        function parseMenuDOMToDefinition(menuEl, title = 'Options') {
+            const screens = {
+                root: {
+                    title: title,
+                    items: []
+                }
+            };
+
+            Array.from(menuEl.children).forEach(child => {
+                if (child.tagName === 'BUTTON') {
+                    const label = child.innerText.trim();
+                    const iconEl = child.querySelector('i');
+                    const iconName = iconEl ? iconEl.getAttribute('data-lucide') : null;
+                    const isCheckbox = child.querySelector('.checkbox-marker') || child.querySelector('[id*="marker"]');
+                    const isActive = isCheckbox ? !isCheckbox.classList.contains('hidden') : false;
+
+                    screens.root.items.push({
+                        label: label,
+                        icon: iconName || (isActive ? 'check' : null),
+                        action: () => child.click()
+                    });
+                } else if (child.classList.contains('border-t') || child.tagName === 'HR') {
+                    screens.root.items.push({ type: 'divider' });
+                } else if (child.querySelector('button') && child.querySelector('div')) {
+                    const triggerBtn = child.querySelector('button');
+                    const submenuContainer = child.querySelector('div');
+                    const triggerLabel = triggerBtn.innerText.trim();
+                    const triggerIconEl = triggerBtn.querySelector('i');
+                    const triggerIcon = triggerIconEl ? triggerIconEl.getAttribute('data-lucide') : null;
+
+                    const submenuId = 'sub_' + Math.random().toString(36).substr(2, 9);
+                    
+                    screens.root.items.push({
+                        label: triggerLabel,
+                        icon: triggerIcon,
+                        chevron: true,
+                        submenu: submenuId
+                    });
+
+                    screens[submenuId] = {
+                        title: triggerLabel,
+                        items: []
+                    };
+
+                    Array.from(submenuContainer.querySelectorAll('button')).forEach(subBtn => {
+                        const subLabel = subBtn.innerText.trim();
+                        const subIconEl = subBtn.querySelector('i');
+                        const subIcon = subIconEl ? subIconEl.getAttribute('data-lucide') : null;
+
+                        screens[submenuId].items.push({
+                            label: subLabel,
+                            icon: subIcon,
+                            action: () => subBtn.click()
+                        });
+                    });
+                } else {
+                    const subButtons = child.querySelectorAll('button');
+                    if (subButtons.length > 0) {
+                        Array.from(subButtons).forEach(subBtn => {
+                            const label = subBtn.innerText.trim();
+                            const styleDot = subBtn.querySelector('span[style*="background-color"]');
+                            const iconColor = styleDot ? styleDot.style.backgroundColor : null;
+                            const iconEl = subBtn.querySelector('i');
+                            const iconName = iconEl ? iconEl.getAttribute('data-lucide') : null;
+                            
+                            screens.root.items.push({
+                                label: label,
+                                icon: iconColor || iconName,
+                                action: () => subBtn.click()
+                            });
+                        });
+                    }
+                }
+            });
+
+            return { screens };
         }
 
         function handleDescriptionKeydown(e) {
@@ -1152,9 +653,6 @@
             event.stopPropagation();
             
             const menu = document.getElementById('counter-context-menu');
-            menu.style.left = `${event.clientX}px`;
-            menu.style.top = `${event.clientY}px`;
-            menu.classList.remove('hidden');
 
             document.getElementById('counter-policy-tasks-marker').classList.add('hidden');
             document.getElementById('counter-policy-subtasks-marker').classList.add('hidden');
@@ -1165,11 +663,28 @@
                 document.getElementById('counter-policy-subtasks-marker').classList.remove('hidden');
             }
             lucide.createIcons();
+
+            if (window.innerWidth < 768) {
+                hideFloatingElement(menu);
+                const menuDef = parseMenuDOMToDefinition(menu, 'Quantification Policy');
+                openMobileDrawer(menuDef);
+            } else {
+                menu.classList.remove('hidden');
+                const syntheticRect = {
+                    left: event.clientX,
+                    top: event.clientY,
+                    right: event.clientX,
+                    bottom: event.clientY,
+                    width: 0,
+                    height: 0
+                };
+                positionFloatingElement(menu, syntheticRect);
+            }
         }
 
         function changeCounterTargetPolicy(policy) {
             AppState.counterTargetPolicy = policy;
-            document.getElementById('counter-context-menu').classList.add('hidden');
+            hideFloatingElement(document.getElementById('counter-context-menu'));
             saveToLocalStorage();
         }
 
@@ -1248,7 +763,7 @@
             }
 
             if (AppState.currentTab === 'inbox') {
-                return list.filter(t => !t.done);
+                return list; // Return all tasks instead of filtering out t.done
             } else if (AppState.currentTab === 'today') {
                 return list.filter(t => t.dueDate === todayStr);
             } else if (AppState.currentTab === 'done') {
@@ -1431,10 +946,6 @@
         function renderGroupSection(container, title, groupId, tasks, groupColor, index, groupIcon) {
             const groupSection = document.createElement('div');
             groupSection.className = "space-y-3 p-4 bg-white/[0.01] border border-white/[0.03] rounded-2xl transition duration-150 relative";
-            
-            groupSection.setAttribute('ondragover', 'allowDrop(event)');
-            groupSection.setAttribute('ondragleave', 'dragLeave(event)');
-            groupSection.setAttribute('ondrop', `dropTask(event, '${groupId}')`);
 
             const isUngrouped = (groupId === 'ungrouped');
             
@@ -1495,7 +1006,7 @@
                     </div>
                 `;
             } else {
-                tasks.forEach(task => {
+                tasks.forEach((task, cardIndex) => {
                     const project = AppState.projects.find(p => p.id === task.projectId);
                     const subDone = task.subtasks ? task.subtasks.filter(s => s.done).length : 0;
                     const subTotal = task.subtasks ? task.subtasks.length : 0;
@@ -1503,7 +1014,7 @@
                     const isSelected = AppState.selectedTaskId === task.id || (AppState.selectedTaskIds && AppState.selectedTaskIds.includes(task.id));
 
                     const accentColor = task.done ? '#7a7a7a' : (task.color || '#2997ff');
-                    const cardBg = task.done ? 'bg-[#121212]/40 border-white/[0.01]' : 'bg-[#121212] border-white/[0.02]';
+                    const cardBg = task.done ? 'bg-[#121212]/40 border-white/[0.01] opacity-50' : 'bg-[#121212] border-white/[0.02]';
                     const textClass = task.done ? 'line-through text-gray-500 font-normal' : 'text-white font-bold';
                     const subtextClass = task.done ? 'text-gray-600' : 'text-gray-400';
 
@@ -1529,10 +1040,8 @@
                     }
 
                     const card = document.createElement('div');
-                    card.className = `group-card relative ${cardBg} p-3 rounded-xl cursor-grab active:cursor-grabbing hover:bg-[#161616] transition duration-150 border ${isSelected ? 'ring-1 ring-[#2997ff]' : ''}`;
-                    card.setAttribute('draggable', 'true');
+                    card.className = `group-card relative ${cardBg} p-3 rounded-xl hover:bg-[#161616] transition duration-150 border ${isSelected ? 'ring-1 ring-[#2997ff]' : ''}`;
                     card.setAttribute('data-task-id', task.id); 
-                    card.setAttribute('ondragstart', `dragTask(event, '${task.id}')`);
                     card.setAttribute('oncontextmenu', `showContextMenu(event, '${task.id}')`);
                     card.onclick = (e) => selectTask(task.id, e);
 
@@ -1581,8 +1090,13 @@
                                     ${subtasksHTML}
                                 </div>
                             </div>
-                            <div class="text-gray-600 self-center flex-shrink-0">
-                                <i data-lucide="grip-vertical" class="w-3.5 h-3.5"></i>
+                            <div class="flex flex-col items-center space-y-0.5 text-gray-500 self-center flex-shrink-0 mr-1">
+                                <button onclick="moveTaskInGroup('${task.id}', -1, event)" class="p-0.5 hover:text-white transition" ${cardIndex === 0 ? 'disabled style="opacity: 0.2; cursor: not-allowed;"' : ''} title="Move Up">
+                                    <i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button onclick="moveTaskInGroup('${task.id}', 1, event)" class="p-0.5 hover:text-white transition" ${cardIndex === tasks.length - 1 ? 'disabled style="opacity: 0.2; cursor: not-allowed;"' : ''} title="Move Down">
+                                    <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                                </button>
                             </div>
                         </div>
                     `;
@@ -1608,13 +1122,6 @@
             }
         }
 
-        function dragTask(event, taskId) {
-            event.dataTransfer.setData('text/plain', taskId);
-            event.dataTransfer.setData('drag-type', 'task');
-            const draggedCard = event.currentTarget;
-            setTimeout(() => { draggedCard.classList.add('dragging'); }, 0);
-        }
-
         function dragGroup(event, groupId) {
             if (groupId === 'ungrouped') {
                 event.preventDefault();
@@ -1624,82 +1131,8 @@
             event.dataTransfer.setData('drag-type', 'group');
         }
 
-        function allowDrop(event) {
-            event.preventDefault();
-            const groupSection = event.currentTarget;
-            groupSection.classList.add('drag-over');
-
-            const card = event.target.closest('.group-card');
-            if (card) {
-                const rect = card.getBoundingClientRect();
-                const boundingMidpoint = rect.top + rect.height / 2;
-                
-                card.style.borderTop = '';
-                card.style.borderBottom = '';
-                
-                if (event.clientY < boundingMidpoint) {
-                    card.style.borderTop = '2px solid #2997ff';
-                } else {
-                    card.style.borderBottom = '2px solid #2997ff';
-                }
-            }
-        }
-
         function allowGroupDrop(event) {
             event.preventDefault();
-        }
-
-        function dragLeave(event) {
-            event.currentTarget.classList.remove('drag-over');
-            const cards = event.currentTarget.querySelectorAll('.group-card');
-            cards.forEach(c => {
-                c.style.borderTop = '';
-                c.style.borderBottom = '';
-            });
-        }
-
-        function dropTask(event, groupId) {
-            event.preventDefault();
-            const groupSection = event.currentTarget;
-            groupSection.classList.remove('drag-over');
-
-            const dragType = event.dataTransfer.getData('drag-type');
-            if (dragType !== 'task' && dragType !== '') return; 
-
-            const taskId = event.dataTransfer.getData('text/plain');
-            const taskIndex = AppState.tasks.findIndex(t => t.id === taskId);
-            if (taskIndex === -1) return;
-
-            const [task] = AppState.tasks.splice(taskIndex, 1);
-            task.groupId = (groupId === 'ungrouped') ? null : groupId;
-
-            const card = event.target.closest('.group-card');
-            if (card) {
-                const targetTaskId = card.getAttribute('data-task-id');
-                const targetIndex = AppState.tasks.findIndex(t => t.id === targetTaskId);
-                
-                const rect = card.getBoundingClientRect();
-                const boundingMidpoint = rect.top + rect.height / 2;
-                
-                card.style.borderTop = '';
-                card.style.borderBottom = '';
-
-                if (event.clientY < boundingMidpoint) {
-                    AppState.tasks.splice(targetIndex, 0, task);
-                } else {
-                    AppState.tasks.splice(targetIndex + 1, 0, task);
-                }
-            } else {
-                AppState.tasks.push(task);
-            }
-
-            const cards = groupSection.querySelectorAll('.group-card');
-            cards.forEach(c => {
-                c.style.borderTop = '';
-                c.style.borderBottom = '';
-            });
-
-            syncDeviceDataChannels();
         }
 
         function dropGroup(event, targetGroupId) {
@@ -1736,6 +1169,54 @@
             showToast('Groups Arranged', 'Group column configurations saved.');
         }
 
+        function moveTaskInGroup(taskId, direction, event) {
+            if (event) event.stopPropagation();
+            const task = AppState.tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            const filtered = getFilteredTasks();
+            const sorted = sortTasks(filtered);
+            const groupTasks = sorted.filter(t => t.groupId === task.groupId);
+
+            const index = groupTasks.findIndex(t => t.id === taskId);
+            if (index === -1) return;
+
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= groupTasks.length) return;
+
+            const otherTask = groupTasks[newIndex];
+            
+            const mainIndex1 = AppState.tasks.findIndex(t => t.id === task.id);
+            const mainIndex2 = AppState.tasks.findIndex(t => t.id === otherTask.id);
+
+            if (mainIndex1 !== -1 && mainIndex2 !== -1) {
+                if (AppState.sortBy === 'created') {
+                    const tempDate = AppState.tasks[mainIndex1].createdDate;
+                    AppState.tasks[mainIndex1].createdDate = AppState.tasks[mainIndex2].createdDate;
+                    AppState.tasks[mainIndex2].createdDate = tempDate;
+                } else if (AppState.sortBy === 'due') {
+                    const tempDate = AppState.tasks[mainIndex1].dueDate;
+                    AppState.tasks[mainIndex1].dueDate = AppState.tasks[mainIndex2].dueDate;
+                    AppState.tasks[mainIndex2].dueDate = tempDate;
+                } else if (AppState.sortBy === 'priority') {
+                    const tempColor = AppState.tasks[mainIndex1].color;
+                    AppState.tasks[mainIndex1].color = AppState.tasks[mainIndex2].color;
+                    AppState.tasks[mainIndex2].color = tempColor;
+                } else if (AppState.sortBy === 'alphabetical') {
+                    const tempTitle = AppState.tasks[mainIndex1].title;
+                    AppState.tasks[mainIndex1].title = AppState.tasks[mainIndex2].title;
+                    AppState.tasks[mainIndex2].title = tempTitle;
+                }
+
+                const temp = AppState.tasks[mainIndex1];
+                AppState.tasks[mainIndex1] = AppState.tasks[mainIndex2];
+                AppState.tasks[mainIndex2] = temp;
+                
+                syncDeviceDataChannels();
+                showToast('Tasks Arranged', 'Task order updated.');
+            }
+        }
+
         function openCustomCalendar(targetId, event) {
             if (event) event.stopPropagation();
             calendarTargetInputId = targetId;
@@ -1759,9 +1240,16 @@
             const rect = triggerBtn.getBoundingClientRect();
             const popup = document.getElementById('custom-calendar-popup');
             
-            popup.style.top = `${rect.bottom + window.scrollY + 4}px`;
-            popup.style.left = `${rect.left + window.scrollX}px`;
-            popup.classList.remove('hidden');
+            if (window.innerWidth < 768) {
+                popup.classList.remove('hidden');
+                popup.style.top = '';
+                popup.style.left = '';
+                popup.style.width = '';
+                popup.style.position = '';
+            } else {
+                popup.classList.remove('hidden');
+                positionFloatingElement(popup, rect);
+            }
         }
 
         function renderCalendarGrid() {
@@ -1849,7 +1337,8 @@
         }
 
         function closeCalendarPopup() {
-            document.getElementById('custom-calendar-popup').classList.add('hidden');
+            const popup = document.getElementById('custom-calendar-popup');
+            if (popup) hideFloatingElement(popup);
         }
 
         function renderManageDashboard() {
@@ -1997,9 +1486,6 @@
             }
             
             const menu = document.getElementById('context-menu');
-            menu.style.left = `${event.clientX}px`;
-            menu.style.top = `${event.clientY}px`;
-            menu.classList.remove('hidden');
 
             if (AppState.selectedTaskIds.length > 1) {
                 menu.innerHTML = `
@@ -2079,13 +1565,30 @@
             }
             
             lucide.createIcons();
+
+            if (window.innerWidth < 768) {
+                hideFloatingElement(menu);
+                const menuDef = parseMenuDOMToDefinition(menu, 'Task Options');
+                openMobileDrawer(menuDef);
+            } else {
+                menu.classList.remove('hidden');
+                const syntheticRect = {
+                    left: event.clientX,
+                    top: event.clientY,
+                    right: event.clientX,
+                    bottom: event.clientY,
+                    width: 0,
+                    height: 0
+                };
+                positionFloatingElement(menu, syntheticRect);
+            }
         }
 
         function hideContextMenu() {
             const menu = document.getElementById('context-menu');
-            if (menu) menu.classList.add('hidden');
+            if (menu) hideFloatingElement(menu);
             const counterMenu = document.getElementById('counter-context-menu');
-            if (counterMenu) counterMenu.classList.add('hidden');
+            if (counterMenu) hideFloatingElement(counterMenu);
         }
 
         function showGroupContextMenu(event, groupId) {
@@ -2097,14 +1600,28 @@
 
             contextSelectedGroupId = groupId;
             const menu = document.getElementById('group-context-menu');
-            menu.style.left = `${event.clientX}px`;
-            menu.style.top = `${event.clientY}px`;
-            menu.classList.remove('hidden');
+            
+            if (window.innerWidth < 768) {
+                hideFloatingElement(menu);
+                const menuDef = parseMenuDOMToDefinition(menu, 'Group Options');
+                openMobileDrawer(menuDef);
+            } else {
+                menu.classList.remove('hidden');
+                const syntheticRect = {
+                    left: event.clientX,
+                    top: event.clientY,
+                    right: event.clientX,
+                    bottom: event.clientY,
+                    width: 0,
+                    height: 0
+                };
+                positionFloatingElement(menu, syntheticRect);
+            }
         }
 
         function hideGroupContextMenu() {
             const menu = document.getElementById('group-context-menu');
-            if (menu) menu.classList.add('hidden');
+            if (menu) hideFloatingElement(menu);
         }
 
         function handleFeedContextMenu(event) {
@@ -2117,7 +1634,8 @@
                 event.target.closest('#sidebar-panel') ||
                 event.target.closest('#context-menu') ||
                 event.target.closest('#counter-context-menu') ||
-                event.target.closest('#group-context-menu')) {
+                event.target.closest('#group-context-menu') ||
+                event.target.closest('#feed-context-menu')) {
                 return;
             }
             event.preventDefault();
@@ -2125,15 +1643,29 @@
             hideGroupContextMenu();
 
             const menu = document.getElementById('feed-context-menu');
-            menu.style.left = `${event.clientX}px`;
-            menu.style.top = `${event.clientY}px`;
-            menu.classList.remove('hidden');
             lucide.createIcons();
+
+            if (window.innerWidth < 768) {
+                hideFloatingElement(menu);
+                const menuDef = parseMenuDOMToDefinition(menu, 'Feed Options');
+                openMobileDrawer(menuDef);
+            } else {
+                menu.classList.remove('hidden');
+                const syntheticRect = {
+                    left: event.clientX,
+                    top: event.clientY,
+                    right: event.clientX,
+                    bottom: event.clientY,
+                    width: 0,
+                    height: 0
+                };
+                positionFloatingElement(menu, syntheticRect);
+            }
         }
 
         function hideFeedContextMenu() {
             const menu = document.getElementById('feed-context-menu');
-            if (menu) menu.classList.add('hidden');
+            if (menu) hideFloatingElement(menu);
         }
 
         function bulkCompleteAllFiltered() {
@@ -2184,8 +1716,11 @@
                 const allDropdowns = ['sort-dropdown-options', 'ins-project-dropdown-options', 'new-task-project-options', 'new-task-group-options', 'new-task-autodelete-options', 'nav-menu-dropdown-options'];
                 allDropdowns.forEach(id => {
                     const el = document.getElementById(id);
-                    if (el) el.classList.add('hidden');
+                    if (el) hideFloatingElement(el);
                 });
+            }
+            if (activeFloatingElement && activeFloatingElement.classList.contains('hidden')) {
+                activeFloatingElement = null;
             }
         });
 
@@ -2630,19 +2165,19 @@
         function selectNewTaskProject(projectId, label) {
             document.getElementById('new-task-project').value = projectId;
             document.getElementById('new-task-project-label').textContent = label;
-            document.getElementById('new-task-project-options').classList.add('hidden');
+            hideFloatingElement(document.getElementById('new-task-project-options'));
         }
 
         function selectNewTaskGroup(groupId, label) {
             document.getElementById('new-task-group-id').value = groupId;
             document.getElementById('new-task-group-label').textContent = label;
-            document.getElementById('new-task-group-options').classList.add('hidden');
+            hideFloatingElement(document.getElementById('new-task-group-options'));
         }
 
         function selectNewTaskAutodelete(policy, label) {
             document.getElementById('new-task-autodelete').value = policy;
             document.getElementById('new-task-autodelete-label').textContent = label;
-            document.getElementById('new-task-autodelete-options').classList.add('hidden');
+            hideFloatingElement(document.getElementById('new-task-autodelete-options'));
             
             const customContainer = document.getElementById('custom-autodelete-container');
             if (policy === 'custom') {
@@ -2653,39 +2188,15 @@
         }
 
         function toggleNewTaskProjectDropdown(event) {
-            if (event) event.stopPropagation();
-            const optionsPanel = document.getElementById('new-task-project-options');
-            if (optionsPanel) optionsPanel.classList.toggle('hidden');
-            
-            const otherDropdowns = ['sort-dropdown-options', 'ins-project-dropdown-options', 'new-task-group-options', 'new-task-autodelete-options', 'nav-menu-dropdown-options'];
-            otherDropdowns.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.classList.add('hidden');
-            });
+            toggleCustomDropdown('new-task-project-options', event);
         }
 
         function toggleNewTaskGroupDropdown(event) {
-            if (event) event.stopPropagation();
-            const optionsPanel = document.getElementById('new-task-group-options');
-            if (optionsPanel) optionsPanel.classList.toggle('hidden');
-            
-            const otherDropdowns = ['sort-dropdown-options', 'ins-project-dropdown-options', 'new-task-project-options', 'new-task-autodelete-options', 'nav-menu-dropdown-options'];
-            otherDropdowns.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.classList.add('hidden');
-            });
+            toggleCustomDropdown('new-task-group-options', event);
         }
 
         function toggleNewTaskAutodeleteDropdown(event) {
-            if (event) event.stopPropagation();
-            const optionsPanel = document.getElementById('new-task-autodelete-options');
-            if (optionsPanel) optionsPanel.classList.toggle('hidden');
-
-            const otherDropdowns = ['sort-dropdown-options', 'ins-project-dropdown-options', 'new-task-project-options', 'new-task-group-options', 'nav-menu-dropdown-options'];
-            otherDropdowns.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.classList.add('hidden');
-            });
+            toggleCustomDropdown('new-task-autodelete-options', event);
         }
 
         function toggleCustomDropdown(menuId, event) {
@@ -2694,12 +2205,37 @@
             allDropdowns.forEach(id => {
                 if (id !== menuId) {
                     const el = document.getElementById(id);
-                    if (el) el.classList.add('hidden');
+                    if (el) hideFloatingElement(el);
                 }
             });
 
             const targetMenu = document.getElementById(menuId);
-            if (targetMenu) targetMenu.classList.toggle('hidden');
+            if (!targetMenu) return;
+
+            if (window.innerWidth < 768) {
+                hideFloatingElement(targetMenu);
+                const menuDef = parseMenuDOMToDefinition(targetMenu, getMenuTitle(menuId));
+                openMobileDrawer(menuDef);
+            } else {
+                const isHidden = targetMenu.classList.contains('hidden');
+                if (isHidden) {
+                    targetMenu.classList.remove('hidden');
+                    const triggerBtn = event.currentTarget;
+                    const rect = triggerBtn.getBoundingClientRect();
+                    positionFloatingElement(targetMenu, rect);
+                } else {
+                    hideFloatingElement(targetMenu);
+                }
+            }
+        }
+
+        function getMenuTitle(menuId) {
+            if (menuId === 'sort-dropdown-options') return 'Sort Options';
+            if (menuId === 'nav-menu-dropdown-options') return 'More Options';
+            if (menuId === 'ins-project-dropdown-options' || menuId === 'new-task-project-options') return 'Select Collection';
+            if (menuId === 'new-task-group-options') return 'Select Group Column';
+            if (menuId === 'new-task-autodelete-options') return 'Auto-Deletion Policy';
+            return 'Options';
         }
 
         function toggleTaskDone(taskId, event) {
@@ -2717,7 +2253,6 @@
         function selectTask(taskId, event) {
             if (event) {
                 if (event.target.closest('button')) return;
-                event.stopPropagation();
             }
             
             if (!AppState.selectedTaskIds) AppState.selectedTaskIds = [];
@@ -2856,7 +2391,7 @@
         function selectInspectorProject(projectId, label) {
             updateInspectorField('projectId', projectId || null);
             document.getElementById('ins-selected-project-label').textContent = label;
-            document.getElementById('ins-project-dropdown-options').classList.add('hidden');
+            hideFloatingElement(document.getElementById('ins-project-dropdown-options'));
         }
 
         function updateInspectorField(field, value) {
@@ -3292,7 +2827,7 @@
             document.getElementById('selected-sort-label').textContent = label;
             
             const menu = document.getElementById('sort-dropdown-options');
-            if (menu) menu.classList.add('hidden');
+            if (menu) hideFloatingElement(menu);
 
             document.querySelectorAll('.checkbox-marker').forEach(marker => {
                 marker.classList.add('hidden');
@@ -3599,6 +3134,3 @@
                 }
             }
         });
-    </script>
-</body>
-</html>
