@@ -2227,6 +2227,8 @@
             const targetMenu = document.getElementById(menuId);
             if (!targetMenu) return;
 
+            const isModalDropdown = ['new-task-project-options', 'new-task-group-options', 'new-task-autodelete-options'].includes(menuId);
+
             if (window.innerWidth < 768) {
                 hideFloatingElement(targetMenu);
                 const menuDef = parseMenuDOMToDefinition(targetMenu, getMenuTitle(menuId));
@@ -2235,9 +2237,11 @@
                 const isHidden = targetMenu.classList.contains('hidden');
                 if (isHidden) {
                     targetMenu.classList.remove('hidden');
-                    const triggerBtn = (event && event.currentTarget) || (event && event.target && event.target.closest('button'));
-                    const rect = triggerBtn ? triggerBtn.getBoundingClientRect() : { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
-                    positionFloatingElement(targetMenu, rect);
+                    if (!isModalDropdown) {
+                        const triggerBtn = (event && event.currentTarget) || (event && event.target && event.target.closest('button'));
+                        const rect = triggerBtn ? triggerBtn.getBoundingClientRect() : { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
+                        positionFloatingElement(targetMenu, rect);
+                    }
                 } else {
                     hideFloatingElement(targetMenu);
                 }
