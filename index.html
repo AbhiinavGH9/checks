@@ -284,74 +284,142 @@
 
             <section id="inspector-panel" class="bg-[#0F0F0F] flex flex-col justify-between flex-shrink-0 transition-[width] duration-200 overflow-hidden" style="width: 0px;">
                 
-                <div id="inspector-content" class="flex-1 overflow-y-auto p-4 space-y-6 hidden">
+                <div id="inspector-content" class="flex-1 overflow-y-auto p-4 space-y-4 hidden">
                     
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <span class="text-[10px] uppercase font-bold tracking-widest text-[#2997ff] flex items-center">
-                                <i data-lucide="sliders" class="w-3.5 h-3.5 mr-1.5"></i> Task details
-                            </span>
-                            <button onclick="closeInspector()" class="text-gray-400 hover:text-white btn-scale p-1 bg-white/5 hover:bg-white/10 rounded-md">
-                                <i data-lucide="x" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                        
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Title</label>
-                            <input type="text" id="ins-task-title" onchange="updateInspectorField('title', this.value)" class="w-full bg-white/5 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition font-semibold border border-white/5">
-                        </div>
+                    <!-- Header of Inspector Content -->
+                    <div class="flex items-center justify-between pb-2 border-b border-white/[0.04]">
+                        <span class="text-[10px] uppercase font-bold tracking-widest text-[#2997ff] flex items-center">
+                            <i data-lucide="sliders" class="w-3.5 h-3.5 mr-1.5"></i> Task details
+                        </span>
+                        <button onclick="closeInspector()" class="text-gray-400 hover:text-white btn-scale p-1 bg-white/5 hover:bg-white/10 rounded-md">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
 
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Description</label>
-                            <textarea id="ins-task-desc" rows="3" onchange="updateInspectorField('description', this.value)" onkeydown="handleDescriptionKeydown(event)" placeholder="Write descriptions... (Shift+Enter for â€¢ bullets)" class="w-full bg-white/5 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition leading-relaxed resize-none border border-white/5"></textarea>
+                    <!-- Category 1: Task Details (Collapsible) -->
+                    <div class="border-b border-white/[0.04] pb-3">
+                        <button type="button" onclick="toggleInspectorSection('details')" class="w-full flex items-center justify-between py-1.5 text-[10px] font-bold text-white uppercase tracking-wider hover:text-[#2997ff] transition">
+                            <span>Details</span>
+                            <i id="ins-sec-icon-details" data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
+                        </button>
+                        <div id="ins-sec-content-details" class="space-y-3 mt-2">
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Title</label>
+                                <input type="text" id="ins-task-title" onchange="updateInspectorField('title', this.value)" class="w-full bg-white/5 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition font-semibold border border-white/5">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Description</label>
+                                <textarea id="ins-task-desc" rows="3" onchange="updateInspectorField('description', this.value)" onkeydown="handleDescriptionKeydown(event)" placeholder="Write descriptions... (Shift+Enter for • bullets)" class="w-full bg-white/5 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition leading-relaxed resize-none border border-white/5"></textarea>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="space-y-4 border-t border-b border-white/[0.03] py-4">
-                        
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block">Priority Color (Slide Right for more)</label>
-                            <div class="flex items-center overflow-x-auto space-x-2 py-1.5 no-scrollbar" id="ins-task-priority-options"></div>
-                        </div>
-
-                        <div class="space-y-1 relative" id="project-dropdown-container">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Collection Folder</label>
-                            <button type="button" onclick="toggleCustomDropdown('ins-project-dropdown-options', event)" class="w-full flex items-center justify-between bg-white/5 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] text-left border border-white/5">
-                                <span id="ins-selected-project-label" class="flex items-center space-x-2">None / Inbox</span>
-                                <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
-                            </button>
-                        </div>
-
-                        <div class="space-y-1 relative">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Deadline</label>
-                            <div class="flex items-center space-x-1">
-                                <button type="button" onclick="openCustomCalendar('ins-task-date', event)" id="ins-task-date-btn" class="flex-1 bg-white/5 rounded-xl px-3 py-2 text-xs text-white border border-white/5 hover:bg-white/10 text-left flex items-center justify-between">
-                                    <span id="ins-task-date-label">No Deadline</span>
-                                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-400"></i>
-                                </button>
-                                <button type="button" onclick="clearDeadline('ins-task-date', event)" class="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition" title="Clear Deadline">
-                                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                    <!-- Category 2: Short Notes (Collapsible) -->
+                    <div class="border-b border-white/[0.04] pb-3">
+                        <button type="button" onclick="toggleInspectorSection('notes')" class="w-full flex items-center justify-between py-1.5 text-[10px] font-bold text-white uppercase tracking-wider hover:text-[#2997ff] transition">
+                            <span>Short Notes</span>
+                            <i id="ins-sec-icon-notes" data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
+                        </button>
+                        <div id="ins-sec-content-notes" class="space-y-3 mt-2">
+                            <div id="inspector-notes-list" class="space-y-1.5 max-h-32 overflow-y-auto pr-1"></div>
+                            <div class="flex items-center space-x-1.5">
+                                <input type="text" id="new-task-note-input-ins" placeholder="Add a short note..." class="flex-1 bg-white/5 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
+                                <button type="button" onclick="addInspectorNote()" class="btn-scale bg-[#2997ff] hover:bg-[#0066cc] text-black hover:text-white p-2 rounded-xl transition">
+                                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
                                 </button>
                             </div>
-                            <input type="hidden" id="ins-task-date" onchange="updateInspectorField('dueDate', this.value)">
                         </div>
-
                     </div>
 
-                    <div class="space-y-3">
-                        <div class="flex items-center justify-between">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Subtask list</label>
-                            <span id="subtask-fraction" class="text-xs text-[#2997ff] font-mono font-bold">0 / 0</span>
+                    <!-- Category 3: Subtasks (Collapsible) -->
+                    <div class="border-b border-white/[0.04] pb-3">
+                        <button type="button" onclick="toggleInspectorSection('subtasks')" class="w-full flex items-center justify-between py-1.5 text-[10px] font-bold text-white uppercase tracking-wider hover:text-[#2997ff] transition">
+                            <span class="flex items-center">Subtasks <span id="subtask-fraction" class="text-xs text-[#2997ff] font-mono font-bold ml-2">0 / 0</span></span>
+                            <i id="ins-sec-icon-subtasks" data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
+                        </button>
+                        <div id="ins-sec-content-subtasks" class="space-y-3 mt-2">
+                            <div id="inspector-subtasks-list" class="space-y-1.5 max-h-60 overflow-y-auto pr-1"></div>
+                            <form onsubmit="handleAddSubtask(event)" class="flex items-center space-x-1.5 mt-2">
+                                <input type="text" id="new-subtask-input" placeholder="Create new subtask..." class="flex-1 bg-white/5 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
+                                <button type="submit" class="btn-scale bg-[#2997ff] hover:bg-[#0066cc] text-black hover:text-white p-2 rounded-lg transition">
+                                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </form>
                         </div>
-                        
-                        <div id="inspector-subtasks-list" class="space-y-1.5 max-h-60 overflow-y-auto pr-1"></div>
+                    </div>
 
-                        <form onsubmit="handleAddSubtask(event)" class="flex items-center space-x-1.5 mt-2">
-                            <input type="text" id="new-subtask-input" placeholder="Create new subtask..." class="flex-1 bg-white/5 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
-                            <button type="submit" class="btn-scale bg-[#2997ff] hover:bg-[#0066cc] text-black hover:text-white p-2 rounded-lg transition">
-                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                            </button>
-                        </form>
+                    <!-- Category 4: Design Customization (Collapsible) -->
+                    <div class="border-b border-white/[0.04] pb-3">
+                        <button type="button" onclick="toggleInspectorSection('customization')" class="w-full flex items-center justify-between py-1.5 text-[10px] font-bold text-white uppercase tracking-wider hover:text-[#2997ff] transition">
+                            <span>Design Customization</span>
+                            <i id="ins-sec-icon-customization" data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
+                        </button>
+                        <div id="ins-sec-content-customization" class="space-y-3 mt-2">
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block">Priority Color (Slide Right for more)</label>
+                                <div class="flex items-center overflow-x-auto space-x-2 py-1.5 no-scrollbar" id="ins-task-priority-options"></div>
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block mb-1">Select Icon Glyph</label>
+                                <div id="ins-task-icon-grid" class="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1.5 bg-[#141414] rounded-xl border border-white/[0.05]"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category 5: Location & Settings (Collapsible, Side-by-Side Dropdowns) -->
+                    <div class="pb-2">
+                        <button type="button" onclick="toggleInspectorSection('settings')" class="w-full flex items-center justify-between py-1.5 text-[10px] font-bold text-white uppercase tracking-wider hover:text-[#2997ff] transition">
+                            <span>Location & Settings</span>
+                            <i id="ins-sec-icon-settings" data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
+                        </button>
+                        <div id="ins-sec-content-settings" class="space-y-3 mt-2">
+                            <!-- Side-by-Side: Collection Folder & Target Column -->
+                            <div class="grid grid-cols-2 gap-3 items-start">
+                                <div class="space-y-1 relative" id="project-dropdown-container">
+                                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block mb-1">Collection Folder</label>
+                                    <button type="button" onclick="toggleCustomDropdown('ins-project-dropdown-options', event)" class="w-full h-9 flex items-center justify-between bg-white/5 rounded-xl px-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] text-left border border-white/5">
+                                        <span id="ins-selected-project-label" class="flex items-center space-x-2 truncate">None / Inbox</span>
+                                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500 flex-shrink-0 ml-1"></i>
+                                    </button>
+                                </div>
+                                <div class="space-y-1 relative" id="ins-group-dropdown-container">
+                                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block mb-1">Target Column</label>
+                                    <button type="button" onclick="toggleCustomDropdown('ins-group-dropdown-options', event)" class="w-full h-9 flex items-center justify-between bg-white/5 rounded-xl px-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] text-left border border-white/5">
+                                        <span id="ins-selected-group-label" class="flex items-center space-x-2 truncate">Select Column</span>
+                                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500 flex-shrink-0 ml-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Side-by-Side: Auto-Deletion & Deadline -->
+                            <div class="grid grid-cols-2 gap-3 items-start">
+                                <div class="space-y-1 relative" id="ins-autodelete-dropdown-container">
+                                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block mb-1">Auto-Deletion</label>
+                                    <button type="button" onclick="toggleCustomDropdown('ins-autodelete-options', event)" class="w-full h-9 flex items-center justify-between bg-white/5 rounded-xl px-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] text-left border border-white/5">
+                                        <span id="ins-selected-autodelete-label" class="flex items-center space-x-2 truncate">Do not delete</span>
+                                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500 flex-shrink-0 ml-1"></i>
+                                    </button>
+                                </div>
+                                <div class="space-y-1 relative">
+                                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block mb-1">Deadline</label>
+                                    <div class="flex items-center space-x-1">
+                                        <button type="button" onclick="openCustomCalendar('ins-task-date', event)" id="ins-task-date-btn" class="flex-1 h-9 bg-white/5 rounded-xl px-3 text-xs text-white border border-white/5 hover:bg-white/10 text-left flex items-center justify-between">
+                                            <span id="ins-task-date-label" class="truncate">No Deadline</span>
+                                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-400 flex-shrink-0 ml-1"></i>
+                                        </button>
+                                        <button type="button" onclick="clearDeadline('ins-task-date', event)" class="w-9 h-9 flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition" title="Clear Deadline">
+                                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </div>
+                                    <input type="hidden" id="ins-task-date" onchange="updateInspectorField('dueDate', this.value)">
+                                </div>
+                            </div>
+
+                            <div id="ins-custom-autodelete-container" class="space-y-1 hidden">
+                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block">Duration (Hours)</label>
+                                <input type="number" id="ins-task-autodelete-custom" min="1" max="8760" value="24" onchange="updateInspectorCustomAutodelete(this.value)" class="w-full h-11 bg-white/5 text-xs text-white rounded-xl px-3.5 border border-white/5 focus:outline-none focus:ring-1 focus:ring-[#2997ff]">
+                            </div>
+                        </div>
                     </div>
 
                 </div>
@@ -502,7 +570,18 @@
 
                         <div class="space-y-1">
                             <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Description</label>
-                            <textarea id="new-task-desc" rows="2" onkeydown="handleDescriptionKeydown(event)" placeholder="Optional notes... (Shift+Enter for â€¢ bullets)" class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition resize-none border border-white/5"></textarea>
+                            <textarea id="new-task-desc" rows="2" onkeydown="handleDescriptionKeydown(event)" placeholder="Optional notes... (Shift+Enter for • bullets)" class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition resize-none border border-white/5"></textarea>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block">Short Notes (Yellow Pills)</label>
+                            <div id="new-task-notes-list" class="space-y-1.5 max-h-24 overflow-y-auto pr-1"></div>
+                            <div class="flex items-center space-x-1.5">
+                                <input type="text" id="new-task-note-input" placeholder="Add a short note..." class="flex-1 bg-white/5 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
+                                <button type="button" onclick="addNewTaskNoteDraft()" class="btn-scale bg-[#2997ff] hover:bg-[#0066cc] text-black hover:text-white p-2 rounded-xl transition">
+                                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -670,6 +749,8 @@
 
     <!-- Floating Dropdown Option Panels (moved outside containers to prevent transforms/clipping inside modals) -->
     <div id="ins-project-dropdown-options" class="hidden w-full bg-[#141414] rounded-xl shadow-2xl z-[250] max-h-48 overflow-y-auto py-1 border border-white/[0.05]"></div>
+    <div id="ins-group-dropdown-options" class="hidden w-full bg-[#141414] rounded-xl shadow-2xl z-[250] max-h-48 overflow-y-auto py-1 border border-white/[0.05]"></div>
+    <div id="ins-autodelete-options" class="hidden w-full bg-[#141414] rounded-xl shadow-2xl z-[250] py-1 border border-white/[0.05]"></div>
 
     <div id="custom-calendar-popup" class="hidden absolute bg-[#141414] border border-white/[0.05] rounded-xl shadow-2xl z-[120] p-4 w-72 text-xs text-gray-300">
         <div class="flex items-center justify-between mb-3">

@@ -24,6 +24,7 @@
             tempProjectIcon: 'smile',
             tempCreatePriority: '#FF3B30',
             tempCreateIcon: 'smile',
+            tempCreateNotes: [],
             tempGroupColor: '#FF3B30',
             tempGroupIcon: 'list',
             returningToTaskModal: false,
@@ -524,7 +525,21 @@
             const profile = localStorage.getItem('CLIPBOARD_PROFILE_DATA_V3');
             const savedCounterPolicy = localStorage.getItem('CLIPBOARD_COUNTER_POLICY');
             
-            if (tasks) AppState.tasks = JSON.parse(tasks);
+            if (tasks) {
+                AppState.tasks = JSON.parse(tasks);
+                AppState.tasks.forEach(task => {
+                    if (task.note && (!task.notes || task.notes.length === 0)) {
+                        task.notes = [{
+                            id: 'note-' + Date.now() + Math.random().toString(36).substr(2, 5),
+                            text: task.note
+                        }];
+                        delete task.note;
+                    }
+                    if (!task.notes) {
+                        task.notes = [];
+                    }
+                });
+            }
             if (projects) AppState.projects = JSON.parse(projects);
             if (groups) AppState.groups = JSON.parse(groups);
             if (profile) {
@@ -1094,6 +1109,16 @@
                                             </span>
                                         ` : ''}
                                     </div>
+                                    ${task.notes && task.notes.length > 0 ? `
+                                        <div class="flex flex-col gap-1 mt-2">
+                                            ${task.notes.map(n => `
+                                                <span class="inline-flex items-center space-x-1.5 px-2 py-0.5 bg-yellow-500/10 text-yellow-400 rounded-lg text-[9.5px] font-bold border border-yellow-500/20 w-fit max-w-full">
+                                                    <i data-lucide="sticky-note" class="w-3 h-3 flex-shrink-0"></i>
+                                                    <span class="truncate">${escapeHTML(n.text)}</span>
+                                                </span>
+                                            `).join('')}
+                                        </div>
+                                    ` : ''}
                                     ${subtasksHTML}
                                 </div>
                             </div>
@@ -1716,11 +1741,13 @@
             }
             if (!e.target.closest('#sort-dropdown-wrapper') && 
                 !e.target.closest('#project-dropdown-container') && 
+                !e.target.closest('#ins-group-dropdown-container') && 
+                !e.target.closest('#ins-autodelete-dropdown-container') && 
                 !e.target.closest('#new-task-project-container') && 
                 !e.target.closest('#new-task-group-container') &&
                 !e.target.closest('#new-task-autodelete-container') &&
                 !e.target.closest('nav')) {
-                const allDropdowns = ['sort-dropdown-options', 'ins-project-dropdown-options', 'new-task-project-options', 'new-task-group-options', 'new-task-autodelete-options', 'nav-menu-dropdown-options'];
+                const allDropdowns = ['sort-dropdown-options', 'ins-project-dropdown-options', 'ins-group-dropdown-options', 'ins-autodelete-options', 'new-task-project-options', 'new-task-group-options', 'new-task-autodelete-options', 'nav-menu-dropdown-options'];
                 allDropdowns.forEach(id => {
                     const el = document.getElementById(id);
                     if (el) hideFloatingElement(el);
@@ -1999,6 +2026,8 @@
             if (AppState.draftTask) {
                 document.getElementById('new-task-title').value = AppState.draftTask.title || '';
                 document.getElementById('new-task-desc').value = AppState.draftTask.description || '';
+                AppState.tempCreateNotes = AppState.draftTask.notes || [];
+                renderNewTaskNotesDraft();
                 document.getElementById('new-task-project').value = AppState.draftTask.projectId || '';
                 document.getElementById('new-task-project-label').textContent = AppState.draftTask.projectLabel || 'None / Inbox';
                 document.getElementById('new-task-date').value = AppState.draftTask.dueDate || '';
@@ -2030,6 +2059,8 @@
             } else {
                 document.getElementById('new-task-title').value = '';
                 document.getElementById('new-task-desc').value = '';
+                AppState.tempCreateNotes = [];
+                renderNewTaskNotesDraft();
                 document.getElementById('new-task-project').value = '';
                 document.getElementById('new-task-project-label').textContent = 'None / Inbox';
                 
@@ -2065,6 +2096,7 @@
             AppState.draftTask = {
                 title: document.getElementById('new-task-title').value,
                 description: document.getElementById('new-task-desc').value,
+                notes: AppState.tempCreateNotes || [],
                 projectId: document.getElementById('new-task-project').value,
                 projectLabel: document.getElementById('new-task-project-label').textContent,
                 dueDate: document.getElementById('new-task-date').value,
@@ -2098,8 +2130,12 @@
             
             if (shouldClearDraft) {
                 AppState.draftTask = null;
+                AppState.tempCreateNotes = [];
                 document.getElementById('new-task-title').value = '';
                 document.getElementById('new-task-desc').value = '';
+                const noteInput = document.getElementById('new-task-note-input');
+                if (noteInput) noteInput.value = '';
+                renderNewTaskNotesDraft();
             }
         }
 
@@ -2157,6 +2193,7 @@
                 id: 'task-' + Date.now() + Math.random().toString(36).substr(2, 5),
                 title: finalTitle,
                 description: finalDesc,
+                notes: AppState.tempCreateNotes || [],
                 done: false,
                 dueDate: dateInput.value || '',
                 projectId: projInput.value || null,
@@ -2202,6 +2239,47 @@
             }
         }
 
+        function addNewTaskNoteDraft() {
+            const input = document.getElementById('new-task-note-input');
+            if (!input) return;
+            const text = input.value.trim();
+            if (text) {
+                if (!AppState.tempCreateNotes) AppState.tempCreateNotes = [];
+                AppState.tempCreateNotes.push({
+                    id: 'note-' + Date.now() + Math.random().toString(36).substr(2, 5),
+                    text: text
+                });
+                input.value = '';
+                renderNewTaskNotesDraft();
+            }
+        }
+
+        function deleteNewTaskNoteDraft(noteId) {
+            if (AppState.tempCreateNotes) {
+                AppState.tempCreateNotes = AppState.tempCreateNotes.filter(n => n.id !== noteId);
+            }
+            renderNewTaskNotesDraft();
+        }
+
+        function renderNewTaskNotesDraft() {
+            const list = document.getElementById('new-task-notes-list');
+            if (!list) return;
+            list.innerHTML = '';
+            const notes = AppState.tempCreateNotes || [];
+            notes.forEach(n => {
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between bg-white/5 p-2 rounded-lg";
+                item.innerHTML = `
+                    <span class="text-xs text-yellow-400 truncate flex-1 mr-2">${escapeHTML(n.text)}</span>
+                    <button type="button" onclick="deleteNewTaskNoteDraft('${n.id}')" class="text-gray-500 hover:text-red-400 transition p-1 flex-shrink-0">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                `;
+                list.appendChild(item);
+            });
+            lucide.createIcons();
+        }
+
         function toggleNewTaskProjectDropdown(event) {
             toggleCustomDropdown('new-task-project-options', event);
         }
@@ -2216,7 +2294,7 @@
 
         function toggleCustomDropdown(menuId, event) {
             if (event) event.stopPropagation();
-            const allDropdowns = ['sort-dropdown-options', 'ins-project-dropdown-options', 'new-task-project-options', 'new-task-group-options', 'new-task-autodelete-options', 'nav-menu-dropdown-options'];
+            const allDropdowns = ['sort-dropdown-options', 'ins-project-dropdown-options', 'ins-group-dropdown-options', 'ins-autodelete-options', 'new-task-project-options', 'new-task-group-options', 'new-task-autodelete-options', 'nav-menu-dropdown-options'];
             allDropdowns.forEach(id => {
                 if (id !== menuId) {
                     const el = document.getElementById(id);
@@ -2252,8 +2330,8 @@
             if (menuId === 'sort-dropdown-options') return 'Sort Options';
             if (menuId === 'nav-menu-dropdown-options') return 'More Options';
             if (menuId === 'ins-project-dropdown-options' || menuId === 'new-task-project-options') return 'Select Collection';
-            if (menuId === 'new-task-group-options') return 'Select Group Column';
-            if (menuId === 'new-task-autodelete-options') return 'Auto-Deletion Policy';
+            if (menuId === 'ins-group-dropdown-options' || menuId === 'new-task-group-options') return 'Select Target Column';
+            if (menuId === 'ins-autodelete-options' || menuId === 'new-task-autodelete-options') return 'Auto-Deletion Policy';
             return 'Options';
         }
 
@@ -2309,6 +2387,10 @@
             AppState.selectedTaskId = null;
             renderTaskFeed();
             
+            hideFloatingElement(document.getElementById('ins-project-dropdown-options'));
+            hideFloatingElement(document.getElementById('ins-group-dropdown-options'));
+            hideFloatingElement(document.getElementById('ins-autodelete-options'));
+
             const inspector = document.getElementById('inspector-panel');
             inspector.style.width = '0px';
             document.getElementById('inspector-resizer').style.display = 'none';
@@ -2330,7 +2412,6 @@
                 placeholder.classList.add('hidden');
                 return;
             }
-
             content.classList.remove('hidden');
             footer.classList.remove('hidden');
             placeholder.classList.add('hidden');
@@ -2339,6 +2420,36 @@
             document.getElementById('ins-task-desc').value = task.description || '';
             document.getElementById('ins-task-date').value = task.dueDate || '';
             document.getElementById('ins-task-date-label').textContent = task.dueDate ? task.dueDate : "No Deadline";
+
+            const notesList = document.getElementById('inspector-notes-list');
+            if (notesList) {
+                notesList.innerHTML = '';
+                const notes = task.notes || [];
+                notes.forEach(n => {
+                    const item = document.createElement('div');
+                    item.id = `ins-note-row-${n.id}`;
+                    item.className = "flex items-center justify-between bg-white/5 p-1.5 rounded-lg space-x-2";
+                    item.innerHTML = `
+                        <div class="flex-1 min-w-0 flex items-center space-x-2">
+                            <i data-lucide="sticky-note" class="w-3.5 h-3.5 text-yellow-400/70 flex-shrink-0"></i>
+                            <span id="ins-note-text-${n.id}" class="text-xs text-yellow-400 truncate flex-1 font-medium select-text">${escapeHTML(n.text)}</span>
+                            <input id="ins-note-input-${n.id}" type="text" value="${escapeHTML(n.text)}" onkeydown="if(event.key === 'Enter') saveEditNote('${n.id}')" class="hidden bg-transparent border-none text-xs text-yellow-400 focus:outline-none focus:ring-0 w-full p-0 flex-1 font-medium">
+                        </div>
+                        <div class="flex items-center space-x-1 flex-shrink-0">
+                            <button type="button" id="ins-note-edit-btn-${n.id}" onclick="startEditNote('${n.id}')" class="text-gray-500 hover:text-white transition p-1" title="Edit Note">
+                                <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button type="button" id="ins-note-save-btn-${n.id}" onclick="saveEditNote('${n.id}')" class="hidden text-green-400 hover:text-green-300 transition p-1" title="Save Note">
+                                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button type="button" onclick="deleteInspectorNote('${n.id}')" class="text-gray-500 hover:text-red-400 transition p-1" title="Delete Note">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    `;
+                    notesList.appendChild(item);
+                });
+            }
 
             const colorContainer = document.getElementById('ins-task-priority-options');
             colorContainer.innerHTML = '';
@@ -2349,6 +2460,17 @@
                 btn.className = `w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 bg-white/5 border border-transparent transition-all ${task.color === color ? 'ring-2 ring-white scale-110 z-10' : ''}`;
                 btn.innerHTML = `<span class="w-6 h-6 rounded-full block" style="background-color: ${color};"></span>`;
                 colorContainer.appendChild(btn);
+            });
+
+            const iconContainer = document.getElementById('ins-task-icon-grid');
+            iconContainer.innerHTML = '';
+            SYSTEM_ICONS.forEach(iconName => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.onclick = () => updateInspectorIcon(iconName);
+                btn.className = `ins-task-icon-btn w-9 h-9 rounded-xl flex items-center justify-center bg-white/5 border border-transparent text-gray-400 hover:text-white transition-all flex-shrink-0 ${task.icon === iconName ? 'bg-white text-black scale-110 z-10' : ''}`;
+                btn.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 flex-shrink-0"></i>`;
+                iconContainer.appendChild(btn);
             });
 
             const projectDropdownContainer = document.getElementById('ins-project-dropdown-options');
@@ -2375,6 +2497,60 @@
 
             document.getElementById('ins-selected-project-label').textContent = chosenProjectName;
 
+            const groupDropdownContainer = document.getElementById('ins-group-dropdown-options');
+            groupDropdownContainer.innerHTML = '';
+
+            let chosenGroupName = 'Select Group Column';
+            const defaultGroupBtn = document.createElement('button');
+            defaultGroupBtn.type = 'button';
+            defaultGroupBtn.onclick = () => selectInspectorGroup('', 'Select Group Column');
+            defaultGroupBtn.className = "w-full text-left px-4 py-2 text-xs text-white hover:bg-white/5 transition";
+            defaultGroupBtn.textContent = "Select Group Column";
+            groupDropdownContainer.appendChild(defaultGroupBtn);
+
+            AppState.groups.forEach(g => {
+                const optBtn = document.createElement('button');
+                optBtn.type = 'button';
+                optBtn.onclick = () => selectInspectorGroup(g.id, g.title);
+                optBtn.className = "w-full text-left px-4 py-2 text-xs text-white hover:bg-white/5 transition flex items-center space-x-2";
+                optBtn.innerHTML = `<span class="w-2 h-2 rounded-full" style="background-color: ${g.color}"></span><span>${escapeHTML(g.title)}</span>`;
+                groupDropdownContainer.appendChild(optBtn);
+
+                if (task.groupId === g.id) chosenGroupName = g.title;
+            });
+            document.getElementById('ins-selected-group-label').textContent = chosenGroupName;
+
+            const autoDeleteDropdownContainer = document.getElementById('ins-autodelete-options');
+            autoDeleteDropdownContainer.innerHTML = '';
+
+            const policies = [
+                { value: 'never', label: 'Do not delete' },
+                { value: '1day', label: '1 Day after' },
+                { value: '1week', label: '1 Week after' },
+                { value: 'custom', label: 'Custom duration' }
+            ];
+
+            let chosenPolicyLabel = 'Do not delete';
+            policies.forEach(p => {
+                const optBtn = document.createElement('button');
+                optBtn.type = 'button';
+                optBtn.onclick = () => selectInspectorAutodelete(p.value, p.label);
+                optBtn.className = "w-full text-left px-4 py-2 text-xs text-white hover:bg-white/5 transition";
+                optBtn.textContent = p.label;
+                autoDeleteDropdownContainer.appendChild(optBtn);
+
+                if (task.autoDelete === p.value) chosenPolicyLabel = p.label;
+            });
+            document.getElementById('ins-selected-autodelete-label').textContent = chosenPolicyLabel;
+
+            const customAutoDeleteContainer = document.getElementById('ins-custom-autodelete-container');
+            if (task.autoDelete === 'custom') {
+                customAutoDeleteContainer.classList.remove('hidden');
+                document.getElementById('ins-task-autodelete-custom').value = task.customAutoDeleteHrs || 24;
+            } else {
+                customAutoDeleteContainer.classList.add('hidden');
+            }
+
             const subtasksList = document.getElementById('inspector-subtasks-list');
             subtasksList.innerHTML = '';
             
@@ -2387,19 +2563,29 @@
 
             subtasks.forEach(s => {
                 const row = document.createElement('div');
-                row.className = `flex items-center justify-between bg-white/5 p-2.5 rounded-lg transition ${s.done ? 'opacity-70' : ''}`;
+                row.id = `ins-subtask-row-${s.id}`;
+                row.className = `flex items-center justify-between bg-white/5 p-2 rounded-lg transition ${s.done ? 'opacity-70' : ''}`;
                 const bgStyle = s.done ? `background-color: ${subtaskColor};` : `background-color: transparent;`;
 
                 row.innerHTML = `
-                    <div class="flex items-center space-x-3 flex-1 min-w-0">
+                    <div class="flex items-center space-x-3 flex-1 min-w-0 pr-2">
                         <button onclick="toggleSubtaskDone('${s.id}')" class="w-[18px] h-[18px] rounded-full border flex items-center justify-center flex-shrink-0 transition-all duration-200" style="${borderStyle} ${bgStyle}" title="Toggle Subtask">
                             ${s.done ? `<i data-lucide="check" class="w-3 h-3 text-[#0a0a0a] font-extrabold tick-animation"></i>` : ''}
                         </button>
-                        <span class="text-xs text-gray-200 truncate warp-text ${s.done ? 'line-through text-gray-500' : ''}">${escapeHTML(s.title)}</span>
+                        <span id="ins-subtask-text-${s.id}" class="text-xs text-gray-200 truncate flex-1 select-text ${s.done ? 'line-through text-gray-500' : ''}">${escapeHTML(s.title)}</span>
+                        <input id="ins-subtask-input-${s.id}" type="text" value="${escapeHTML(s.title)}" onkeydown="if(event.key === 'Enter') saveEditSubtask('${s.id}')" class="hidden bg-transparent border-none text-xs text-gray-200 focus:outline-none focus:ring-0 w-full p-0 flex-1 ${s.done ? 'line-through text-gray-500' : ''}">
                     </div>
-                    <button onclick="deleteSubtask('${s.id}')" class="text-gray-500 hover:text-red-400 transition p-1 ml-2">
-                        <i data-lucide="trash-2" class="w-3.5 h-3.5 flex-shrink-0"></i>
-                    </button>
+                    <div class="flex items-center space-x-1 flex-shrink-0">
+                        <button type="button" id="ins-subtask-edit-btn-${s.id}" onclick="startEditSubtask('${s.id}')" class="text-gray-500 hover:text-white transition p-1" title="Edit Subtask">
+                            <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <button type="button" id="ins-subtask-save-btn-${s.id}" onclick="saveEditSubtask('${s.id}')" class="hidden text-green-400 hover:text-green-300 transition p-1" title="Save Subtask">
+                            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <button onclick="deleteSubtask('${s.id}')" class="text-gray-500 hover:text-red-400 transition p-1" title="Delete Subtask">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                        </button>
+                    </div>
                 `;
                 subtasksList.appendChild(row);
             });
@@ -2429,6 +2615,165 @@
                 task.color = colorHex;
                 syncDeviceDataChannels();
                 renderInspector();
+            }
+        }
+
+        function toggleInspectorSection(sectionId) {
+            const content = document.getElementById(`ins-sec-content-${sectionId}`);
+            const icon = document.getElementById(`ins-sec-icon-${sectionId}`);
+            if (!content || !icon) return;
+
+            const isHidden = content.classList.contains('hidden');
+            if (isHidden) {
+                content.classList.remove('hidden');
+                icon.setAttribute('data-lucide', 'chevron-down');
+            } else {
+                content.classList.add('hidden');
+                icon.setAttribute('data-lucide', 'chevron-right');
+            }
+            lucide.createIcons();
+        }
+
+        function addInspectorNote() {
+            const input = document.getElementById('new-task-note-input-ins');
+            if (!input) return;
+            const text = input.value.trim();
+            const task = AppState.tasks.find(t => t.id === AppState.selectedTaskId);
+            if (task && text) {
+                if (!task.notes) task.notes = [];
+                task.notes.push({
+                    id: 'note-' + Date.now() + Math.random().toString(36).substr(2, 5),
+                    text: text
+                });
+                input.value = '';
+                syncDeviceDataChannels();
+                renderTaskFeed();
+                renderInspector();
+            }
+        }
+
+        function deleteInspectorNote(noteId) {
+            const task = AppState.tasks.find(t => t.id === AppState.selectedTaskId);
+            if (task && task.notes) {
+                task.notes = task.notes.filter(n => n.id !== noteId);
+                syncDeviceDataChannels();
+                renderTaskFeed();
+                renderInspector();
+            }
+        }
+
+        function updateInspectorNoteText(noteId, newText) {
+            const task = AppState.tasks.find(t => t.id === AppState.selectedTaskId);
+            if (task && task.notes) {
+                const note = task.notes.find(n => n.id === noteId);
+                if (note) {
+                    note.text = newText.trim() || note.text;
+                    syncDeviceDataChannels();
+                    renderTaskFeed();
+                    renderInspector();
+                }
+            }
+        }
+
+        function updateSubtaskTitle(subtaskId, newTitle) {
+            const task = AppState.tasks.find(t => t.id === AppState.selectedTaskId);
+            if (task && task.subtasks) {
+                const sub = task.subtasks.find(s => s.id === subtaskId);
+                if (sub) {
+                    sub.title = sanitizeSentenceCase(newTitle.trim()) || sub.title;
+                    syncDeviceDataChannels();
+                    renderTaskFeed();
+                    renderInspector();
+                }
+            }
+        }
+
+        function startEditNote(noteId) {
+            document.getElementById(`ins-note-text-${noteId}`).classList.add('hidden');
+            document.getElementById(`ins-note-input-${noteId}`).classList.remove('hidden');
+            document.getElementById(`ins-note-edit-btn-${noteId}`).classList.add('hidden');
+            document.getElementById(`ins-note-save-btn-${noteId}`).classList.remove('hidden');
+            document.getElementById(`ins-note-input-${noteId}`).focus();
+        }
+
+        function saveEditNote(noteId) {
+            const input = document.getElementById(`ins-note-input-${noteId}`);
+            const newText = input.value.trim();
+            if (newText) {
+                updateInspectorNoteText(noteId, newText);
+            } else {
+                renderInspector();
+            }
+        }
+
+        function startEditSubtask(subtaskId) {
+            document.getElementById(`ins-subtask-text-${subtaskId}`).classList.add('hidden');
+            document.getElementById(`ins-subtask-input-${subtaskId}`).classList.remove('hidden');
+            document.getElementById(`ins-subtask-edit-btn-${subtaskId}`).classList.add('hidden');
+            document.getElementById(`ins-subtask-save-btn-${subtaskId}`).classList.remove('hidden');
+            document.getElementById(`ins-subtask-input-${subtaskId}`).focus();
+        }
+
+        function saveEditSubtask(subtaskId) {
+            const input = document.getElementById(`ins-subtask-input-${subtaskId}`);
+            const newTitle = input.value.trim();
+            if (newTitle) {
+                updateSubtaskTitle(subtaskId, newTitle);
+            } else {
+                renderInspector();
+            }
+        }
+
+        function updateInspectorIcon(iconName) {
+            const task = AppState.tasks.find(t => t.id === AppState.selectedTaskId);
+            if (task) {
+                task.icon = iconName;
+                syncDeviceDataChannels();
+                renderInspector();
+            }
+        }
+
+        function selectInspectorGroup(groupId, title) {
+            const task = AppState.tasks.find(t => t.id === AppState.selectedTaskId);
+            if (task) {
+                task.groupId = groupId || null;
+                syncDeviceDataChannels();
+                renderInspector();
+            }
+            const dropdown = document.getElementById('ins-group-dropdown-options');
+            if (dropdown) hideFloatingElement(dropdown);
+        }
+
+        function selectInspectorAutodelete(value, label) {
+            const task = AppState.tasks.find(t => t.id === AppState.selectedTaskId);
+            if (task) {
+                task.autoDelete = value;
+                const createdTime = new Date(task.createdDate).getTime() || Date.now();
+                if (value === 'never') {
+                    task.expiryTime = null;
+                } else if (value === '1day') {
+                    task.expiryTime = createdTime + (24 * 60 * 60 * 1000);
+                } else if (value === '1week') {
+                    task.expiryTime = createdTime + (7 * 24 * 60 * 60 * 1000);
+                } else if (value === 'custom') {
+                    const hrs = task.customAutoDeleteHrs || 24;
+                    task.expiryTime = createdTime + (hrs * 60 * 60 * 1000);
+                }
+                syncDeviceDataChannels();
+                renderInspector();
+            }
+            const dropdown = document.getElementById('ins-autodelete-options');
+            if (dropdown) hideFloatingElement(dropdown);
+        }
+
+        function updateInspectorCustomAutodelete(hours) {
+            const task = AppState.tasks.find(t => t.id === AppState.selectedTaskId);
+            if (task) {
+                const hrs = parseFloat(hours) || 24;
+                task.customAutoDeleteHrs = hrs;
+                const createdTime = new Date(task.createdDate).getTime() || Date.now();
+                task.expiryTime = createdTime + (hrs * 60 * 60 * 1000);
+                syncDeviceDataChannels();
             }
         }
 
