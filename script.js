@@ -897,19 +897,16 @@
 
         async function initSupabaseAuth() {
             if (!supabaseClient) {
-                // If not initialized, fallback to showing auth screen
                 document.getElementById('auth-guard-screen').classList.remove('hidden');
                 return;
             }
 
-            // 1. Listen for auth state changes
             supabaseClient.auth.onAuthStateChange(async (event, session) => {
                 const prevSession = AppState.session;
                 AppState.session = session;
                 
                 if (session) {
                     document.getElementById('auth-guard-screen').classList.add('hidden');
-                    // Check if we are logging in for the first time in this session context
                     if (!prevSession) {
                         showToast('Sync Activated', 'Ecosystem multi-device data channels synchronized.');
                         await performInitialDataSync();
@@ -921,17 +918,6 @@
                     showToast('Session Closed', 'Local storage device synchronization disconnected.');
                 }
             });
-
-            // 2. Silent login check on load
-            const { data } = await supabaseClient.auth.getSession();
-            if (data && data.session) {
-                AppState.session = data.session;
-                document.getElementById('auth-guard-screen').classList.add('hidden');
-                await performInitialDataSync();
-                subscribeToRealtimeSync();
-            } else {
-                document.getElementById('auth-guard-screen').classList.remove('hidden');
-            }
         }
 
         async function performInitialDataSync() {
