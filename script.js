@@ -1660,6 +1660,15 @@
             const container = document.getElementById('tasks-list');
             const emptyScreen = document.getElementById('empty-state-screen');
 
+            const clearDoneBtn = document.getElementById('clear-done-archive-btn');
+            if (clearDoneBtn) {
+                if (AppState.currentTab === 'done' && AppState.tasks.some(t => t.done)) {
+                    clearDoneBtn.classList.remove('hidden');
+                } else {
+                    clearDoneBtn.classList.add('hidden');
+                }
+            }
+
             if (AppState.currentTab === 'manage') {
                 renderManageDashboard();
                 return;
@@ -3605,6 +3614,20 @@
             if (deleteActionCallback) deleteActionCallback();
             closeDeleteModal(); 
         };
+
+        function clearCompletedTasks() {
+            const completedCount = AppState.tasks.filter(t => t.done).length;
+            if (completedCount === 0) return;
+            
+            showDeleteConfirmation(`Are you sure you want to permanently delete all ${completedCount} completed tasks? This action cannot be undone.`, () => {
+                AppState.tasks = AppState.tasks.filter(t => !t.done);
+                syncDeviceDataChannels();
+                renderTaskFeed();
+                updateGlobalBadges();
+                closeInspector();
+                showToast('Archive Cleared', `Successfully deleted all ${completedCount} completed tasks.`);
+            });
+        }
 
         function openNewProjectModal() {
             const backdrop = document.getElementById('project-modal-backdrop');

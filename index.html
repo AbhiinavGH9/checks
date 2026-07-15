@@ -206,6 +206,11 @@
                     </div>
                     
                     <div class="flex flex-wrap items-center gap-2 relative">
+                        <button id="clear-done-archive-btn" onclick="clearCompletedTasks()" class="btn-scale flex items-center space-x-1 px-3 py-1.5 text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition hidden" title="Delete all completed tasks in this folder">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            <span>Delete All Completed</span>
+                        </button>
+
                         <button onclick="openAddTaskModal()" class="btn-scale flex items-center space-x-1 px-3 py-1.5 text-xs font-bold bg-[#2997ff] text-black hover:bg-[#0066cc] hover:text-white rounded-lg transition" title="Create a new task">
                             <i data-lucide="plus" class="w-3.5 h-3.5"></i>
                             <span>New Task</span>
