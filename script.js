@@ -9,6 +9,101 @@
             'zap', 'dumbbell', 'utensils', 'graduation-cap', 'map-pin', 'smile'
         ];
 
+        // Supabase client configuration placeholders
+        const SUPABASE_URL = "https://sbqjvrkdfmygjpfbtocs.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNicWp2cmtkZm15Z2pwZmJ0b2NzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwODA2NDEsImV4cCI6MjA5OTY1NjY0MX0.rjjZ8_TjfeQyq6Nw2ZOWdGQQpXb-T0xW98tz0RJB9Ic";
+        let supabaseClient = null;
+        try {
+            if (typeof supabase !== 'undefined') {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+        } catch (e) {
+            console.error("Supabase initialization failed:", e);
+        }
+
+        // Data mappers to convert between local state and Postgres DB schemas
+        function mapTaskToDB(task) {
+            return {
+                id: task.id,
+                title: task.title,
+                description: task.description || '',
+                priority: task.color || '',
+                due_date: task.dueDate || '',
+                project_id: task.projectId || null,
+                group_id: task.groupId || null,
+                icon: task.icon || '',
+                done: !!task.done,
+                autodelete_policy: task.autoDelete || 'never',
+                subtasks: task.subtasks || [],
+                notes: task.notes || [],
+                expiry_time: task.expiryTime || null,
+                created_date: task.createdDate || new Date().toISOString(),
+                updated_at: task.updatedAt || new Date().toISOString()
+            };
+        }
+
+        function mapTaskFromDB(dbTask) {
+            return {
+                id: dbTask.id,
+                title: dbTask.title,
+                description: dbTask.description || '',
+                color: dbTask.priority || '',
+                dueDate: dbTask.due_date || '',
+                projectId: dbTask.project_id || null,
+                groupId: dbTask.group_id || null,
+                icon: dbTask.icon || '',
+                done: !!dbTask.done,
+                autoDelete: dbTask.autodelete_policy || 'never',
+                subtasks: dbTask.subtasks || [],
+                notes: dbTask.notes || [],
+                expiryTime: dbTask.expiry_time || null,
+                createdDate: dbTask.created_date || new Date().toISOString(),
+                updatedAt: dbTask.updated_at || new Date().toISOString()
+            };
+        }
+
+        function mapProjectToDB(proj) {
+            return {
+                id: proj.id,
+                name: proj.title,
+                color: proj.color,
+                icon: proj.icon,
+                updated_at: proj.updatedAt || new Date().toISOString()
+            };
+        }
+
+        function mapProjectFromDB(dbProj) {
+            return {
+                id: dbProj.id,
+                title: dbProj.name,
+                color: dbProj.color,
+                icon: dbProj.icon,
+                updatedAt: dbProj.updated_at || new Date().toISOString()
+            };
+        }
+
+        function mapGroupToDB(group, position) {
+            return {
+                id: group.id,
+                name: group.title,
+                color: group.color,
+                icon: group.icon,
+                position: position,
+                updated_at: group.updatedAt || new Date().toISOString()
+            };
+        }
+
+        function mapGroupFromDB(dbGroup) {
+            return {
+                id: dbGroup.id,
+                title: dbGroup.name,
+                color: dbGroup.color,
+                icon: dbGroup.icon,
+                position: dbGroup.position || 0,
+                updatedAt: dbGroup.updated_at || new Date().toISOString()
+            };
+        }
+
         let AppState = {
             tasks: [],
             projects: [],
@@ -37,6 +132,16 @@
             profilePass: 'anv_edt',
             profileDP: 'smile',
 
+            // Supabase cross-device sync properties
+            session: null,
+            syncing: false,
+            lastKnownState: {
+                tasks: [],
+                projects: [],
+                groups: [],
+                profile: {}
+            },
+
             // Metric tracking variables
             metricCardCollapsed: true,
             counterTargetPolicy: 'tasks' // Can be 'tasks' or 'subtasks'
@@ -45,6 +150,113 @@
         let contextSelectedTaskId = null;
         let contextSelectedGroupId = null;
         let deleteActionCallback = null;
+
+        function updateSyncStatusUI(status) {
+            const statusIndicator = document.getElementById('storage-status');
+            if (!statusIndicator) return;
+            statusIndicator.innerHTML = '';
+            
+            if (status === 'synced') {
+                statusIndicator.className = "flex items-center text-emerald-400 font-medium";
+                statusIndicator.innerHTML = '<i data-lucide="shield-check" class="w-3 h-3 mr-1"></i> Autosaved';
+            } else if (status === 'syncing') {
+                statusIndicator.className = "flex items-center text-blue-400 font-medium";
+                statusIndicator.innerHTML = '<i data-lucide="refresh-cw" class="w-3 h-3 mr-1 animate-spin"></i> Syncing...';
+            } else if (status === 'offline') {
+                statusIndicator.className = "flex items-center text-yellow-500 font-medium";
+                statusIndicator.innerHTML = '<i data-lucide="wifi-off" class="w-3 h-3 mr-1"></i> Offline Pending';
+            } else if (status === 'error') {
+                statusIndicator.className = "flex items-center text-red-400 font-medium";
+                statusIndicator.innerHTML = '<i data-lucide="alert-circle" class="w-3 h-3 mr-1"></i> Sync Error';
+            }
+            lucide.createIcons();
+        }
+
+        function queueSyncOperation(table, action, recordId, data) {
+            if (!AppState.session) return;
+            
+            const op = {
+                id: 'op-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                table,
+                action,
+                recordId,
+                data,
+                timestamp: Date.now()
+            };
+            
+            let queue = [];
+            try {
+                queue = JSON.parse(localStorage.getItem('CLIPBOARD_PENDING_WRITES') || '[]');
+            } catch(e) {}
+            
+            // Consolidate queue operations
+            queue = queue.filter(q => !(q.table === table && q.recordId === recordId));
+            queue.push(op);
+            
+            localStorage.setItem('CLIPBOARD_PENDING_WRITES', JSON.stringify(queue));
+            processSyncQueue();
+        }
+
+        async function processSyncQueue() {
+            if (!supabaseClient || !AppState.session) {
+                updateSyncStatusUI('synced');
+                return;
+            }
+            
+            if (!navigator.onLine) {
+                updateSyncStatusUI('offline');
+                return;
+            }
+            
+            if (AppState.syncing) return;
+            AppState.syncing = true;
+            updateSyncStatusUI('syncing');
+            
+            try {
+                while (true) {
+                    let queue = [];
+                    try {
+                        queue = JSON.parse(localStorage.getItem('CLIPBOARD_PENDING_WRITES') || '[]');
+                    } catch(e) {}
+                    
+                    if (queue.length === 0) {
+                        AppState.syncing = false;
+                        updateSyncStatusUI('synced');
+                        break;
+                    }
+                    
+                    const op = queue[0];
+                    let error = null;
+                    
+                    if (op.action === 'upsert') {
+                        op.data.user_id = AppState.session.user.id;
+                        const res = await supabaseClient.from(op.table).upsert(op.data);
+                        error = res.error;
+                    } else if (op.action === 'delete') {
+                        const res = await supabaseClient.from(op.table).delete().eq('id', op.recordId);
+                        error = res.error;
+                    }
+                    
+                    if (error) {
+                        console.error(`Sync error on table ${op.table} for action ${op.action}:`, error);
+                        AppState.syncing = false;
+                        updateSyncStatusUI('error');
+                        return; // Halt and retry later
+                    }
+                    
+                    queue.shift();
+                    localStorage.setItem('CLIPBOARD_PENDING_WRITES', JSON.stringify(queue));
+                }
+            } catch (err) {
+                console.error("Unhandled sync queue worker error:", err);
+                AppState.syncing = false;
+                updateSyncStatusUI('error');
+            }
+        }
+
+        window.addEventListener('online', () => {
+            processSyncQueue();
+        });
 
         let calendarTargetInputId = null;
         let calendarMonth = 5; 
@@ -556,38 +768,537 @@
         }
 
         function syncDeviceDataChannels() {
+            const nowISO = new Date().toISOString();
+            
+            AppState.tasks.forEach(t => {
+                if (!t.updatedAt) t.updatedAt = nowISO;
+            });
+            AppState.projects.forEach(p => {
+                if (!p.updatedAt) p.updatedAt = nowISO;
+            });
+            AppState.groups.forEach(g => {
+                if (!g.updatedAt) g.updatedAt = nowISO;
+            });
+
             localStorage.setItem('CLIPBOARD_DEVICE_SYNC_FLAG', Date.now().toString());
             saveToLocalStorage();
+
+            if (!AppState.session) return;
+
+            // 1. Detect task creations / updates
+            AppState.tasks.forEach(task => {
+                const last = AppState.lastKnownState.tasks.find(t => t.id === task.id);
+                if (!last) {
+                    task.updatedAt = nowISO;
+                    queueSyncOperation('tasks', 'upsert', task.id, mapTaskToDB(task));
+                } else if (JSON.stringify(task) !== JSON.stringify(last)) {
+                    task.updatedAt = nowISO;
+                    queueSyncOperation('tasks', 'upsert', task.id, mapTaskToDB(task));
+                }
+            });
+            // Detect task deletions
+            AppState.lastKnownState.tasks.forEach(last => {
+                const exists = AppState.tasks.some(t => t.id === last.id);
+                if (!exists) {
+                    queueSyncOperation('tasks', 'delete', last.id);
+                }
+            });
+
+            // 2. Detect project creations / updates
+            AppState.projects.forEach(proj => {
+                const last = AppState.lastKnownState.projects.find(p => p.id === proj.id);
+                if (!last) {
+                    proj.updatedAt = nowISO;
+                    queueSyncOperation('projects', 'upsert', proj.id, mapProjectToDB(proj));
+                } else if (JSON.stringify(proj) !== JSON.stringify(last)) {
+                    proj.updatedAt = nowISO;
+                    queueSyncOperation('projects', 'upsert', proj.id, mapProjectToDB(proj));
+                }
+            });
+            // Detect project deletions
+            AppState.lastKnownState.projects.forEach(last => {
+                const exists = AppState.projects.some(p => p.id === last.id);
+                if (!exists) {
+                    queueSyncOperation('projects', 'delete', last.id);
+                }
+            });
+
+            // 3. Detect group creations / updates / position changes
+            AppState.groups.forEach((group, index) => {
+                const last = AppState.lastKnownState.groups.find(g => g.id === group.id);
+                const lastIndex = AppState.lastKnownState.groups.findIndex(g => g.id === group.id);
+                if (!last) {
+                    group.updatedAt = nowISO;
+                    queueSyncOperation('groups', 'upsert', group.id, mapGroupToDB(group, index));
+                } else if (lastIndex !== index || JSON.stringify(group) !== JSON.stringify(last)) {
+                    group.updatedAt = nowISO;
+                    queueSyncOperation('groups', 'upsert', group.id, mapGroupToDB(group, index));
+                }
+            });
+            // Detect group deletions
+            AppState.lastKnownState.groups.forEach(last => {
+                const exists = AppState.groups.some(g => g.id === last.id);
+                if (!exists) {
+                    queueSyncOperation('groups', 'delete', last.id);
+                }
+            });
+
+            // 4. Detect profile settings modifications
+            const currentProfile = {
+                name: AppState.profileName,
+                dp: AppState.profileDP,
+                counterPolicy: AppState.counterTargetPolicy
+            };
+            if (JSON.stringify(currentProfile) !== JSON.stringify(AppState.lastKnownState.profile)) {
+                queueSyncOperation('profiles', 'upsert', AppState.session.user.id, {
+                    user_id: AppState.session.user.id,
+                    display_name: AppState.profileName,
+                    avatar_glyph: AppState.profileDP,
+                    counter_policy: AppState.counterTargetPolicy,
+                    updated_at: nowISO
+                });
+            }
+
+            AppState.lastKnownState.tasks = JSON.parse(JSON.stringify(AppState.tasks));
+            AppState.lastKnownState.projects = JSON.parse(JSON.stringify(AppState.projects));
+            AppState.lastKnownState.groups = JSON.parse(JSON.stringify(AppState.groups));
+            AppState.lastKnownState.profile = JSON.parse(JSON.stringify(currentProfile));
         }
 
         function syncProfileUIElements() {
             lucide.createIcons();
         }
 
-        function executeLoginValidation(event) {
-            event.preventDefault();
-            const userInput = document.getElementById('auth-username-field').value;
-            const passInput = document.getElementById('auth-password-field').value;
-            const errorBanner = document.getElementById('auth-failure-error');
+        function clearLocalState() {
+            AppState.tasks = [];
+            AppState.projects = [];
+            AppState.groups = [];
+            AppState.profileName = 'Anv';
+            AppState.profileDP = 'smile';
+            AppState.counterTargetPolicy = 'tasks';
+            AppState.lastKnownState = {
+                tasks: [],
+                projects: [],
+                groups: [],
+                profile: {}
+            };
+            
+            localStorage.removeItem('CLIPBOARD_TASKS_DATA_V3');
+            localStorage.removeItem('CLIPBOARD_PROJECTS_DATA_V3');
+            localStorage.removeItem('CLIPBOARD_GROUPS_DATA_V3');
+            localStorage.removeItem('CLIPBOARD_PROFILE_DATA_V3');
+            localStorage.removeItem('CLIPBOARD_COUNTER_POLICY');
+            localStorage.removeItem('CLIPBOARD_PENDING_WRITES');
+            
+            renderTaskFeed();
+            updateGlobalBadges();
+            closeInspector();
+        }
 
-            if ((userInput === AppState.profileUser && passInput === AppState.profilePass) || (userInput === 'tyson' && passInput === 'anv_temp')) {
-                errorBanner.classList.add('hidden');
+        async function initSupabaseAuth() {
+            if (!supabaseClient) {
+                // If not initialized, fallback to showing auth screen
+                document.getElementById('auth-guard-screen').classList.remove('hidden');
+                return;
+            }
+
+            // 1. Listen for auth state changes
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                const prevSession = AppState.session;
+                AppState.session = session;
+                
+                if (session) {
+                    document.getElementById('auth-guard-screen').classList.add('hidden');
+                    // Check if we are logging in for the first time in this session context
+                    if (!prevSession) {
+                        showToast('Sync Activated', 'Ecosystem multi-device data channels synchronized.');
+                        await performInitialDataSync();
+                        subscribeToRealtimeSync();
+                    }
+                } else {
+                    clearLocalState();
+                    document.getElementById('auth-guard-screen').classList.remove('hidden');
+                    showToast('Session Closed', 'Local storage device synchronization disconnected.');
+                }
+            });
+
+            // 2. Silent login check on load
+            const { data } = await supabaseClient.auth.getSession();
+            if (data && data.session) {
+                AppState.session = data.session;
                 document.getElementById('auth-guard-screen').classList.add('hidden');
-                localStorage.setItem('CLIPBOARD_SESSION_ACTIVE', 'true');
-                syncDeviceDataChannels();
-                showToast('Sync Successful', 'Ecosystem multi-device data channels synchronized.');
+                await performInitialDataSync();
+                subscribeToRealtimeSync();
             } else {
-                errorBanner.classList.remove('hidden');
+                document.getElementById('auth-guard-screen').classList.remove('hidden');
             }
         }
 
-        function executeLogoutAction() {
-            localStorage.removeItem('CLIPBOARD_SESSION_ACTIVE');
-            document.getElementById('auth-username-field').value = '';
-            document.getElementById('auth-password-field').value = '';
-            document.getElementById('auth-failure-error').classList.add('hidden');
-            document.getElementById('auth-guard-screen').classList.remove('hidden');
-            showToast('Session Closed', 'Local storage device synchronization disconnected.');
+        async function performInitialDataSync() {
+            if (!supabaseClient || !AppState.session) return;
+            
+            updateSyncStatusUI('syncing');
+            const userId = AppState.session.user.id;
+            
+            try {
+                // Fetch remote data
+                const [
+                    { data: dbTasks, error: errTasks },
+                    { data: dbProjects, error: errProjects },
+                    { data: dbGroups, error: errGroups },
+                    { data: dbProfiles, error: errProfiles }
+                ] = await Promise.all([
+                    supabaseClient.from('tasks').select('*'),
+                    supabaseClient.from('projects').select('*'),
+                    supabaseClient.from('groups').select('*'),
+                    supabaseClient.from('profiles').select('*')
+                ]);
+                
+                if (errTasks || errProjects || errGroups || errProfiles) {
+                    console.error("Initial data sync fetch failed:", { errTasks, errProjects, errGroups, errProfiles });
+                    updateSyncStatusUI('error');
+                    return;
+                }
+
+                // 1. Process Projects
+                let localProjects = [...AppState.projects];
+                let remoteProjects = (dbProjects || []).map(mapProjectFromDB);
+                let mergedProjects = [];
+                let projectsToPush = [];
+
+                remoteProjects.forEach(rp => {
+                    const lp = localProjects.find(p => p.id === rp.id);
+                    if (!lp) {
+                        mergedProjects.push(rp);
+                    } else {
+                        const lpTime = new Date(lp.updatedAt || 0).getTime();
+                        const rpTime = new Date(rp.updatedAt || 0).getTime();
+                        if (lpTime > rpTime) {
+                            mergedProjects.push(lp);
+                            projectsToPush.push(lp);
+                        } else {
+                            mergedProjects.push(rp);
+                        }
+                    }
+                });
+                localProjects.forEach(lp => {
+                    if (!mergedProjects.some(p => p.id === lp.id)) {
+                        mergedProjects.push(lp);
+                        projectsToPush.push(lp);
+                    }
+                });
+
+                // 2. Process Groups
+                let localGroups = [...AppState.groups];
+                let remoteGroups = (dbGroups || []).map(mapGroupFromDB);
+                let mergedGroups = [];
+                let groupsToPush = [];
+
+                remoteGroups.forEach(rg => {
+                    const lg = localGroups.find(g => g.id === rg.id);
+                    if (!lg) {
+                        mergedGroups.push(rg);
+                    } else {
+                        const lgTime = new Date(lg.updatedAt || 0).getTime();
+                        const rgTime = new Date(rg.updatedAt || 0).getTime();
+                        if (lgTime > rgTime) {
+                            mergedGroups.push(lg);
+                            groupsToPush.push(lg);
+                        } else {
+                            mergedGroups.push(rg);
+                        }
+                    }
+                });
+                localGroups.forEach(lg => {
+                    if (!mergedGroups.some(g => g.id === lg.id)) {
+                        mergedGroups.push(lg);
+                        groupsToPush.push(lg);
+                    }
+                });
+                mergedGroups.sort((a, b) => (a.position || 0) - (b.position || 0));
+
+                // 3. Process Tasks
+                let localTasks = [...AppState.tasks];
+                let remoteTasks = (dbTasks || []).map(mapTaskFromDB);
+                let mergedTasks = [];
+                let tasksToPush = [];
+
+                remoteTasks.forEach(rt => {
+                    const lt = localTasks.find(t => t.id === rt.id);
+                    if (!lt) {
+                        mergedTasks.push(rt);
+                    } else {
+                        const ltTime = new Date(lt.updatedAt || 0).getTime();
+                        const rtTime = new Date(rt.updatedAt || 0).getTime();
+                        if (ltTime > rtTime) {
+                            mergedTasks.push(lt);
+                            tasksToPush.push(lt);
+                        } else {
+                            mergedTasks.push(rt);
+                        }
+                    }
+                });
+                localTasks.forEach(lt => {
+                    if (!mergedTasks.some(t => t.id === lt.id)) {
+                        mergedTasks.push(lt);
+                        tasksToPush.push(lt);
+                    }
+                });
+
+                // 4. Process Profile
+                let remoteProfile = dbProfiles && dbProfiles[0];
+                let profileToPush = null;
+                if (remoteProfile) {
+                    AppState.profileName = remoteProfile.display_name;
+                    AppState.profileDP = remoteProfile.avatar_glyph;
+                    AppState.counterTargetPolicy = remoteProfile.counter_policy;
+                } else {
+                    profileToPush = {
+                        user_id: userId,
+                        display_name: AppState.profileName,
+                        avatar_glyph: AppState.profileDP,
+                        counter_policy: AppState.counterTargetPolicy,
+                        updated_at: new Date().toISOString()
+                    };
+                }
+
+                AppState.projects = mergedProjects;
+                AppState.groups = mergedGroups;
+                AppState.tasks = mergedTasks;
+
+                saveToLocalStorage();
+
+                AppState.lastKnownState.projects = JSON.parse(JSON.stringify(mergedProjects));
+                AppState.lastKnownState.groups = JSON.parse(JSON.stringify(mergedGroups));
+                AppState.lastKnownState.tasks = JSON.parse(JSON.stringify(mergedTasks));
+                AppState.lastKnownState.profile = {
+                    name: AppState.profileName,
+                    dp: AppState.profileDP,
+                    counterPolicy: AppState.counterTargetPolicy
+                };
+
+                // Push local migrations/updates up to Supabase
+                if (projectsToPush.length > 0) {
+                    projectsToPush.forEach(p => {
+                        queueSyncOperation('projects', 'upsert', p.id, mapProjectToDB(p));
+                    });
+                }
+                if (groupsToPush.length > 0) {
+                    groupsToPush.forEach(g => {
+                        const idx = mergedGroups.findIndex(mg => mg.id === g.id);
+                        queueSyncOperation('groups', 'upsert', g.id, mapGroupToDB(g, idx));
+                    });
+                }
+                if (tasksToPush.length > 0) {
+                    tasksToPush.forEach(t => {
+                        queueSyncOperation('tasks', 'upsert', t.id, mapTaskToDB(t));
+                    });
+                }
+                if (profileToPush) {
+                    queueSyncOperation('profiles', 'upsert', userId, profileToPush);
+                }
+
+                await processSyncQueue();
+                
+                renderTaskFeed();
+                updateGlobalBadges();
+                syncProfileUIElements();
+                if (AppState.selectedTaskId) {
+                    renderInspector();
+                }
+                
+                showToast('Sync Complete', 'Data synchronization successfully completed.');
+            } catch (err) {
+                console.error("Error during initial data sync:", err);
+                updateSyncStatusUI('error');
+            }
+        }
+
+        let realtimeSubscription = null;
+
+        function subscribeToRealtimeSync() {
+            if (!supabaseClient || !AppState.session) return;
+            
+            if (realtimeSubscription) {
+                supabaseClient.removeChannel(realtimeSubscription);
+            }
+            
+            const userId = AppState.session.user.id;
+            
+            realtimeSubscription = supabaseClient.channel('realtime-sync')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `user_id=eq.${userId}` }, handleRealtimeTaskChange)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'projects', filter: `user_id=eq.${userId}` }, handleRealtimeProjectChange)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'groups', filter: `user_id=eq.${userId}` }, handleRealtimeGroupChange)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `user_id=eq.${userId}` }, handleRealtimeProfileChange)
+                .subscribe();
+        }
+
+        function handleRealtimeTaskChange(payload) {
+            if (payload.eventType === 'DELETE') {
+                const targetId = payload.old.id;
+                if (AppState.tasks.some(t => t.id === targetId)) {
+                    AppState.tasks = AppState.tasks.filter(t => t.id !== targetId);
+                    AppState.lastKnownState.tasks = AppState.lastKnownState.tasks.filter(t => t.id !== targetId);
+                    saveToLocalStorage();
+                    renderTaskFeed();
+                    updateGlobalBadges();
+                    if (AppState.selectedTaskId === targetId) {
+                        closeInspector();
+                    }
+                }
+            } else {
+                const task = mapTaskFromDB(payload.new);
+                const localIdx = AppState.tasks.findIndex(t => t.id === task.id);
+                if (localIdx === -1) {
+                    AppState.tasks.push(task);
+                    AppState.lastKnownState.tasks.push(JSON.parse(JSON.stringify(task)));
+                    saveToLocalStorage();
+                    renderTaskFeed();
+                    updateGlobalBadges();
+                } else {
+                    const local = AppState.tasks[localIdx];
+                    const localTime = new Date(local.updatedAt || 0).getTime();
+                    const remoteTime = new Date(task.updatedAt || 0).getTime();
+                    if (remoteTime > localTime) {
+                        AppState.tasks[localIdx] = task;
+                        const lastIdx = AppState.lastKnownState.tasks.findIndex(t => t.id === task.id);
+                        if (lastIdx !== -1) {
+                            AppState.lastKnownState.tasks[lastIdx] = JSON.parse(JSON.stringify(task));
+                        } else {
+                            AppState.lastKnownState.tasks.push(JSON.parse(JSON.stringify(task)));
+                        }
+                        saveToLocalStorage();
+                        renderTaskFeed();
+                        updateGlobalBadges();
+                        if (AppState.selectedTaskId === task.id) {
+                            renderInspector();
+                        }
+                    }
+                }
+            }
+        }
+
+        function handleRealtimeProjectChange(payload) {
+            if (payload.eventType === 'DELETE') {
+                const targetId = payload.old.id;
+                if (AppState.projects.some(p => p.id === targetId)) {
+                    AppState.projects = AppState.projects.filter(p => p.id !== targetId);
+                    AppState.lastKnownState.projects = AppState.lastKnownState.projects.filter(p => p.id !== targetId);
+                    saveToLocalStorage();
+                    renderTaskFeed();
+                }
+            } else {
+                const proj = mapProjectFromDB(payload.new);
+                const localIdx = AppState.projects.findIndex(p => p.id === proj.id);
+                if (localIdx === -1) {
+                    AppState.projects.push(proj);
+                    AppState.lastKnownState.projects.push(JSON.parse(JSON.stringify(proj)));
+                    saveToLocalStorage();
+                    renderTaskFeed();
+                } else {
+                    const local = AppState.projects[localIdx];
+                    const localTime = new Date(local.updatedAt || 0).getTime();
+                    const remoteTime = new Date(proj.updatedAt || 0).getTime();
+                    if (remoteTime > localTime) {
+                        AppState.projects[localIdx] = proj;
+                        const lastIdx = AppState.lastKnownState.projects.findIndex(p => p.id === proj.id);
+                        if (lastIdx !== -1) {
+                            AppState.lastKnownState.projects[lastIdx] = JSON.parse(JSON.stringify(proj));
+                        }
+                        saveToLocalStorage();
+                        renderTaskFeed();
+                    }
+                }
+            }
+        }
+
+        function handleRealtimeGroupChange(payload) {
+            if (payload.eventType === 'DELETE') {
+                const targetId = payload.old.id;
+                if (AppState.groups.some(g => g.id === targetId)) {
+                    AppState.groups = AppState.groups.filter(g => g.id !== targetId);
+                    AppState.lastKnownState.groups = AppState.lastKnownState.groups.filter(g => g.id !== targetId);
+                    saveToLocalStorage();
+                    renderTaskFeed();
+                }
+            } else {
+                const group = mapGroupFromDB(payload.new);
+                const localIdx = AppState.groups.findIndex(g => g.id === group.id);
+                if (localIdx === -1) {
+                    AppState.groups.push(group);
+                    AppState.lastKnownState.groups.push(JSON.parse(JSON.stringify(group)));
+                    AppState.groups.sort((a, b) => (a.position || 0) - (b.position || 0));
+                    AppState.lastKnownState.groups.sort((a, b) => (a.position || 0) - (b.position || 0));
+                    saveToLocalStorage();
+                    renderTaskFeed();
+                } else {
+                    const local = AppState.groups[localIdx];
+                    const localTime = new Date(local.updatedAt || 0).getTime();
+                    const remoteTime = new Date(group.updatedAt || 0).getTime();
+                    if (remoteTime > localTime) {
+                        AppState.groups[localIdx] = group;
+                        const lastIdx = AppState.lastKnownState.groups.findIndex(g => g.id === group.id);
+                        if (lastIdx !== -1) {
+                            AppState.lastKnownState.groups[lastIdx] = JSON.parse(JSON.stringify(group));
+                        }
+                        AppState.groups.sort((a, b) => (a.position || 0) - (b.position || 0));
+                        AppState.lastKnownState.groups.sort((a, b) => (a.position || 0) - (b.position || 0));
+                        saveToLocalStorage();
+                        renderTaskFeed();
+                    }
+                }
+            }
+        }
+
+        function handleRealtimeProfileChange(payload) {
+            if (payload.eventType !== 'DELETE') {
+                const remoteProfile = payload.new;
+                const localTime = new Date(AppState.lastKnownState.profile.updatedAt || 0).getTime();
+                const remoteTime = new Date(remoteProfile.updated_at || 0).getTime();
+                
+                if (remoteTime > localTime) {
+                    AppState.profileName = remoteProfile.display_name;
+                    AppState.profileDP = remoteProfile.avatar_glyph;
+                    AppState.counterTargetPolicy = remoteProfile.counter_policy;
+                    
+                    AppState.lastKnownState.profile = {
+                        name: remoteProfile.display_name,
+                        dp: remoteProfile.avatar_glyph,
+                        counterPolicy: remoteProfile.counter_policy,
+                        updatedAt: remoteProfile.updated_at
+                    };
+                    
+                    saveToLocalStorage();
+                    syncProfileUIElements();
+                    updateGlobalBadges();
+                }
+            }
+        }
+
+        function executeGoogleLogin() {
+            if (supabaseClient) {
+                supabaseClient.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: window.location.origin + window.location.pathname
+                    }
+                });
+            } else {
+                showToast('Configuration Error', 'Supabase URL/Key placeholders are not configured yet.');
+            }
+        }
+
+        async function executeLogoutAction() {
+            if (supabaseClient) {
+                const { error } = await supabaseClient.auth.signOut();
+                if (error) {
+                    console.error("Supabase signOut error:", error);
+                }
+            } else {
+                clearLocalState();
+                document.getElementById('auth-guard-screen').classList.remove('hidden');
+                showToast('Session Closed', 'Local storage device synchronization disconnected.');
+            }
         }
 
         function openProfileCustomizerModal() {
@@ -595,8 +1306,6 @@
             const container = document.getElementById('profile-customizer-container');
             
             document.getElementById('profile-customizer-name-field').value = AppState.profileName;
-            document.getElementById('profile-customizer-user-field').value = AppState.profileUser;
-            document.getElementById('profile-customizer-pass-field').value = AppState.profilePass;
             
             updateProfileCustomizerDPPreview();
 
@@ -639,8 +1348,6 @@
         function handleProfileUpdates(event) {
             event.preventDefault();
             AppState.profileName = document.getElementById('profile-customizer-name-field').value.trim();
-            AppState.profileUser = document.getElementById('profile-customizer-user-field').value.trim();
-            AppState.profilePass = document.getElementById('profile-customizer-pass-field').value.trim();
             
             syncDeviceDataChannels();
             syncProfileUIElements();
@@ -3479,9 +4186,7 @@
                 if (uncollapseBtn) uncollapseBtn.classList.remove('hidden');
             }
 
-            if (localStorage.getItem('CLIPBOARD_SESSION_ACTIVE') !== 'true') {
-                document.getElementById('auth-guard-screen').classList.remove('hidden');
-            }
+            initSupabaseAuth();
 
             switchTab('inbox');
             lucide.createIcons(); 
