@@ -1,3 +1,15 @@
+        window.addEventListener('error', function(e) {
+            console.error("Global Error Caught:", e.error);
+            const container = document.getElementById('toast-container') || document.body;
+            if (container) {
+                const toast = document.createElement('div');
+                toast.className = "fixed bottom-6 right-6 z-[999] bg-red-500/90 border border-red-400 text-white px-5 py-4 rounded-xl text-xs font-semibold shadow-2xl pointer-events-auto flex flex-col space-y-1.5 max-w-sm";
+                toast.innerHTML = `<div><strong>Application Error:</strong> ${e.message}</div><div class="text-[10px] text-white/80">${e.filename}:${e.lineno}</div>`;
+                container.appendChild(toast);
+                setTimeout(() => toast.remove(), 15000);
+            }
+        });
+
         const SYSTEM_COLORS = [
             '#FF3B30', '#FF9500', '#FFCC00', '#34C759', '#5AC8FA', '#007AFF',
             '#5856D6', '#FF2D55', '#AF52DE', '#A2845E', '#8E8E93', '#E4A3A1'
