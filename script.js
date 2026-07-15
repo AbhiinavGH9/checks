@@ -35,14 +35,18 @@
 
         // Data mappers to convert between local state and Postgres DB schemas
         function mapTaskToDB(task) {
+            // Verify that referenced project and group exist locally to prevent foreign key constraint violations (Postgres 409)
+            const projectExists = task.projectId ? AppState.projects.some(p => p.id === task.projectId) : false;
+            const groupExists = task.groupId ? AppState.groups.some(g => g.id === task.groupId) : false;
+
             return {
                 id: task.id,
                 title: task.title,
                 description: task.description || '',
                 priority: task.color || '',
                 due_date: task.dueDate || '',
-                project_id: task.projectId || null,
-                group_id: task.groupId || null,
+                project_id: projectExists ? task.projectId : null,
+                group_id: groupExists ? task.groupId : null,
                 icon: task.icon || '',
                 done: !!task.done,
                 autodelete_policy: task.autoDelete || 'never',
@@ -209,6 +213,36 @@
             processSyncQueue();
         }
 
+        function healSyncQueue() {
+            let queue = [];
+            try {
+                queue = JSON.parse(localStorage.getItem('CLIPBOARD_PENDING_WRITES') || '[]');
+            } catch(e) {}
+            
+            if (queue.length === 0) return;
+            
+            let healed = false;
+            queue.forEach(op => {
+                if (op.table === 'tasks' && op.action === 'upsert' && op.data) {
+                    const projectExists = op.data.project_id ? AppState.projects.some(p => p.id === op.data.project_id) : false;
+                    const groupExists = op.data.group_id ? AppState.groups.some(g => g.id === op.data.group_id) : false;
+                    
+                    if (op.data.project_id && !projectExists) {
+                        op.data.project_id = null;
+                        healed = true;
+                    }
+                    if (op.data.group_id && !groupExists) {
+                        op.data.group_id = null;
+                        healed = true;
+                    }
+                }
+            });
+            
+            if (healed) {
+                localStorage.setItem('CLIPBOARD_PENDING_WRITES', JSON.stringify(queue));
+            }
+        }
+
         async function processSyncQueue() {
             if (!supabaseClient || !AppState.session) {
                 updateSyncStatusUI('synced');
@@ -221,6 +255,10 @@
             }
             
             if (AppState.syncing) return;
+            
+            // Clean up any invalid foreign key references in the queue before processing
+            healSyncQueue();
+
             AppState.syncing = true;
             updateSyncStatusUI('syncing');
             
