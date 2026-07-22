@@ -135,3 +135,19 @@ alter publication supabase_realtime add table public.profiles;
 5. Copy the **Redirect URI** provided in the Supabase Google Auth card (usually `https://[your-project-ref].supabase.co/auth/v1/callback`).
 6. Paste this Redirect URI into your Google Cloud OAuth Client credentials as an **Authorized Redirect URI**.
 7. Save changes in both the Google Console and Supabase Dashboard.
+
+---
+
+## Step 5: Database Updates for Auto-Delete & Hold System
+If you are upgrading an existing database, go to the **SQL Editor**, create a new query, paste the following SQL, and run it to add the new completion and hold columns:
+
+```sql
+alter table public.tasks 
+add column completed_at timestamptz,
+add column hold_deletion boolean default false,
+add column hold_until timestamptz;
+
+alter table public.groups 
+add column hold_deletion boolean default false,
+add column hold_until timestamptz;
+```

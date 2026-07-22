@@ -54,7 +54,10 @@
                 notes: task.notes || [],
                 expiry_time: task.expiryTime || null,
                 created_date: task.createdDate || new Date().toISOString(),
-                updated_at: task.updatedAt || new Date().toISOString()
+                updated_at: task.updatedAt || new Date().toISOString(),
+                completed_at: task.completedAt || null,
+                hold_deletion: !!task.holdDeletion,
+                hold_until: task.holdUntil || null
             };
         }
 
@@ -74,7 +77,10 @@
                 notes: dbTask.notes || [],
                 expiryTime: dbTask.expiry_time || null,
                 createdDate: dbTask.created_date || new Date().toISOString(),
-                updatedAt: dbTask.updated_at || new Date().toISOString()
+                updatedAt: dbTask.updated_at || new Date().toISOString(),
+                completedAt: dbTask.completed_at || null,
+                holdDeletion: !!dbTask.hold_deletion,
+                holdUntil: dbTask.hold_until || null
             };
         }
 
@@ -105,7 +111,9 @@
                 color: group.color,
                 icon: group.icon,
                 position: position,
-                updated_at: group.updatedAt || new Date().toISOString()
+                updated_at: group.updatedAt || new Date().toISOString(),
+                hold_deletion: !!group.holdDeletion,
+                hold_until: group.holdUntil || null
             };
         }
 
@@ -116,7 +124,9 @@
                 color: dbGroup.color,
                 icon: dbGroup.icon,
                 position: dbGroup.position || 0,
-                updatedAt: dbGroup.updated_at || new Date().toISOString()
+                updatedAt: dbGroup.updated_at || new Date().toISOString(),
+                holdDeletion: !!dbGroup.hold_deletion,
+                holdUntil: dbGroup.hold_until || null
             };
         }
 
@@ -1744,29 +1754,38 @@
                 `;
             }
 
+            const group = AppState.groups.find(g => g.id === groupId);
+            const isGroupHeld = group ? group.holdDeletion : false;
+
             groupSection.innerHTML = `
                 <div class="flex items-center justify-between border-b border-white/[0.04] pb-2 cursor-pointer select-none" 
                      style="border-bottom-color: ${groupColor}25"
                      oncontextmenu="showGroupContextMenu(event, '${groupId}')">
-                    <div class="flex items-center space-x-2">
-                        <span class="w-2.5 h-2.5 rounded bg-white/10 flex items-center justify-center border border-white/20">
-                            <span class="w-1.5 h-1.5 rounded-sm" style="background-color: ${groupColor}; box-shadow: 0 0 8px ${groupColor}80;"></span>
-                        </span>
-                        <i data-lucide="${groupIcon}" class="w-4 h-4 flex-shrink-0" style="color: ${groupColor};"></i>
-                        <span class="text-xs font-bold text-white uppercase tracking-wider">${escapeHTML(title)}</span>
-                        <span class="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">${tasks.length}</span>
-                    </div>
-                    <div class="flex items-center space-x-1">
-                        ${navigationButtons}
-                        ${!isUngrouped ? `
-                            <button onclick="openEditGroupModalTriggerFromId('${groupId}', event)" class="text-gray-500 hover:text-white p-1 rounded hover:bg-white/5 transition" title="Edit Group Column">
-                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                            </button>
-                            <button onclick="handleDeleteGroup('${groupId}')" class="text-gray-500 hover:text-red-400 p-1 rounded hover:bg-white/5 transition" title="Delete Group Column">
-                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                            </button>
-                        ` : ''}
-                    </div>
+                     <div class="flex items-center space-x-2 flex-wrap">
+                         <span class="w-2.5 h-2.5 rounded bg-white/10 flex items-center justify-center border border-white/20">
+                             <span class="w-1.5 h-1.5 rounded-sm" style="background-color: ${groupColor}; box-shadow: 0 0 8px ${groupColor}80;"></span>
+                         </span>
+                         <i data-lucide="${groupIcon}" class="w-4 h-4 flex-shrink-0" style="color: ${groupColor};"></i>
+                         <span class="text-xs font-bold text-white uppercase tracking-wider">${escapeHTML(title)}</span>
+                         ${isGroupHeld ? `
+                             <span class="inline-flex items-center px-1.5 py-0.5 bg-[#2997ff]/10 text-[#2997ff] rounded text-[8px] font-bold border border-[#2997ff]/20" title="${group.holdUntil ? 'Column auto-delete held until ' + new Date(group.holdUntil).toLocaleString() : 'Column auto-delete held indefinitely'}">
+                                 <i data-lucide="lock" class="w-2.5 h-2.5 flex-shrink-0 mr-0.5"></i>
+                                 <span>Held</span>
+                             </span>
+                         ` : ''}
+                         <span class="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">${tasks.length}</span>
+                     </div>
+                     <div class="flex items-center space-x-1">
+                         ${navigationButtons}
+                         ${!isUngrouped ? `
+                             <button onclick="openEditGroupModalTriggerFromId('${groupId}', event)" class="text-gray-500 hover:text-white p-1 rounded hover:bg-white/5 transition" title="Edit Group Column">
+                                 <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                             </button>
+                             <button onclick="handleDeleteGroup('${groupId}')" class="text-gray-500 hover:text-red-400 p-1 rounded hover:bg-white/5 transition" title="Delete Group Column">
+                                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                             </button>
+                         ` : ''}
+                     </div>
                 </div>
                 <div class="space-y-2 min-h-[50px] transition-all duration-150" id="group-body-${groupId}"></div>
             `;
@@ -1858,6 +1877,12 @@
                                             <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 bg-white/5 rounded text-[8px] font-medium ${task.done ? 'text-gray-600' : 'text-gray-400'}">
                                                 <i data-lucide="list-checks" class="w-2.5 h-2.5 flex-shrink-0"></i>
                                                 <span>${subDone}/${subTotal}</span>
+                                            </span>
+                                        ` : ''}
+                                        ${isTaskOnHold(task) ? `
+                                            <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 bg-[#2997ff]/15 text-[#2997ff] rounded text-[8px] font-bold border border-[#2997ff]/20 animate-fade-in" title="${task.holdUntil ? 'Auto-delete held until ' + new Date(task.holdUntil).toLocaleString() : 'Auto-delete held indefinitely'}">
+                                                <i data-lucide="lock" class="w-2.5 h-2.5 flex-shrink-0"></i>
+                                                <span>Held</span>
                                             </span>
                                         ` : ''}
                                     </div>
@@ -2285,6 +2310,15 @@
                         <span>Mark all incomplete</span>
                     </button>
                     <div class="border-t border-white/[0.03] my-1"></div>
+                    <button onclick="triggerMultiTaskHold()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
+                        <i data-lucide="lock" class="w-3.5 h-3.5 text-[#2997ff]"></i>
+                        <span>Hold Auto-Delete</span>
+                    </button>
+                    <button onclick="clearMultiTaskHold()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
+                        <i data-lucide="unlock" class="w-3.5 h-3.5"></i>
+                        <span>Unhold Auto-Delete</span>
+                    </button>
+                    <div class="border-t border-white/[0.03] my-1"></div>
                     <div class="px-4 py-1.5 text-[9px] font-bold tracking-widest uppercase text-gray-500">Arrange all in group</div>
                     <div id="context-groups-list" class="max-h-32 overflow-y-auto"></div>
                     <div class="border-t border-white/[0.03] my-1"></div>
@@ -2311,6 +2345,9 @@
                     groupsList.appendChild(groupBtn);
                 });
             } else {
+                const task = AppState.tasks.find(t => t.id === taskId);
+                const isHeld = task ? task.holdDeletion : false;
+
                 menu.innerHTML = `
                     <button onclick="contextToggleComplete()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
                         <i data-lucide="check" class="w-3.5 h-3.5"></i>
@@ -2319,6 +2356,11 @@
                     <button onclick="contextOpenDetails()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
                         <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
                         <span>Edit Specifications</span>
+                    </button>
+                    <div class="border-t border-white/[0.03] my-1"></div>
+                    <button onclick="triggerTaskHold(${isHeld})" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
+                        <i data-lucide="${isHeld ? 'unlock' : 'lock'}" class="w-3.5 h-3.5 text-[#2997ff]"></i>
+                        <span>${isHeld ? 'Unhold Auto-Delete' : 'Hold Auto-Delete'}</span>
                     </button>
                     <div class="border-t border-white/[0.03] my-1"></div>
                     <div class="px-4 py-1.5 text-[9px] font-bold tracking-widest uppercase text-gray-500">Add to group</div>
@@ -2385,6 +2427,30 @@
             contextSelectedGroupId = groupId;
             const menu = document.getElementById('group-context-menu');
             
+            const group = AppState.groups.find(g => g.id === groupId);
+            if (!group) return;
+            
+            const isHeld = group.holdDeletion || false;
+            
+            menu.innerHTML = `
+                <button onclick="openEditGroupModalTrigger()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
+                    <i data-lucide="edit" class="w-3.5 h-3.5"></i>
+                    <span>Edit Group settings</span>
+                </button>
+                <div class="border-t border-white/[0.03] my-1"></div>
+                <button onclick="triggerGroupHold(${isHeld})" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
+                    <i data-lucide="${isHeld ? 'unlock' : 'lock'}" class="w-3.5 h-3.5 text-[#2997ff]"></i>
+                    <span>${isHeld ? 'Unhold Auto-Delete' : 'Hold Auto-Delete'}</span>
+                </button>
+                <div class="border-t border-white/[0.03] my-1"></div>
+                <button onclick="contextDeleteGroupTrigger()" class="w-full text-left px-4 py-2 hover:bg-red-500/10 hover:text-red-400 transition flex items-center space-x-2">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    <span>Delete Group Column</span>
+                </button>
+            `;
+            
+            lucide.createIcons();
+            
             if (window.innerWidth < 768) {
                 hideFloatingElement(menu);
                 const menuDef = parseMenuDOMToDefinition(menu, 'Group Options');
@@ -2407,6 +2473,167 @@
             const menu = document.getElementById('group-context-menu');
             if (menu) hideFloatingElement(menu);
         }
+
+        let holdTargetType = null;
+        let holdTargetId = null;
+
+        function triggerTaskHold(isHeld) {
+            hideContextMenu();
+            if (isHeld) {
+                const task = AppState.tasks.find(t => t.id === contextSelectedTaskId);
+                if (task) {
+                    task.holdDeletion = false;
+                    task.holdUntil = null;
+                    syncDeviceDataChannels();
+                    renderTaskFeed();
+                    showToast('Auto-Delete Unheld', `Auto-deletion hold removed for "${task.title}".`);
+                }
+            } else {
+                openHoldModal('task', contextSelectedTaskId);
+            }
+        }
+
+        function triggerMultiTaskHold() {
+            hideContextMenu();
+            openHoldModal('multi-task', AppState.selectedTaskIds);
+        }
+
+        function clearMultiTaskHold() {
+            hideContextMenu();
+            if (AppState.selectedTaskIds && AppState.selectedTaskIds.length > 0) {
+                AppState.tasks.forEach(t => {
+                    if (AppState.selectedTaskIds.includes(t.id)) {
+                        t.holdDeletion = false;
+                        t.holdUntil = null;
+                    }
+                });
+                syncDeviceDataChannels();
+                renderTaskFeed();
+                showToast('Auto-Delete Unheld', `Removed auto-deletion hold from ${AppState.selectedTaskIds.length} tasks.`);
+            }
+        }
+
+        function triggerGroupHold(isHeld) {
+            hideGroupContextMenu();
+            if (isHeld) {
+                const group = AppState.groups.find(g => g.id === contextSelectedGroupId);
+                if (group) {
+                    group.holdDeletion = false;
+                    group.holdUntil = null;
+                    syncDeviceDataChannels();
+                    renderTaskFeed();
+                    showToast('Auto-Delete Unheld', `Auto-deletion hold removed for Group column "${group.title}".`);
+                }
+            } else {
+                openHoldModal('group', contextSelectedGroupId);
+            }
+        }
+
+        function openHoldModal(type, targetId) {
+            holdTargetType = type;
+            holdTargetId = targetId;
+
+            let titleText = "Configure Auto-Delete Hold";
+            if (type === 'task') {
+                const task = AppState.tasks.find(t => t.id === targetId);
+                if (task) titleText = `Hold Deletion for "${task.title}"`;
+            } else if (type === 'group') {
+                const group = AppState.groups.find(g => g.id === targetId);
+                if (group) titleText = `Hold Deletion for Group "${group.title}"`;
+            } else if (type === 'multi-task') {
+                titleText = `Hold Deletion for ${targetId.length} selected tasks`;
+            }
+
+            document.getElementById('hold-modal-title').textContent = titleText;
+            document.getElementById('hold-indefinitely-checkbox').checked = true;
+            document.getElementById('hold-until-input').value = "";
+            document.getElementById('hold-until-container').classList.add('hidden');
+
+            const backdrop = document.getElementById('hold-modal-backdrop');
+            const container = document.getElementById('hold-modal-container');
+            
+            backdrop.classList.remove('hidden');
+            setTimeout(() => {
+                backdrop.classList.remove('opacity-0');
+                container.classList.remove('scale-95');
+                lucide.createIcons();
+            }, 10);
+        }
+
+        function closeHoldModal() {
+            const backdrop = document.getElementById('hold-modal-backdrop');
+            const container = document.getElementById('hold-modal-container');
+            backdrop.classList.add('opacity-0');
+            container.classList.add('scale-95');
+            setTimeout(() => { backdrop.classList.add('hidden'); }, 150);
+            holdTargetType = null;
+            holdTargetId = null;
+        }
+
+        function toggleHoldUntilInput() {
+            const checkbox = document.getElementById('hold-indefinitely-checkbox');
+            const container = document.getElementById('hold-until-container');
+            if (checkbox.checked) {
+                container.classList.add('hidden');
+            } else {
+                container.classList.remove('hidden');
+            }
+        }
+
+        function handleApplyHold(event) {
+            if (event) event.preventDefault();
+            
+            const indefinite = document.getElementById('hold-indefinitely-checkbox').checked;
+            const untilVal = document.getElementById('hold-until-input').value;
+            
+            let holdUntil = null;
+            if (!indefinite && untilVal) {
+                holdUntil = new Date(untilVal).toISOString();
+            }
+
+            if (holdTargetType === 'task') {
+                const task = AppState.tasks.find(t => t.id === holdTargetId);
+                if (task) {
+                    task.holdDeletion = true;
+                    task.holdUntil = holdUntil;
+                    syncDeviceDataChannels();
+                    renderTaskFeed();
+                    showToast('Auto-Delete Held', `Auto-deletion hold set for "${task.title}".`);
+                }
+            } else if (holdTargetType === 'group') {
+                const group = AppState.groups.find(g => g.id === holdTargetId);
+                if (group) {
+                    group.holdDeletion = true;
+                    group.holdUntil = holdUntil;
+                    syncDeviceDataChannels();
+                    renderTaskFeed();
+                    showToast('Auto-Delete Held', `Auto-deletion hold set for Group column "${group.title}".`);
+                }
+            } else if (holdTargetType === 'multi-task') {
+                if (Array.isArray(holdTargetId)) {
+                    AppState.tasks.forEach(t => {
+                        if (holdTargetId.includes(t.id)) {
+                            t.holdDeletion = true;
+                            t.holdUntil = holdUntil;
+                        }
+                    });
+                    syncDeviceDataChannels();
+                    renderTaskFeed();
+                    showToast('Auto-Delete Held', `Auto-deletion hold set for ${holdTargetId.length} tasks.`);
+                }
+            }
+
+            closeHoldModal();
+        }
+
+        window.triggerTaskHold = triggerTaskHold;
+        window.triggerMultiTaskHold = triggerMultiTaskHold;
+        window.clearMultiTaskHold = clearMultiTaskHold;
+        window.triggerGroupHold = triggerGroupHold;
+        window.openHoldModal = openHoldModal;
+        window.closeHoldModal = closeHoldModal;
+        window.toggleHoldUntilInput = toggleHoldUntilInput;
+        window.handleApplyHold = handleApplyHold;
 
         function handleFeedContextMenu(event) {
             if (event.target.closest('.group-card') || 
@@ -2459,7 +2686,7 @@
                 hideFeedContextMenu();
                 return;
             }
-            list.forEach(t => t.done = true);
+            list.forEach(t => setTaskDone(t, true));
             syncDeviceDataChannels();
             showToast('All Completed', `Marked ${list.length} tasks as completed.`);
             hideFeedContextMenu();
@@ -2514,7 +2741,7 @@
             if (AppState.selectedTaskIds && AppState.selectedTaskIds.length > 0) {
                 AppState.tasks.forEach(t => {
                     if (AppState.selectedTaskIds.includes(t.id)) {
-                        t.done = status;
+                        setTaskDone(t, status);
                     }
                 });
                 syncDeviceDataChannels();
@@ -3087,11 +3314,22 @@
             return 'Options';
         }
 
+        function setTaskDone(task, status) {
+            task.done = !!status;
+            if (task.done) {
+                if (!task.completedAt) {
+                    task.completedAt = new Date().toISOString();
+                }
+            } else {
+                task.completedAt = null;
+            }
+        }
+
         function toggleTaskDone(taskId, event) {
             if (event) event.stopPropagation();
             const task = AppState.tasks.find(t => t.id === taskId);
             if (task) {
-                task.done = !task.done;
+                setTaskDone(task, !task.done);
                 syncDeviceDataChannels();
                 
                 if (task.done) showToast('Task Completed', `"${task.title}" has been archived.`);
@@ -4046,17 +4284,51 @@
             return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
         }
 
+        function isTaskOnHold(task) {
+            const now = Date.now();
+            
+            // Check task-level hold
+            if (task.holdDeletion) {
+                if (!task.holdUntil) return true; // Indefinite hold
+                if (new Date(task.holdUntil).getTime() > now) return true; // Active timed hold
+            }
+            
+            // Check group-level hold
+            if (task.groupId) {
+                const group = AppState.groups.find(g => g.id === task.groupId);
+                if (group && group.holdDeletion) {
+                    if (!group.holdUntil) return true; // Indefinite group hold
+                    if (new Date(group.holdUntil).getTime() > now) return true; // Active timed group hold
+                }
+            }
+            
+            return false;
+        }
+
         function checkAndAutoDeleteTasks() {
             const now = Date.now();
             let deletedAny = false;
             let deletedNames = [];
+            const lifespan = 27 * 24 * 60 * 60 * 1000;
 
             AppState.tasks = AppState.tasks.filter(task => {
+                // 1. Check custom auto-delete policy expiryTime
                 if (task.expiryTime && now > task.expiryTime) {
                     deletedAny = true;
                     deletedNames.push(task.title);
                     return false; 
                 }
+                
+                // 2. Check 27-day auto-delete for completed tasks
+                if (task.done && task.completedAt) {
+                    const completedTime = new Date(task.completedAt).getTime();
+                    if (now - completedTime > lifespan && !isTaskOnHold(task)) {
+                        deletedAny = true;
+                        deletedNames.push(task.title);
+                        return false;
+                    }
+                }
+                
                 return true;
             });
 
