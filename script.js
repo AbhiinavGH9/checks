@@ -459,12 +459,12 @@
                 // Swipe left -> right from screen edge to open sidebar (touchStartX < 40 && deltaX > 60)
                 if (Math.abs(deltaX) > Math.abs(deltaY)) {
                     const sidebar = document.getElementById('sidebar-panel');
-                    const isSidebarOpen = sidebar && sidebar.style.width !== '0px' && sidebar.style.width !== '';
+                    const isSidebarCollapsed = AppState.sidebarCollapsed || (sidebar && (sidebar.style.width === '0px' || sidebar.style.width === ''));
 
-                    if (touchStartX < 40 && deltaX > 60 && !isSidebarOpen) {
-                        openSidebarMobile();
-                    } else if (isSidebarOpen && deltaX < -60) {
-                        closeSidebarMobile();
+                    if (touchStartX < 40 && deltaX > 60 && isSidebarCollapsed) {
+                        toggleSidebarCollapse();
+                    } else if (!isSidebarCollapsed && deltaX < -60) {
+                        toggleSidebarCollapse();
                     }
                 }
 
@@ -2863,6 +2863,11 @@
         window.toggleTaskCustomizationPanel = toggleTaskCustomizationPanel;
 
         function handleFeedContextMenu(event) {
+            if (AppState.currentTab === 'manage') {
+                event.preventDefault();
+                hideContextMenu();
+                return;
+            }
             if (event.target.closest('.group-card') || 
                 event.target.closest('button') || 
                 event.target.closest('input') || 
@@ -3450,7 +3455,21 @@
             setTimeout(openAddGroupModal, 150);
         }
 
-        function closeAddTaskModal(shouldClearDraft = true) {
+        function isTaskModalDirty() {
+            const title = document.getElementById('new-task-title') ? document.getElementById('new-task-title').value.trim() : '';
+            const desc = document.getElementById('new-task-desc') ? document.getElementById('new-task-desc').value.trim() : '';
+            const hasNotes = AppState.tempCreateNotes && AppState.tempCreateNotes.length > 0;
+            return title.length > 0 || desc.length > 0 || hasNotes;
+        }
+
+        function closeAddTaskModal(shouldClearDraft = true, force = false) {
+            if (shouldClearDraft && !force && isTaskModalDirty()) {
+                showDeleteConfirmation("Discard unfinished task details?", () => {
+                    closeAddTaskModal(true, true);
+                });
+                return;
+            }
+
             const backdrop = document.getElementById('task-modal-backdrop');
             const container = document.getElementById('task-modal-container');
             
