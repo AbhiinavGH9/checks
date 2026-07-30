@@ -956,8 +956,12 @@
         }
 
         async function initSupabaseAuth() {
+            const isGuestMode = localStorage.getItem('ANV_GUEST_MODE') === 'true';
+
             if (!supabaseClient) {
-                document.getElementById('auth-guard-screen').classList.remove('hidden');
+                if (!isGuestMode) {
+                    document.getElementById('auth-guard-screen').classList.remove('hidden');
+                }
                 return;
             }
 
@@ -966,6 +970,7 @@
                 AppState.session = session;
                 
                 if (session) {
+                    localStorage.removeItem('ANV_GUEST_MODE');
                     document.getElementById('auth-guard-screen').classList.add('hidden');
                     if (!prevSession) {
                         showToast('Sync Activated', 'Ecosystem multi-device data channels synchronized.');
@@ -973,11 +978,21 @@
                         subscribeToRealtimeSync();
                     }
                 } else {
-                    clearLocalState();
-                    document.getElementById('auth-guard-screen').classList.remove('hidden');
-                    showToast('Session Closed', 'Local storage device synchronization disconnected.');
+                    if (localStorage.getItem('ANV_GUEST_MODE') === 'true') {
+                        document.getElementById('auth-guard-screen').classList.add('hidden');
+                    } else {
+                        clearLocalState();
+                        document.getElementById('auth-guard-screen').classList.remove('hidden');
+                        showToast('Session Closed', 'Local storage device synchronization disconnected.');
+                    }
                 }
             });
+        }
+
+        function executeGuestLogin() {
+            localStorage.setItem('ANV_GUEST_MODE', 'true');
+            document.getElementById('auth-guard-screen').classList.add('hidden');
+            showToast('Guest Mode Activated', 'Working in offline local guest mode.');
         }
 
         async function performInitialDataSync() {
