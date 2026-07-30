@@ -408,6 +408,7 @@
             el.style.left = `${left}px`;
             el.style.top = `${top}px`;
             el.style.visibility = 'visible';
+            el.classList.add('floating-menu-anim');
 
             // Keep track of the active floating element so we can reposition on resize or close on scroll
             activeFloatingElement = el;
@@ -418,7 +419,7 @@
         function hideFloatingElement(el) {
             if (!el) return;
             el.classList.add('hidden');
-            el.classList.remove('floating-positioned');
+            el.classList.remove('floating-positioned', 'floating-menu-anim');
             el.style.display = '';
             el.style.visibility = '';
             el.style.position = '';
@@ -1834,9 +1835,19 @@
                     const isSelected = AppState.selectedTaskId === task.id || (AppState.selectedTaskIds && AppState.selectedTaskIds.includes(task.id));
 
                     const accentColor = task.done ? '#7a7a7a' : (task.color || '#2997ff');
-                    const cardBg = task.done ? 'bg-[#121212]/40 border-white/[0.01] opacity-50' : 'bg-[#121212] border-white/[0.02]';
-                    const textClass = task.done ? 'line-through text-gray-500 font-normal' : 'text-white font-bold';
-                    const subtextClass = task.done ? 'text-gray-600' : 'text-gray-400';
+                    let cardBg = 'bg-[#121212] border-white/[0.02]';
+                    let textClass = 'text-white font-bold';
+                    let subtextClass = 'text-gray-400';
+
+                    if (task.done) {
+                        cardBg = 'bg-[#121212]/40 border-white/[0.01] opacity-50';
+                        textClass = 'line-through text-gray-500 font-normal';
+                        subtextClass = 'text-gray-600';
+                    } else if (task.isHeldTask) {
+                        cardBg = 'bg-amber-500/[0.08] border-amber-500/30 opacity-70';
+                        textClass = 'text-gray-300 font-semibold';
+                        subtextClass = 'text-gray-500';
+                    }
 
                     let subtasksHTML = '';
                     if (task.subtasks && task.subtasks.length > 0) {
@@ -2487,17 +2498,17 @@
             submenu.innerHTML = html;
             lucide.createIcons();
 
-            const parentMenu = document.getElementById('context-menu');
-            const parentRect = parentMenu ? parentMenu.getBoundingClientRect() : { right: event.clientX, top: event.clientY };
+            const triggerBtn = (event && event.currentTarget) || (event && event.target && event.target.closest('button'));
+            const btnRect = triggerBtn ? triggerBtn.getBoundingClientRect() : { right: event.clientX, top: event.clientY, bottom: event.clientY + 30 };
             
             positionFloatingElement(submenu, {
-                left: parentRect.right - 4,
-                top: parentRect.top,
-                right: parentRect.right,
-                bottom: parentRect.bottom,
+                left: btnRect.right + 4,
+                top: btnRect.top - 4,
+                right: btnRect.right + 4,
+                bottom: btnRect.bottom,
                 width: 0,
                 height: 0
-            });
+            }, { margin: 2 });
         }
 
         function hideGroupSubmenu() {
@@ -2588,17 +2599,13 @@
 
         function triggerTaskHold(isHeld) {
             hideContextMenu();
-            if (isHeld) {
-                const task = AppState.tasks.find(t => t.id === contextSelectedTaskId);
-                if (task) {
-                    task.holdDeletion = false;
-                    task.holdUntil = null;
-                    syncDeviceDataChannels();
-                    renderTaskFeed();
-                    showToast('Auto-Delete Unheld', `Auto-deletion hold removed for "${task.title}".`);
-                }
-            } else {
-                openHoldModal('task', contextSelectedTaskId);
+            const task = AppState.tasks.find(t => t.id === contextSelectedTaskId);
+            if (task) {
+                task.holdDeletion = !isHeld;
+                task.holdUntil = null;
+                syncDeviceDataChannels();
+                renderTaskFeed();
+                showToast(task.holdDeletion ? 'Auto-Delete Held' : 'Auto-Delete Unheld', `Auto-deletion hold ${task.holdDeletion ? 'activated' : 'removed'} for "${task.title}".`);
             }
         }
 
@@ -2747,6 +2754,7 @@
         window.handleUnifiedHoldAction = handleUnifiedHoldAction;
         window.showGroupSubmenu = showGroupSubmenu;
         window.hideGroupSubmenu = hideGroupSubmenu;
+        window.exportSingleTask = exportSingleTask;
 
         function handleFeedContextMenu(event) {
             if (event.target.closest('.group-card') || 
@@ -3714,6 +3722,19 @@
                 syncDeviceDataChannels();
                 renderInspector();
             }
+        }
+
+        function exportSingleTask() {
+            const task = AppState.tasks.find(t => t.id === AppState.selectedTaskId);
+            if (!task) return;
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(task, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `task-${task.title.toLowerCase().replace(/[^a-z0-9]/g, '-')}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast('Task Exported', `Exported "${task.title}" to JSON.`);
         }
 
         function updateInspectorPriority(colorHex) {

@@ -2,8 +2,24 @@
             font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
             letter-spacing: -0.02em;
             -webkit-font-smoothing: antialiased;
-            background-color: #0A0A0A;
+            background-color: #050505;
             color: #ffffff;
+        }
+
+        /* Pop-down Menu Animation */
+        .floating-menu-anim {
+            transform-origin: top left;
+            animation: pop-down-menu 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes pop-down-menu {
+            0% {
+                opacity: 0;
+                transform: scale(0.94) translateY(-6px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
         }
         
         @supports not (display: grid) {
