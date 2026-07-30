@@ -435,12 +435,12 @@
 
                 <div id="inspector-footer" class="p-4 bg-[#0D0D0D] border-t border-white/[0.04] hidden">
                     <div class="flex flex-col space-y-2.5 w-full">
-                        <button onclick="closeInspector()" class="btn-scale w-full bg-white hover:bg-gray-200 text-black py-3 rounded-full text-xs font-extrabold transition shadow-md">
-                            Close
-                        </button>
                         <button onclick="handleDeleteTaskTrigger()" class="btn-scale w-full bg-red-500/15 hover:bg-red-500/25 text-red-400 py-3 rounded-full text-xs font-extrabold border border-red-500/30 transition flex items-center justify-center space-x-2">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                             <span>Delete Task</span>
+                        </button>
+                        <button onclick="closeInspector()" class="btn-scale w-full bg-white hover:bg-gray-200 text-black py-3 rounded-full text-xs font-extrabold transition shadow-md">
+                            Close
                         </button>
                     </div>
                 </div>
@@ -553,35 +553,45 @@
     </div>
 
     <div id="task-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
-        <div id="task-modal-container" class="bg-[#121212] rounded-3xl w-full mx-4 shadow-2xl border border-white/[0.08] transform scale-95 transition-all duration-200 ease-out flex flex-col overflow-hidden" style="max-width: 440px;">
+        <div id="task-modal-container" class="bg-[#121212] rounded-3xl w-full mx-4 shadow-2xl border border-white/[0.08] transform scale-95 transition-all duration-200 ease-out flex flex-row overflow-visible" style="max-width: 440px;">
             
-            <div class="p-6 flex flex-col justify-between w-full">
+            <div class="w-[440px] p-6 flex flex-col justify-between flex-shrink-0">
                 <div class="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
-                    <div class="w-full text-center relative">
-                        <h3 class="text-xs font-extrabold text-white uppercase tracking-wider text-center" id="task-modal-step-title">Create Task</h3>
-                        <button onclick="closeAddTaskModal(true)" class="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white btn-scale p-1 bg-white/5 rounded-lg">
-                            <i data-lucide="x" class="w-4 h-4"></i>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="task-modal-back-btn" onclick="handleTaskModalBackStep()" class="hidden text-gray-400 hover:text-white btn-scale p-1 bg-white/5 rounded-lg mr-1" title="Back">
+                            <i data-lucide="chevron-left" class="w-4 h-4 text-[#2997ff]"></i>
                         </button>
+                        <h3 class="text-xs font-extrabold text-white uppercase tracking-wider" id="task-modal-step-title">Create Task</h3>
                     </div>
+                    <button onclick="closeAddTaskModal(true)" class="text-gray-400 hover:text-white btn-scale p-1 bg-white/5 rounded-lg">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <!-- Step Indicator Progress Bar (Line Indicators) -->
+                <div id="task-modal-step-indicator" class="flex items-center space-x-1.5 mb-4">
+                    <div id="step-line-1" class="h-1 flex-1 bg-[#2997ff] rounded-full transition-all duration-200"></div>
+                    <div id="step-line-2" class="h-1 flex-1 bg-white/10 rounded-full transition-all duration-200"></div>
+                    <div id="step-line-3" class="h-1 flex-1 bg-white/10 rounded-full transition-all duration-200"></div>
                 </div>
 
                 <form onsubmit="handleAddTaskForm(event)" class="space-y-4">
-                    <div id="task-modal-step-1-fields" class="space-y-3.5">
-                        <div class="space-y-1 text-center">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-center">Task Title</label>
-                            <input type="text" id="new-task-title" required placeholder="Enter task title..." class="w-full bg-white/5 rounded-xl px-4 py-3 text-xs text-white text-center focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition border border-white/5 font-medium">
+                    <div id="task-modal-step-1-fields" class="space-y-3.5 text-left">
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-left">Task Title</label>
+                            <input type="text" id="new-task-title" required placeholder="Enter task title..." class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition border border-white/5 font-medium">
                         </div>
 
-                        <div class="space-y-1 text-center">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-center">Description</label>
-                            <textarea id="new-task-desc" rows="2" onkeydown="handleDescriptionKeydown(event)" placeholder="Optional notes... (Shift+Enter for • bullets)" class="w-full bg-white/5 rounded-xl px-4 py-2.5 text-xs text-white text-center focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition resize-none border border-white/5"></textarea>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-left">Description</label>
+                            <textarea id="new-task-desc" rows="2" onkeydown="handleDescriptionKeydown(event)" placeholder="Optional notes... (Shift+Enter for • bullets)" class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition resize-none border border-white/5"></textarea>
                         </div>
 
-                        <div class="space-y-2 text-center">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-center">Short Notes (Yellow Pills)</label>
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-left">Short Notes (Yellow Pills)</label>
                             <div id="new-task-notes-list" class="space-y-1.5 max-h-24 overflow-y-auto pr-1"></div>
                             <div class="flex items-center space-x-1.5">
-                                <input type="text" id="new-task-note-input" placeholder="Add a short note..." class="flex-1 bg-white/5 rounded-xl px-3.5 py-2 text-xs text-white text-center focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
+                                <input type="text" id="new-task-note-input" placeholder="Add a short note..." class="flex-1 bg-white/5 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
                                 <button type="button" onclick="addNewTaskNoteDraft()" class="btn-scale bg-[#2997ff] hover:bg-[#0066cc] text-black hover:text-white p-2 rounded-xl transition">
                                     <i data-lucide="plus" class="w-3.5 h-3.5"></i>
                                 </button>
@@ -590,9 +600,9 @@
 
                         <div class="grid grid-cols-2 gap-3 items-end pt-1">
                             <div class="space-y-1 relative" id="new-task-project-container">
-                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block mb-1 text-center">Collection</label>
-                                <button type="button" onclick="toggleNewTaskProjectDropdown(event)" class="w-full h-11 flex items-center justify-between bg-white/5 rounded-xl px-3.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
-                                    <span id="new-task-project-label" class="flex-1 text-center truncate">None / Inbox</span>
+                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block mb-1 text-left">Collection</label>
+                                <button type="button" onclick="toggleNewTaskProjectDropdown(event)" class="w-full h-11 flex items-center justify-between bg-white/5 rounded-xl px-3.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5 text-left">
+                                    <span id="new-task-project-label" class="flex-1 text-left truncate">None / Inbox</span>
                                     <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
                                 </button>
                                 <div id="new-task-project-options" class="hidden absolute left-0 right-0 top-full mt-1 w-full bg-[#141414] rounded-xl shadow-2xl z-50 max-h-40 overflow-y-auto py-1 border border-white/[0.05]"></div>
@@ -600,10 +610,10 @@
                             </div>
 
                             <div class="space-y-1 relative">
-                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 text-center block mb-1">Deadline</label>
+                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 text-left block mb-1">Deadline</label>
                                 <div class="flex items-center space-x-1 h-11">
-                                    <button type="button" onclick="openCustomCalendar('new-task-date', event)" id="new-task-date-btn" class="flex-1 bg-white/5 rounded-xl px-3 text-xs text-white border border-white/5 hover:bg-white/10 h-full flex items-center justify-between">
-                                        <span id="new-task-date-label" class="flex-1 text-center truncate">No Deadline</span>
+                                    <button type="button" onclick="openCustomCalendar('new-task-date', event)" id="new-task-date-btn" class="flex-1 bg-white/5 rounded-xl px-3 text-xs text-white border border-white/5 hover:bg-white/10 h-full flex items-center justify-between text-left">
+                                        <span id="new-task-date-label" class="flex-1 text-left truncate">No Deadline</span>
                                         <i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-400"></i>
                                     </button>
                                     <button type="button" onclick="clearDeadline('new-task-date', event)" class="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition h-full flex items-center justify-center" title="Clear Deadline">
@@ -615,9 +625,9 @@
                         </div>
 
                         <div class="space-y-1 relative" id="new-task-group-container">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block mb-1 text-center">Target Column</label>
-                            <button type="button" onclick="toggleNewTaskGroupDropdown(event)" class="w-full h-11 flex items-center justify-between bg-white/5 rounded-xl px-3.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
-                                <span id="new-task-group-label" class="flex-1 text-center truncate">Select Group Column</span>
+                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block mb-1 text-left">Target Column</label>
+                            <button type="button" onclick="toggleNewTaskGroupDropdown(event)" class="w-full h-11 flex items-center justify-between bg-white/5 rounded-xl px-3.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5 text-left">
+                                <span id="new-task-group-label" class="flex-1 text-left truncate">Select Group Column</span>
                                 <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
                             </button>
                             <div id="new-task-group-options" class="hidden absolute left-0 right-0 top-full mt-1 w-full bg-[#141414] rounded-xl shadow-2xl z-50 max-h-40 overflow-y-auto py-1 border border-white/[0.05]"></div>
@@ -626,42 +636,42 @@
 
                         <div class="grid grid-cols-2 gap-3 items-end">
                             <div class="space-y-1 relative" id="new-task-autodelete-container">
-                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block mb-1 text-center">Auto-Delete Policy</label>
-                                <button type="button" onclick="toggleNewTaskAutodeleteDropdown(event)" class="w-full h-11 flex items-center justify-between bg-white/5 rounded-xl px-3.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
-                                    <span id="new-task-autodelete-label" class="flex-1 text-center truncate">Do not delete</span>
+                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block mb-1 text-left">Auto-Delete Policy</label>
+                                <button type="button" onclick="toggleNewTaskAutodeleteDropdown(event)" class="w-full h-11 flex items-center justify-between bg-white/5 rounded-xl px-3.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5 text-left">
+                                    <span id="new-task-autodelete-label" class="flex-1 text-left truncate">Do not delete</span>
                                     <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
                                 </button>
                                 <div id="new-task-autodelete-options" class="hidden absolute left-0 right-0 top-full mt-1 w-full bg-[#141414] rounded-xl shadow-2xl z-50 py-1 border border-white/[0.05]">
-                                    <button type="button" onclick="selectNewTaskAutodelete('never', 'Do not delete')" class="w-full text-center px-4 py-2 text-xs text-white hover:bg-white/5 transition">Do not delete</button>
-                                    <button type="button" onclick="selectNewTaskAutodelete('1day', '1 Day after')" class="w-full text-center px-4 py-2 text-xs text-white hover:bg-white/5 transition">1 Day after</button>
-                                    <button type="button" onclick="selectNewTaskAutodelete('1week', '1 Week after')" class="w-full text-center px-4 py-2 text-xs text-white hover:bg-white/5 transition">1 Week after</button>
-                                    <button type="button" onclick="selectNewTaskAutodelete('custom', 'Custom duration')" class="w-full text-center px-4 py-2 text-xs text-white hover:bg-white/5 transition">Custom duration</button>
+                                    <button type="button" onclick="selectNewTaskAutodelete('never', 'Do not delete')" class="w-full text-left px-4 py-2 text-xs text-white hover:bg-white/5 transition">Do not delete</button>
+                                    <button type="button" onclick="selectNewTaskAutodelete('1day', '1 Day after')" class="w-full text-left px-4 py-2 text-xs text-white hover:bg-white/5 transition">1 Day after</button>
+                                    <button type="button" onclick="selectNewTaskAutodelete('1week', '1 Week after')" class="w-full text-left px-4 py-2 text-xs text-white hover:bg-white/5 transition">1 Week after</button>
+                                    <button type="button" onclick="selectNewTaskAutodelete('custom', 'Custom duration')" class="w-full text-left px-4 py-2 text-xs text-white hover:bg-white/5 transition">Custom duration</button>
                                 </div>
                                 <input type="hidden" id="new-task-autodelete" value="never">
                             </div>
                             <div id="custom-autodelete-container" class="space-y-1 hidden">
-                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 text-center block">Duration (Hours)</label>
-                                <input type="number" id="new-task-autodelete-custom" min="1" max="8760" value="24" class="w-full h-11 bg-white/5 text-xs text-white text-center rounded-xl px-3.5 border border-white/5 focus:outline-none focus:ring-1 focus:ring-[#2997ff]">
+                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 text-left block">Duration (Hours)</label>
+                                <input type="number" id="new-task-autodelete-custom" min="1" max="8760" value="24" class="w-full h-11 bg-white/5 text-xs text-white text-left rounded-xl px-3.5 border border-white/5 focus:outline-none focus:ring-1 focus:ring-[#2997ff]">
                             </div>
                         </div>
                     </div>
 
-                    <!-- Step 2 Substep A: Color Selection -->
+                    <!-- Step 2 Substep A: Color Selection (Mobile) -->
                     <div id="task-modal-step-2-color" class="space-y-3.5 hidden">
-                        <label class="text-[11px] font-bold tracking-wider uppercase text-gray-400 block text-center">Substep 1/2: Choose Vibrant Priority Color</label>
-                        <div id="new-task-color-grid" class="grid grid-cols-6 gap-2.5 p-3 bg-white/[0.03] rounded-2xl border border-white/5 justify-items-center"></div>
+                        <label class="text-[11px] font-bold tracking-wider uppercase text-gray-400 block text-left">Choose Vibrant Priority Color</label>
+                        <div id="new-task-color-grid-mobile" class="grid grid-cols-6 gap-2.5 p-3 bg-white/[0.03] rounded-2xl border border-white/5 justify-items-center"></div>
                     </div>
 
-                    <!-- Step 2 Substep B: Icon Selection -->
+                    <!-- Step 2 Substep B: Icon Selection (Mobile) -->
                     <div id="task-modal-step-2-icon" class="space-y-3.5 hidden">
-                        <label class="text-[11px] font-bold tracking-wider uppercase text-gray-400 block text-center">Substep 2/2: Choose Icon Glyph</label>
-                        <div id="new-task-icon-grid" class="grid grid-cols-6 gap-2.5 max-h-56 overflow-y-auto p-3 bg-white/[0.03] rounded-2xl border border-white/5 justify-items-center"></div>
+                        <label class="text-[11px] font-bold tracking-wider uppercase text-gray-400 block text-left">Choose Icon Glyph</label>
+                        <div id="new-task-icon-grid-mobile" class="grid grid-cols-6 gap-2.5 max-h-56 overflow-y-auto p-3 bg-white/[0.03] rounded-2xl border border-white/5 justify-items-center"></div>
                     </div>
 
                     <div class="flex flex-col space-y-2 pt-3 border-t border-white/5" id="task-modal-actions-container">
                         <button type="button" id="btn-modal-customization-step" onclick="handleTaskModalNextStep()" class="btn-scale w-full py-3 bg-white/5 hover:bg-white/10 text-white rounded-full text-xs font-bold transition flex items-center justify-center space-x-2 border border-white/10">
                             <i data-lucide="palette" class="w-4 h-4 text-[#2997ff]"></i>
-                            <span id="btn-modal-step-label">Proceed to Customize Design</span>
+                            <span id="btn-modal-step-label">Customize</span>
                         </button>
                         <button type="submit" id="btn-modal-submit-task" class="btn-scale w-full bg-[#2997ff] text-black py-3 rounded-full text-xs font-extrabold hover:bg-[#0066cc] hover:text-white transition shadow-md">
                             Create Task
@@ -670,79 +680,93 @@
                 </form>
             </div>
 
+            <!-- Desktop Collapsible Customization Side Drawer -->
+            <div id="new-task-customization-panel" class="w-0 bg-[#0E0E0E] flex flex-col border-l border-white/5 transition-all duration-300 overflow-hidden" style="display: none;">
+                <div class="p-5 space-y-4 h-full overflow-y-auto no-scrollbar" style="width: 320px;">
+                    <div>
+                        <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block mb-2 text-left">Vibrant Priority Color</label>
+                        <div id="new-task-color-grid" class="grid grid-cols-6 gap-2"></div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block mb-2 text-left">Select Icon Glyph</label>
+                        <div id="new-task-icon-grid" class="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1.5 bg-[#141414] rounded-xl border border-white/5"></div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
     <div id="project-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
-        <div id="project-modal-container" class="bg-[#121212] rounded-2xl max-w-md w-full mx-4 p-5 shadow-2xl border border-white/[0.04] transform scale-95 transition-transform duration-150 ease-out">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-bold text-white flex items-center" id="project-modal-title"><i data-lucide="folder-plus" class="text-[#2997ff] mr-2 w-4.5 h-4.5"></i> Configure Collection</h3>
-                <button onclick="closeProjectModal()" class="text-gray-400 hover:text-white btn-scale p-1 bg-white/5 rounded-md">
+        <div id="project-modal-container" class="bg-[#121212] rounded-3xl max-w-md w-full mx-4 p-6 shadow-2xl border border-white/[0.08] transform scale-95 transition-transform duration-150 ease-out">
+            <div class="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
+                <h3 class="text-xs font-extrabold text-white flex items-center uppercase tracking-wider" id="project-modal-title"><i data-lucide="folder-plus" class="text-[#2997ff] mr-2 w-4 h-4"></i> Configure Collection</h3>
+                <button onclick="closeProjectModal()" class="text-gray-400 hover:text-white btn-scale p-1 bg-white/5 rounded-lg">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
 
-            <form onsubmit="handleProjectCreation(event)" class="space-y-4">
+            <form onsubmit="handleProjectCreation(event)" class="space-y-4 text-left">
                 <div class="space-y-1">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Collection Name</label>
-                    <input type="text" id="new-project-title" required placeholder="Enter collection folder name..." class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition border border-white/5">
+                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-left">Collection Name</label>
+                    <input type="text" id="new-project-title" required placeholder="Enter collection folder name..." class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition border border-white/5 font-medium">
                 </div>
                 <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block">Vibrant Colors Palette</label>
+                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-left">Vibrant Colors Palette</label>
                     <div class="grid grid-cols-6 gap-2" id="project-color-options"></div>
                 </div>
                 <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block">Collection Glyph</label>
-                    <div class="grid grid-cols-6 gap-2 p-2 bg-[#1A1A1A] rounded-xl border border-white/5" id="project-icon-options"></div>
+                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-left">Collection Glyph</label>
+                    <div class="grid grid-cols-6 gap-2 p-2.5 bg-[#141414] rounded-2xl border border-white/5 max-h-44 overflow-y-auto no-scrollbar" id="project-icon-options"></div>
                 </div>
-                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-white/5">
-                    <button type="button" onclick="closeProjectModal()" class="btn-scale bg-white/5 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-white/10 transition">Cancel</button>
-                    <button type="submit" id="project-submit-btn" class="btn-scale bg-[#2997ff] text-black px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-[#0066cc] hover:text-white transition">Create Collection</button>
+                <div class="flex flex-col space-y-2 pt-3 border-t border-white/5">
+                    <button type="submit" id="project-submit-btn" class="btn-scale w-full bg-[#2997ff] text-black py-3 rounded-full text-xs font-extrabold hover:bg-[#0066cc] hover:text-white transition shadow-md">Create Collection</button>
+                    <button type="button" onclick="closeProjectModal()" class="btn-scale w-full bg-white/5 text-gray-300 py-2.5 rounded-full text-xs font-bold hover:bg-white/10 transition">Cancel</button>
                 </div>
             </form>
         </div>
     </div>
 
     <div id="group-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
-        <div id="group-modal-container" class="bg-[#121212] rounded-2xl max-w-md w-full mx-4 p-5 shadow-2xl border border-white/[0.04] transform scale-95 transition-transform duration-150 ease-out">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-bold text-white flex items-center" id="group-modal-title-text"><i data-lucide="plus-square" class="text-[#2997ff] mr-2 w-4.5 h-4.5"></i> Create Group Column</h3>
-                <button onclick="closeAddGroupModal()" class="text-gray-400 hover:text-white btn-scale p-1 bg-white/5 rounded-md">
+        <div id="group-modal-container" class="bg-[#121212] rounded-3xl max-w-md w-full mx-4 p-6 shadow-2xl border border-white/[0.08] transform scale-95 transition-transform duration-150 ease-out">
+            <div class="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
+                <h3 class="text-xs font-extrabold text-white flex items-center uppercase tracking-wider" id="group-modal-title-text"><i data-lucide="plus-square" class="text-[#2997ff] mr-2 w-4 h-4"></i> Create Group Column</h3>
+                <button onclick="closeAddGroupModal()" class="text-gray-400 hover:text-white btn-scale p-1 bg-white/5 rounded-lg">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
 
-            <form onsubmit="handleAddGroupForm(event)" class="space-y-4">
+            <form onsubmit="handleAddGroupForm(event)" class="space-y-4 text-left">
                 <div class="space-y-1">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Group Name</label>
-                    <input type="text" id="new-group-title" required placeholder="Enter group column title..." class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition border border-white/5">
+                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-left">Group Name</label>
+                    <input type="text" id="new-group-title" required placeholder="Enter group column title..." class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition border border-white/5 font-medium">
                 </div>
                 <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block">Accent Color Palette</label>
+                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-left">Accent Color Palette</label>
                     <div class="grid grid-cols-6 gap-2" id="group-color-options"></div>
                 </div>
                 <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block">Group Glyph</label>
-                    <div class="grid grid-cols-6 gap-2 p-2 bg-[#1A1A1A] rounded-xl border border-white/5" id="group-icon-options"></div>
+                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-left">Group Glyph</label>
+                    <div class="grid grid-cols-6 gap-2 p-2.5 bg-[#141414] rounded-2xl border border-white/5 max-h-44 overflow-y-auto no-scrollbar" id="group-icon-options"></div>
                 </div>
-                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-white/5">
-                    <button type="button" onclick="closeAddGroupModal()" class="btn-scale bg-white/5 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-white/10 transition">Cancel</button>
-                    <button type="submit" id="group-submit-btn" class="btn-scale bg-[#2997ff] text-black px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-[#0066cc] hover:text-white transition">Create Group</button>
+                <div class="flex flex-col space-y-2 pt-3 border-t border-white/5">
+                    <button type="submit" id="group-submit-btn" class="btn-scale w-full bg-[#2997ff] text-black py-3 rounded-full text-xs font-extrabold hover:bg-[#0066cc] hover:text-white transition shadow-md">Create Group</button>
+                    <button type="button" onclick="closeAddGroupModal()" class="btn-scale w-full bg-white/5 text-gray-300 py-2.5 rounded-full text-xs font-bold hover:bg-white/10 transition">Cancel</button>
                 </div>
             </form>
         </div>
     </div>
 
     <div id="delete-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[60] flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
-        <div id="delete-modal-container" class="bg-[#121212] rounded-2xl max-w-sm w-full mx-4 p-5 shadow-2xl border border-white/[0.04] transform scale-95 transition-transform duration-150 ease-out">
-            <div class="flex items-center space-x-3 text-red-400 mb-3">
+        <div id="delete-modal-container" class="bg-[#121212] rounded-3xl max-w-sm w-full mx-4 p-6 shadow-2xl border border-white/[0.08] transform scale-95 transition-transform duration-150 ease-out">
+            <div class="flex items-center space-x-2 text-red-400 mb-3 border-b border-white/5 pb-3">
                 <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
-                <h3 class="text-sm font-bold text-white">Confirm Deletion</h3>
+                <h3 class="text-xs font-extrabold text-white uppercase tracking-wider">Confirm Deletion</h3>
             </div>
-            <p class="text-xs text-gray-400 mb-5 leading-relaxed" id="delete-modal-message">Are you sure you want to proceed with this deletion? This action cannot be undone.</p>
-            <div class="flex items-center justify-end space-x-2">
-                <button onclick="closeDeleteModal()" class="btn-scale bg-white/5 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-white/10 transition">Cancel</button>
-                <button id="delete-confirm-btn" class="btn-scale bg-red-500 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-600 transition">Proceed</button>
+            <p class="text-xs text-gray-400 mb-5 leading-relaxed text-left" id="delete-modal-message">Are you sure you want to proceed with this deletion? This action cannot be undone.</p>
+            <div class="flex flex-col space-y-2">
+                <button id="delete-confirm-btn" class="btn-scale w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-full text-xs font-extrabold transition shadow-md">Proceed</button>
+                <button onclick="closeDeleteModal()" class="btn-scale w-full bg-white/5 text-gray-300 py-2.5 rounded-full text-xs font-bold hover:bg-white/10 transition">Cancel</button>
             </div>
         </div>
     </div>

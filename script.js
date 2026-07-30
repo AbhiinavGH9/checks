@@ -434,23 +434,50 @@
             }
         }
 
-        window.addEventListener('resize', () => {
-            if (activeFloatingElement && !activeFloatingElement.classList.contains('hidden')) {
-                if (window.innerWidth < 768) {
-                    hideFloatingElement(activeFloatingElement);
-                } else if (activeFloatingElement.anchorRect) {
-                    positionFloatingElement(activeFloatingElement, activeFloatingElement.anchorRect, activeFloatingElement.positionOptions);
-                }
-            }
-        });
+        // Mobile Touch Gestures System
+        (function initMobileTouchGestures() {
+            let touchStartX = 0;
+            let touchStartY = 0;
+            let touchEndX = 0;
+            let touchEndY = 0;
 
-        window.addEventListener('scroll', (e) => {
-            if (activeFloatingElement && !activeFloatingElement.classList.contains('hidden')) {
-                if (!activeFloatingElement.contains(e.target)) {
-                    hideFloatingElement(activeFloatingElement);
+            document.addEventListener('touchstart', (e) => {
+                if (window.innerWidth >= 768) return;
+                touchStartX = e.changedTouches[0].screenX;
+                touchStartY = e.changedTouches[0].screenY;
+            }, { passive: true });
+
+            document.addEventListener('touchend', (e) => {
+                if (window.innerWidth >= 768) return;
+                touchEndX = e.changedTouches[0].screenX;
+                touchEndY = e.changedTouches[0].screenY;
+
+                const deltaX = touchEndX - touchStartX;
+                const deltaY = touchEndY - touchStartY;
+
+                // Swipe right -> left to close sidebar (deltaX < -60)
+                // Swipe left -> right from screen edge to open sidebar (touchStartX < 40 && deltaX > 60)
+                if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                    const sidebar = document.getElementById('sidebar-panel');
+                    const isSidebarOpen = sidebar && sidebar.style.width !== '0px' && sidebar.style.width !== '';
+
+                    if (touchStartX < 40 && deltaX > 60 && !isSidebarOpen) {
+                        openSidebarMobile();
+                    } else if (isSidebarOpen && deltaX < -60) {
+                        closeSidebarMobile();
+                    }
                 }
-            }
-        }, true);
+
+                // Swipe down to close inspector (deltaY > 80)
+                if (deltaY > 80 && Math.abs(deltaY) > Math.abs(deltaX)) {
+                    const inspector = document.getElementById('inspector-panel');
+                    const isInspectorOpen = inspector && inspector.style.width !== '0px' && inspector.style.width !== '';
+                    if (isInspectorOpen) {
+                        closeInspector();
+                    }
+                }
+            }, { passive: true });
+        })();
 
         // Mobile Bottom Drawer stack state
         let drawerStack = [];
@@ -1931,20 +1958,6 @@
                                                 <span>Deletion Held</span>
                                             </span>
                                         ` : ''}
-                                        ${task.done && task.completedAt && !isTaskOnHold(task) ? (() => {
-                                            const completedMs = new Date(task.completedAt).getTime();
-                                            const totalLifespan = 27 * 24 * 60 * 60 * 1000;
-                                            const diffMs = Math.max(0, (completedMs + totalLifespan) - Date.now());
-                                            const daysLeft = Math.floor(diffMs / (24 * 60 * 60 * 1000));
-                                            const hoursLeft = Math.floor((diffMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-                                            const text = daysLeft > 0 ? `${daysLeft}d ${hoursLeft}h left` : `${hoursLeft}h left`;
-                                            return `
-                                                <span class="absolute top-2.5 right-2.5 inline-flex items-center space-x-1.5 px-2 py-0.5 bg-red-500/25 text-red-300 rounded-md text-[10px] font-extrabold border border-red-500/50 shadow-md opacity-100 z-20 pointer-events-none" title="Deletes automatically in ${daysLeft} days, ${hoursLeft} hours">
-                                                    <i data-lucide="timer" class="w-3 h-3 text-red-400 flex-shrink-0"></i>
-                                                    <span>${text}</span>
-                                                </span>
-                                            `;
-                                        })() : ''}
                                     </div>
                                     ${task.notes && task.notes.length > 0 ? `
                                         <div class="flex flex-col gap-1 mt-2">
@@ -1959,13 +1972,29 @@
                                     ${subtasksHTML}
                                 </div>
                             </div>
-                            <div class="flex flex-col items-center space-y-0.5 text-gray-500 self-center flex-shrink-0 mr-1">
-                                <button onclick="moveTaskInGroup('${task.id}', -1, event)" class="p-0.5 hover:text-white transition" ${cardIndex === 0 ? 'disabled style="opacity: 0.2; cursor: not-allowed;"' : ''} title="Move Up">
-                                    <i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
-                                </button>
-                                <button onclick="moveTaskInGroup('${task.id}', 1, event)" class="p-0.5 hover:text-white transition" ${cardIndex === tasks.length - 1 ? 'disabled style="opacity: 0.2; cursor: not-allowed;"' : ''} title="Move Down">
-                                    <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
-                                </button>
+                            <div class="flex items-center space-x-2 flex-shrink-0 ml-1">
+                                ${task.done && task.completedAt && !isTaskOnHold(task) ? (() => {
+                                    const completedMs = new Date(task.completedAt).getTime();
+                                    const totalLifespan = 27 * 24 * 60 * 60 * 1000;
+                                    const diffMs = Math.max(0, (completedMs + totalLifespan) - Date.now());
+                                    const daysLeft = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+                                    const hoursLeft = Math.floor((diffMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+                                    const text = daysLeft > 0 ? `${daysLeft}d ${hoursLeft}h left` : `${hoursLeft}h left`;
+                                    return `
+                                        <span class="inline-flex items-center space-x-1.5 px-2 py-1 bg-red-500/25 text-red-300 rounded-md text-[10px] font-extrabold border border-red-500/50 shadow-md opacity-100 flex-shrink-0 pointer-events-none" title="Deletes automatically in ${daysLeft} days, ${hoursLeft} hours">
+                                            <i data-lucide="timer" class="w-3 h-3 text-red-400 flex-shrink-0"></i>
+                                            <span>${text}</span>
+                                        </span>
+                                    `;
+                                })() : ''}
+                                <div class="flex flex-col items-center space-y-0.5 text-gray-500 flex-shrink-0">
+                                    <button onclick="moveTaskInGroup('${task.id}', -1, event)" class="p-0.5 hover:text-white transition" ${cardIndex === 0 ? 'disabled style="opacity: 0.2; cursor: not-allowed;"' : ''} title="Move Up">
+                                        <i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                    <button onclick="moveTaskInGroup('${task.id}', 1, event)" class="p-0.5 hover:text-white transition" ${cardIndex === tasks.length - 1 ? 'disabled style="opacity: 0.2; cursor: not-allowed;"' : ''} title="Move Down">
+                                        <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -2336,10 +2365,15 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <button onclick="event.stopPropagation(); restoreAutoSnapshot(${idx});" class="btn-scale bg-[#2997ff]/15 hover:bg-[#2997ff] text-[#2997ff] hover:text-black font-bold px-3.5 py-2 rounded-xl text-xs transition flex items-center space-x-1.5 flex-shrink-0 border border-[#2997ff]/30">
-                                                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-                                                <span>Restore Snapshot</span>
-                                            </button>
+                                            <div class="flex items-center space-x-2 flex-shrink-0">
+                                                <button onclick="event.stopPropagation(); restoreAutoSnapshot(${idx});" class="btn-scale bg-[#2997ff]/15 hover:bg-[#2997ff] text-[#2997ff] hover:text-black font-bold px-3 py-1.5 rounded-xl text-xs transition flex items-center space-x-1 border border-[#2997ff]/30">
+                                                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                                                    <span>Restore</span>
+                                                </button>
+                                                <button onclick="event.stopPropagation(); deleteAutoSnapshot(${idx});" class="btn-scale p-1.5 bg-red-500/10 hover:bg-red-500/25 text-red-400 rounded-xl transition" title="Delete Snapshot">
+                                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     `).join('');
                                 })()}
@@ -2820,10 +2854,13 @@
         window.exportSingleTask = exportSingleTask;
         window.triggerManualSnapshot = triggerManualSnapshot;
         window.restoreAutoSnapshot = restoreAutoSnapshot;
+        window.deleteAutoSnapshot = deleteAutoSnapshot;
         window.previewBackupSnapshot = previewBackupSnapshot;
         window.checkFiveDayAutoBackup = checkFiveDayAutoBackup;
         window.setTaskModalStep = setTaskModalStep;
         window.handleTaskModalNextStep = handleTaskModalNextStep;
+        window.handleTaskModalBackStep = handleTaskModalBackStep;
+        window.toggleTaskCustomizationPanel = toggleTaskCustomizationPanel;
 
         function handleFeedContextMenu(event) {
             if (event.target.closest('.group-card') || 
@@ -3258,44 +3295,135 @@
 
         let currentTaskModalStep = 1;
 
+        function toggleTaskCustomizationPanel() {
+            const panel = document.getElementById('new-task-customization-panel');
+            const container = document.getElementById('task-modal-container');
+            const label = document.getElementById('btn-modal-step-label');
+
+            if (!panel || !container) return;
+
+            if (panel.style.display === 'none' || panel.style.width === '0px' || !panel.style.width) {
+                panel.style.display = 'flex';
+                panel.style.width = '320px';
+                container.style.maxWidth = '760px';
+                if (label) label.textContent = 'Collapse Styles';
+            } else {
+                panel.style.display = 'none';
+                panel.style.width = '0px';
+                container.style.maxWidth = '440px';
+                if (label) label.textContent = 'Customize';
+            }
+        }
+
         function setTaskModalStep(step) {
             currentTaskModalStep = step;
             const titleEl = document.getElementById('task-modal-step-title');
+            const backBtn = document.getElementById('task-modal-back-btn');
             const step1Fields = document.getElementById('task-modal-step-1-fields');
             const step2Color = document.getElementById('task-modal-step-2-color');
             const step2Icon = document.getElementById('task-modal-step-2-icon');
             const btnStep = document.getElementById('btn-modal-customization-step');
             const btnStepLabel = document.getElementById('btn-modal-step-label');
 
+            const l1 = document.getElementById('step-line-1');
+            const l2 = document.getElementById('step-line-2');
+            const l3 = document.getElementById('step-line-3');
+
+            if (window.innerWidth >= 768) {
+                toggleTaskCustomizationPanel();
+                return;
+            }
+
             if (!step1Fields || !step2Color || !step2Icon) return;
 
             if (step === 1) {
                 if (titleEl) titleEl.textContent = 'Create Task';
+                if (backBtn) backBtn.classList.add('hidden');
                 step1Fields.classList.remove('hidden');
                 step2Color.classList.add('hidden');
                 step2Icon.classList.add('hidden');
-                if (btnStepLabel) btnStepLabel.textContent = 'Proceed to Customize Design';
+                if (btnStepLabel) btnStepLabel.textContent = 'Customize';
                 if (btnStep) btnStep.setAttribute('onclick', 'handleTaskModalNextStep()');
+
+                if (l1) l1.className = 'h-1 flex-1 bg-[#2997ff] rounded-full transition-all duration-200';
+                if (l2) l2.className = 'h-1 flex-1 bg-white/10 rounded-full transition-all duration-200';
+                if (l3) l3.className = 'h-1 flex-1 bg-white/10 rounded-full transition-all duration-200';
             } else if (step === 2) {
-                if (titleEl) titleEl.textContent = 'Customize Priority Color (1/2)';
+                if (titleEl) titleEl.textContent = 'Choose Priority Color';
+                if (backBtn) backBtn.classList.remove('hidden');
                 step1Fields.classList.add('hidden');
                 step2Color.classList.remove('hidden');
                 step2Icon.classList.add('hidden');
-                if (btnStepLabel) btnStepLabel.textContent = 'Next: Choose Icon Glyph →';
+                if (btnStepLabel) btnStepLabel.textContent = 'Next: Choose Icon →';
                 if (btnStep) btnStep.setAttribute('onclick', 'setTaskModalStep(3)');
+
+                if (l1) l1.className = 'h-1 flex-1 bg-[#2997ff] rounded-full transition-all duration-200';
+                if (l2) l2.className = 'h-1 flex-1 bg-[#2997ff] rounded-full transition-all duration-200';
+                if (l3) l3.className = 'h-1 flex-1 bg-white/10 rounded-full transition-all duration-200';
+                renderMobileColorGrid();
             } else if (step === 3) {
-                if (titleEl) titleEl.textContent = 'Customize Icon Glyph (2/2)';
+                if (titleEl) titleEl.textContent = 'Choose Icon Glyph';
+                if (backBtn) backBtn.classList.remove('hidden');
                 step1Fields.classList.add('hidden');
                 step2Color.classList.add('hidden');
                 step2Icon.classList.remove('hidden');
-                if (btnStepLabel) btnStepLabel.textContent = '← Back to Color Selection';
+                if (btnStepLabel) btnStepLabel.textContent = '← Back to Color';
                 if (btnStep) btnStep.setAttribute('onclick', 'setTaskModalStep(2)');
+
+                if (l1) l1.className = 'h-1 flex-1 bg-[#2997ff] rounded-full transition-all duration-200';
+                if (l2) l2.className = 'h-1 flex-1 bg-[#2997ff] rounded-full transition-all duration-200';
+                if (l3) l3.className = 'h-1 flex-1 bg-[#2997ff] rounded-full transition-all duration-200';
+                renderMobileIconGrid();
             }
             lucide.createIcons();
         }
 
+        function handleTaskModalBackStep() {
+            if (currentTaskModalStep === 3) setTaskModalStep(2);
+            else if (currentTaskModalStep === 2) setTaskModalStep(1);
+        }
+
         function handleTaskModalNextStep() {
-            setTaskModalStep(2);
+            if (window.innerWidth >= 768) {
+                toggleTaskCustomizationPanel();
+            } else {
+                setTaskModalStep(2);
+            }
+        }
+
+        function renderMobileColorGrid() {
+            const grid = document.getElementById('new-task-color-grid-mobile');
+            if (!grid) return;
+            grid.innerHTML = '';
+            SYSTEM_COLORS.slice(0, 18).forEach(color => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `w-9 h-9 rounded-full flex items-center justify-center transition-all ${AppState.tempCreatePriority === color ? 'ring-2 ring-white scale-110' : 'opacity-80 hover:opacity-100'}`;
+                btn.style.backgroundColor = color;
+                btn.onclick = () => {
+                    selectCreatePriority(color);
+                    renderMobileColorGrid();
+                };
+                grid.appendChild(btn);
+            });
+        }
+
+        function renderMobileIconGrid() {
+            const grid = document.getElementById('new-task-icon-grid-mobile');
+            if (!grid) return;
+            grid.innerHTML = '';
+            SYSTEM_ICONS.slice(0, 18).forEach(icon => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `w-9 h-9 rounded-xl flex items-center justify-center transition-all ${AppState.tempCreateIcon === icon ? 'bg-white text-black scale-110' : 'bg-white/5 text-gray-400 hover:text-white'}`;
+                btn.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4"></i>`;
+                btn.onclick = () => {
+                    selectCreateIcon(icon);
+                    renderMobileIconGrid();
+                };
+                grid.appendChild(btn);
+            });
+            lucide.createIcons();
         }
 
         function switchToGroupCreationFromTaskModal() {
@@ -3526,14 +3654,7 @@
                         const rect = triggerBtn ? triggerBtn.getBoundingClientRect() : { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
                         if (menuId === 'nav-menu-dropdown-options' && triggerBtn) {
                             const rect = triggerBtn.getBoundingClientRect();
-                            positionFloatingElement(targetMenu, {
-                                left: rect.left,
-                                top: rect.top,
-                                right: rect.right,
-                                bottom: rect.bottom,
-                                width: rect.width,
-                                height: rect.height
-                            }, { margin: 6, alignRight: true });
+                            positionFloatingElement(targetMenu, rect, { margin: 6, alignRight: true });
                         } else {
                             positionFloatingElement(targetMenu, rect);
                         }
@@ -4519,6 +4640,19 @@
             showToast('5-Day Snapshot Created', 'Captured full task directory snapshot.');
         }
 
+        function deleteAutoSnapshot(index) {
+            let backups = [];
+            try { backups = JSON.parse(localStorage.getItem('ANV_5DAY_SNAPSHOTS') || '[]'); } catch(e) {}
+            if (index < 0 || index >= backups.length) return;
+            const target = backups[index];
+            showDeleteConfirmation(`Delete backup snapshot "${target.label || 'Snapshot'}"?`, () => {
+                backups.splice(index, 1);
+                try { localStorage.setItem('ANV_5DAY_SNAPSHOTS', JSON.stringify(backups)); } catch(e) {}
+                if (AppState.currentTab === 'manage') renderManageDashboard();
+                showToast('Snapshot Deleted', 'Backup removed successfully.');
+            });
+        }
+
         function previewBackupSnapshot(index) {
             let backups = [];
             try { backups = JSON.parse(localStorage.getItem('ANV_5DAY_SNAPSHOTS') || '[]'); } catch(e) {}
@@ -4527,6 +4661,9 @@
 
             const snapTasks = target.data.tasks || [];
             const snapGroups = target.data.groups || [];
+
+            const existingModal = document.getElementById('snapshot-preview-modal');
+            if (existingModal) existingModal.remove();
 
             let html = `
                 <div class="fixed inset-0 bg-black/85 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-fade-in" id="snapshot-preview-modal">
@@ -4544,7 +4681,7 @@
                             </button>
                         </div>
                         <div class="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar">
-                            ${snapTasks.length === 0 ? '<div class="text-center py-8 text-xs text-gray-600">No tasks saved in this snapshot</div>' : snapTasks.map(t => {
+                            ${snapTasks.length === 0 ? '<div class="text-center py-8 text-xs text-gray-600 border border-dashed border-white/5 rounded-xl">No tasks saved in this snapshot</div>' : snapTasks.map(t => {
                                 const group = snapGroups.find(g => g.id === t.groupId);
                                 return `
                                     <div class="flex items-center justify-between bg-white/5 p-2.5 rounded-xl text-xs border border-white/5">
@@ -4557,13 +4694,19 @@
                                 `;
                             }).join('')}
                         </div>
-                        <div class="pt-2 border-t border-white/5 flex items-center justify-between space-x-3">
-                            <button onclick="document.getElementById('snapshot-preview-modal').remove()" class="btn-scale flex-1 py-2 bg-white/5 text-gray-300 rounded-xl text-xs font-semibold hover:bg-white/10 transition">
-                                Close Preview
+                        <div class="pt-2 border-t border-white/5 flex items-center justify-between space-x-2">
+                            <button onclick="document.getElementById('snapshot-preview-modal').remove(); deleteAutoSnapshot(${index});" class="btn-scale bg-red-500/15 hover:bg-red-500/25 text-red-400 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1 border border-red-500/30">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                <span>Delete Snapshot</span>
                             </button>
-                            <button onclick="document.getElementById('snapshot-preview-modal').remove(); restoreAutoSnapshot(${index});" class="btn-scale flex-1 py-2 bg-[#2997ff] text-black font-bold rounded-xl text-xs transition hover:bg-[#0066cc] hover:text-white">
-                                Restore This Snapshot
-                            </button>
+                            <div class="flex items-center space-x-2 flex-1 justify-end">
+                                <button onclick="document.getElementById('snapshot-preview-modal').remove()" class="btn-scale px-3 py-2 bg-white/5 text-gray-300 rounded-xl text-xs font-semibold hover:bg-white/10 transition">
+                                    Close
+                                </button>
+                                <button onclick="document.getElementById('snapshot-preview-modal').remove(); restoreAutoSnapshot(${index});" class="btn-scale px-4 py-2 bg-[#2997ff] text-black font-bold rounded-xl text-xs transition hover:bg-[#0066cc] hover:text-white shadow-md">
+                                    Restore Snapshot
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
