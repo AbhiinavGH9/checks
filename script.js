@@ -1939,7 +1939,7 @@
                                             const hoursLeft = Math.floor((diffMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
                                             const text = daysLeft > 0 ? `${daysLeft}d ${hoursLeft}h left` : `${hoursLeft}h left`;
                                             return `
-                                                <span class="inline-flex items-center space-x-1.5 px-2 py-0.5 bg-red-500/25 text-red-300 rounded-md text-[10px] font-extrabold border border-red-500/50 shadow-md opacity-100 z-10" title="Deletes automatically in ${daysLeft} days, ${hoursLeft} hours">
+                                                <span class="absolute top-2.5 right-2.5 inline-flex items-center space-x-1.5 px-2 py-0.5 bg-red-500/25 text-red-300 rounded-md text-[10px] font-extrabold border border-red-500/50 shadow-md opacity-100 z-20 pointer-events-none" title="Deletes automatically in ${daysLeft} days, ${hoursLeft} hours">
                                                     <i data-lucide="timer" class="w-3 h-3 text-red-400 flex-shrink-0"></i>
                                                     <span>${text}</span>
                                                 </span>
@@ -2317,13 +2317,16 @@
                                         return `<div class="text-center py-6 text-xs text-gray-600 border border-dashed border-white/5 rounded-xl">No 5-day auto snapshots captured yet.</div>`;
                                     }
                                     return backups.map((b, idx) => `
-                                        <div class="flex items-center justify-between bg-white/[0.03] hover:bg-white/[0.06] p-3.5 rounded-xl text-xs transition border border-white/5 gap-3">
+                                        <div onclick="previewBackupSnapshot(${idx})" class="flex items-center justify-between bg-white/[0.03] hover:bg-white/[0.06] p-3.5 rounded-xl text-xs transition border border-white/5 gap-3 cursor-pointer group">
                                             <div class="flex items-center space-x-3 min-w-0 flex-1">
-                                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0 text-emerald-400">
+                                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0 text-emerald-400 group-hover:scale-105 transition">
                                                     <i data-lucide="archive" class="w-4 h-4"></i>
                                                 </div>
                                                 <div class="min-w-0 flex-1">
-                                                    <div class="text-white font-bold truncate text-xs">${escapeHTML(b.label || '5-Day Full Backup Snapshot')}</div>
+                                                    <div class="text-white font-bold truncate text-xs group-hover:text-[#2997ff] transition flex items-center space-x-1.5">
+                                                        <span>${escapeHTML(b.label || '5-Day Full Backup Snapshot')}</span>
+                                                        <i data-lucide="eye" class="w-3.5 h-3.5 text-gray-500"></i>
+                                                    </div>
                                                     <div class="text-[10px] text-gray-400 font-mono mt-0.5 flex items-center space-x-2">
                                                         <span>${new Date(b.timestamp).toLocaleString()}</span>
                                                         <span>•</span>
@@ -2333,7 +2336,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <button onclick="restoreAutoSnapshot(${idx})" class="btn-scale bg-[#2997ff]/15 hover:bg-[#2997ff] text-[#2997ff] hover:text-black font-bold px-3.5 py-2 rounded-xl text-xs transition flex items-center space-x-1.5 flex-shrink-0 border border-[#2997ff]/30">
+                                            <button onclick="event.stopPropagation(); restoreAutoSnapshot(${idx});" class="btn-scale bg-[#2997ff]/15 hover:bg-[#2997ff] text-[#2997ff] hover:text-black font-bold px-3.5 py-2 rounded-xl text-xs transition flex items-center space-x-1.5 flex-shrink-0 border border-[#2997ff]/30">
                                                 <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
                                                 <span>Restore Snapshot</span>
                                             </button>
@@ -2817,7 +2820,10 @@
         window.exportSingleTask = exportSingleTask;
         window.triggerManualSnapshot = triggerManualSnapshot;
         window.restoreAutoSnapshot = restoreAutoSnapshot;
+        window.previewBackupSnapshot = previewBackupSnapshot;
         window.checkFiveDayAutoBackup = checkFiveDayAutoBackup;
+        window.setTaskModalStep = setTaskModalStep;
+        window.handleTaskModalNextStep = handleTaskModalNextStep;
 
         function handleFeedContextMenu(event) {
             if (event.target.closest('.group-card') || 
@@ -3239,12 +3245,7 @@
 
                 selectNewTaskAutodelete('never', 'Do not delete');
                 document.getElementById('custom-autodelete-container').classList.add('hidden');
-                
-                document.getElementById('new-task-customization-panel').style.display = 'none';
-                document.getElementById('new-task-customization-panel').style.width = '0px';
-                container.style.maxWidth = '440px';
-                document.getElementById('toggle-customization-icon').setAttribute('data-lucide', 'chevron-right');
-                document.getElementById('toggle-customization-text').textContent = "Customize Design";
+                setTaskModalStep(1);
             }
 
             backdrop.classList.remove('hidden');
@@ -3253,6 +3254,48 @@
                 container.classList.remove('scale-95');
                 lucide.createIcons();
             }, 10);
+        }
+
+        let currentTaskModalStep = 1;
+
+        function setTaskModalStep(step) {
+            currentTaskModalStep = step;
+            const titleEl = document.getElementById('task-modal-step-title');
+            const step1Fields = document.getElementById('task-modal-step-1-fields');
+            const step2Color = document.getElementById('task-modal-step-2-color');
+            const step2Icon = document.getElementById('task-modal-step-2-icon');
+            const btnStep = document.getElementById('btn-modal-customization-step');
+            const btnStepLabel = document.getElementById('btn-modal-step-label');
+
+            if (!step1Fields || !step2Color || !step2Icon) return;
+
+            if (step === 1) {
+                if (titleEl) titleEl.textContent = 'Create Task';
+                step1Fields.classList.remove('hidden');
+                step2Color.classList.add('hidden');
+                step2Icon.classList.add('hidden');
+                if (btnStepLabel) btnStepLabel.textContent = 'Proceed to Customize Design';
+                if (btnStep) btnStep.setAttribute('onclick', 'handleTaskModalNextStep()');
+            } else if (step === 2) {
+                if (titleEl) titleEl.textContent = 'Customize Priority Color (1/2)';
+                step1Fields.classList.add('hidden');
+                step2Color.classList.remove('hidden');
+                step2Icon.classList.add('hidden');
+                if (btnStepLabel) btnStepLabel.textContent = 'Next: Choose Icon Glyph →';
+                if (btnStep) btnStep.setAttribute('onclick', 'setTaskModalStep(3)');
+            } else if (step === 3) {
+                if (titleEl) titleEl.textContent = 'Customize Icon Glyph (2/2)';
+                step1Fields.classList.add('hidden');
+                step2Color.classList.add('hidden');
+                step2Icon.classList.remove('hidden');
+                if (btnStepLabel) btnStepLabel.textContent = '← Back to Color Selection';
+                if (btnStep) btnStep.setAttribute('onclick', 'setTaskModalStep(2)');
+            }
+            lucide.createIcons();
+        }
+
+        function handleTaskModalNextStep() {
+            setTaskModalStep(2);
         }
 
         function switchToGroupCreationFromTaskModal() {
@@ -3482,7 +3525,15 @@
                         const triggerBtn = (event && event.currentTarget) || (event && event.target && event.target.closest('button'));
                         const rect = triggerBtn ? triggerBtn.getBoundingClientRect() : { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
                         if (menuId === 'nav-menu-dropdown-options' && triggerBtn) {
-                            positionFloatingElement(targetMenu, rect, { margin: 4, alignRight: true });
+                            const rect = triggerBtn.getBoundingClientRect();
+                            positionFloatingElement(targetMenu, {
+                                left: rect.left,
+                                top: rect.top,
+                                right: rect.right,
+                                bottom: rect.bottom,
+                                width: rect.width,
+                                height: rect.height
+                            }, { margin: 6, alignRight: true });
                         } else {
                             positionFloatingElement(targetMenu, rect);
                         }
@@ -3508,8 +3559,14 @@
                 if (!task.completedAt) {
                     task.completedAt = new Date().toISOString();
                 }
+                if (task.subtasks && Array.isArray(task.subtasks)) {
+                    task.subtasks.forEach(s => s.done = true);
+                }
             } else {
                 task.completedAt = null;
+                if (task.subtasks && Array.isArray(task.subtasks)) {
+                    task.subtasks.forEach(s => s.done = false);
+                }
             }
         }
 
@@ -4460,6 +4517,61 @@
             try { localStorage.setItem('ANV_5DAY_SNAPSHOTS', JSON.stringify(backups)); } catch(e) {}
             if (AppState.currentTab === 'manage') renderManageDashboard();
             showToast('5-Day Snapshot Created', 'Captured full task directory snapshot.');
+        }
+
+        function previewBackupSnapshot(index) {
+            let backups = [];
+            try { backups = JSON.parse(localStorage.getItem('ANV_5DAY_SNAPSHOTS') || '[]'); } catch(e) {}
+            const target = backups[index];
+            if (!target || !target.data) return;
+
+            const snapTasks = target.data.tasks || [];
+            const snapGroups = target.data.groups || [];
+
+            let html = `
+                <div class="fixed inset-0 bg-black/85 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-fade-in" id="snapshot-preview-modal">
+                    <div class="bg-[#121212] border border-white/10 rounded-2xl w-full max-w-lg p-5 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+                        <div class="flex items-center justify-between border-b border-white/5 pb-3">
+                            <div>
+                                <h3 class="text-xs font-extrabold text-white flex items-center space-x-2 uppercase tracking-wider">
+                                    <i data-lucide="archive" class="w-4 h-4 text-emerald-400"></i>
+                                    <span>${escapeHTML(target.label || 'Snapshot Preview')}</span>
+                                </h3>
+                                <div class="text-[10px] text-gray-400 font-mono mt-0.5">${new Date(target.timestamp).toLocaleString()} • ${snapTasks.length} Tasks</div>
+                            </div>
+                            <button onclick="document.getElementById('snapshot-preview-modal').remove()" class="p-1 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div class="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar">
+                            ${snapTasks.length === 0 ? '<div class="text-center py-8 text-xs text-gray-600">No tasks saved in this snapshot</div>' : snapTasks.map(t => {
+                                const group = snapGroups.find(g => g.id === t.groupId);
+                                return `
+                                    <div class="flex items-center justify-between bg-white/5 p-2.5 rounded-xl text-xs border border-white/5">
+                                        <div class="flex items-center space-x-2.5 min-w-0 flex-1">
+                                            <span class="w-2.5 h-2.5 rounded-full border flex-shrink-0" style="border-color: ${t.color || '#2997ff'}; background-color: ${t.done ? (t.color || '#2997ff') : 'transparent'};"></span>
+                                            <span class="text-white font-medium truncate ${t.done ? 'line-through text-gray-500' : ''}">${escapeHTML(t.title)}</span>
+                                        </div>
+                                        ${group ? `<span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-white/5 text-gray-400 flex-shrink-0">${escapeHTML(group.title)}</span>` : ''}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                        <div class="pt-2 border-t border-white/5 flex items-center justify-between space-x-3">
+                            <button onclick="document.getElementById('snapshot-preview-modal').remove()" class="btn-scale flex-1 py-2 bg-white/5 text-gray-300 rounded-xl text-xs font-semibold hover:bg-white/10 transition">
+                                Close Preview
+                            </button>
+                            <button onclick="document.getElementById('snapshot-preview-modal').remove(); restoreAutoSnapshot(${index});" class="btn-scale flex-1 py-2 bg-[#2997ff] text-black font-bold rounded-xl text-xs transition hover:bg-[#0066cc] hover:text-white">
+                                Restore This Snapshot
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = html;
+            document.body.appendChild(wrapper.firstElementChild);
+            lucide.createIcons();
         }
 
         function restoreAutoSnapshot(index) {
