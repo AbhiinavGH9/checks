@@ -288,11 +288,11 @@
                 <div id="inspector-content" class="flex-1 overflow-y-auto p-4 space-y-4 hidden">
                     
                     <!-- Header of Inspector Content -->
-                    <div class="flex items-center justify-between pb-2 border-b border-white/[0.04]">
-                        <span class="text-[10px] uppercase font-bold tracking-widest text-[#2997ff] flex items-center">
-                            <i data-lucide="sliders" class="w-3.5 h-3.5 mr-1.5"></i> Task details
+                    <div class="relative flex items-center justify-center pb-3 border-b border-white/[0.04]">
+                        <span class="text-xs uppercase font-bold tracking-widest text-[#2997ff] flex items-center justify-center">
+                            <i data-lucide="sliders" class="w-3.5 h-3.5 mr-1.5"></i> Task Details
                         </span>
-                        <button onclick="closeInspector()" class="text-gray-400 hover:text-white btn-scale p-1 bg-white/5 hover:bg-white/10 rounded-md">
+                        <button onclick="closeInspector()" class="absolute right-0 text-gray-400 hover:text-white btn-scale p-1 bg-white/5 hover:bg-white/10 rounded-md">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -397,7 +397,7 @@
                                 <div class="space-y-1 relative" id="ins-autodelete-dropdown-container">
                                     <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block mb-1">Auto-Deletion</label>
                                     <button type="button" onclick="toggleCustomDropdown('ins-autodelete-options', event)" class="w-full h-9 flex items-center justify-between bg-white/5 rounded-xl px-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] text-left border border-white/5">
-                                        <span id="ins-selected-autodelete-label" class="flex items-center space-x-2 truncate">Do not delete</span>
+                                        <span id="ins-selected-autodelete-label" class="flex items-center space-x-2 truncate">Default (27 Days)</span>
                                         <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500 flex-shrink-0 ml-1"></i>
                                     </button>
                                 </div>
@@ -420,22 +420,26 @@
                                 <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block">Duration (Hours)</label>
                                 <input type="number" id="ins-task-autodelete-custom" min="1" max="8760" value="24" onchange="updateInspectorCustomAutodelete(this.value)" class="w-full h-11 bg-white/5 text-xs text-white rounded-xl px-3.5 border border-white/5 focus:outline-none focus:ring-1 focus:ring-[#2997ff]">
                             </div>
+
+                            <!-- Export Task Action Inside Location & Settings -->
+                            <div class="pt-2">
+                                <button type="button" onclick="exportSingleTask()" class="w-full btn-scale flex items-center justify-center space-x-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white py-2.5 rounded-xl text-xs font-semibold border border-white/5 transition">
+                                    <i data-lucide="download" class="w-4 h-4 text-[#2997ff]"></i>
+                                    <span>Export Task Data (.JSON)</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                 </div>
 
                 <div id="inspector-footer" class="p-4 bg-[#0B0B0B] border-t border-white/[0.02] hidden">
-                    <div class="flex items-center justify-between space-x-2">
-                        <button onclick="handleDeleteTaskTrigger()" class="btn-scale flex items-center justify-center space-x-1.5 bg-red-500/10 text-red-400 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-red-500/20 transition">
-                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                            <span>Delete</span>
+                    <div class="flex items-center justify-between space-x-3">
+                        <button onclick="handleDeleteTaskTrigger()" class="btn-scale flex-1 flex items-center justify-center space-x-1.5 bg-red-500/10 text-red-400 px-4 py-2.5 rounded-xl text-xs font-semibold hover:bg-red-500/20 transition">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            <span>Delete Task</span>
                         </button>
-                        <button onclick="exportSingleTask()" class="btn-scale flex items-center justify-center space-x-1.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white px-3 py-2 rounded-xl text-xs font-semibold border border-white/5 transition">
-                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                            <span>Export</span>
-                        </button>
-                        <button onclick="closeInspector()" class="btn-scale flex-1 bg-white text-black px-4 py-2 rounded-xl text-xs font-bold transition hover:bg-gray-200">
+                        <button onclick="closeInspector()" class="btn-scale flex-1 bg-white text-black px-4 py-2.5 rounded-xl text-xs font-bold transition hover:bg-gray-200">
                             Close
                         </button>
                     </div>

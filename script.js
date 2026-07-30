@@ -979,10 +979,12 @@
                         showToast('Sync Activated', 'Ecosystem multi-device data channels synchronized.');
                         await performInitialDataSync();
                         subscribeToRealtimeSync();
+                        checkFiveDayAutoBackup();
                     }
                 } else {
                     if (localStorage.getItem('ANV_GUEST_MODE') === 'true') {
                         document.getElementById('auth-guard-screen').classList.add('hidden');
+                        checkFiveDayAutoBackup();
                     } else {
                         clearLocalState();
                         document.getElementById('auth-guard-screen').classList.remove('hidden');
@@ -1937,7 +1939,7 @@
                                             const hoursLeft = Math.floor((diffMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
                                             const text = daysLeft > 0 ? `${daysLeft}d ${hoursLeft}h left` : `${hoursLeft}h left`;
                                             return `
-                                                <span class="inline-flex items-center space-x-1.5 px-2 py-0.5 bg-red-500/20 text-red-300 rounded-md text-[10px] font-extrabold border border-red-500/40 shadow-sm" title="Deletes automatically in ${daysLeft} days, ${hoursLeft} hours">
+                                                <span class="inline-flex items-center space-x-1.5 px-2 py-0.5 bg-red-500/25 text-red-300 rounded-md text-[10px] font-extrabold border border-red-500/50 shadow-md opacity-100 z-10" title="Deletes automatically in ${daysLeft} days, ${hoursLeft} hours">
                                                     <i data-lucide="timer" class="w-3 h-3 text-red-400 flex-shrink-0"></i>
                                                     <span>${text}</span>
                                                 </span>
@@ -2292,6 +2294,54 @@
                             <i data-lucide="alert-triangle" class="w-4 h-4"></i>
                             <span>Delete All Groups</span>
                         </button>
+                    <div class="bg-[#121212] p-5 rounded-2xl border border-white/[0.04] flex flex-col justify-between md:col-span-2">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center space-x-2">
+                                    <span class="p-1.5 rounded-lg bg-white/5 text-[#2997ff]"><i data-lucide="database" class="w-4 h-4"></i></span>
+                                    <h4 class="text-xs font-bold text-white uppercase tracking-wider">Automated Studio Backups (5-Day Snapshots)</h4>
+                                </div>
+                                <span class="bg-[#2997ff]/10 text-[#2997ff] text-xs font-mono px-3 py-1 rounded-full border border-[#2997ff]/20">Auto-Rolling</span>
+                            </div>
+                            <p class="text-[11px] text-gray-500 mb-4 leading-relaxed">System automatically captures full data snapshots every 5 days. Old 5-day cycles are automatically rotated to conserve space.</p>
+                            
+                            <div class="space-y-2 max-h-60 overflow-y-auto pr-1 mb-4" id="auto-backups-list">
+                                ${(() => {
+                                    let backups = [];
+                                    try { backups = JSON.parse(localStorage.getItem('ANV_5DAY_SNAPSHOTS') || '[]'); } catch(e) {}
+                                    if (backups.length === 0) {
+                                        return `<div class="text-center py-6 text-xs text-gray-600 border border-dashed border-white/5 rounded-xl">No 5-day auto snapshots captured yet. Triggering first cycle...</div>`;
+                                    }
+                                    return backups.map((b, idx) => `
+                                        <div class="flex items-center justify-between bg-white/5 p-3 rounded-xl text-xs hover:bg-white/10 transition border border-white/5">
+                                            <div class="flex items-center space-x-3">
+                                                <i data-lucide="archive" class="w-4 h-4 text-emerald-400"></i>
+                                                <div>
+                                                    <div class="text-white font-semibold">${escapeHTML(b.label || '5-Day Full Backup Snapshot')}</div>
+                                                    <div class="text-[10px] text-gray-400 font-mono mt-0.5">${new Date(b.timestamp).toLocaleString()} • ${b.taskCount || 0} Tasks • ${b.groupCount || 0} Groups</div>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <button onclick="restoreAutoSnapshot(${idx})" class="btn-scale bg-[#2997ff]/15 hover:bg-[#2997ff] text-[#2997ff] hover:text-black font-bold px-3 py-1.5 rounded-lg text-xs transition flex items-center space-x-1.5">
+                                                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                                                    <span>Restore Snapshot</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `).join('');
+                                })()}
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3 pt-2">
+                            <button onclick="triggerManualSnapshot()" class="btn-scale flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold border border-white/5 transition flex items-center justify-center space-x-2">
+                                <i data-lucide="camera" class="w-4 h-4 text-[#2997ff]"></i>
+                                <span>Capture 5-Day Snapshot Now</span>
+                            </button>
+                            <button onclick="triggerImport()" class="btn-scale flex-1 py-2.5 bg-[#2997ff] hover:bg-[#0066cc] text-black hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2">
+                                <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                                <span>Import Previous Backup File</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -2755,6 +2805,9 @@
         window.showGroupSubmenu = showGroupSubmenu;
         window.hideGroupSubmenu = hideGroupSubmenu;
         window.exportSingleTask = exportSingleTask;
+        window.triggerManualSnapshot = triggerManualSnapshot;
+        window.restoreAutoSnapshot = restoreAutoSnapshot;
+        window.checkFiveDayAutoBackup = checkFiveDayAutoBackup;
 
         function handleFeedContextMenu(event) {
             if (event.target.closest('.group-card') || 
@@ -3639,13 +3692,14 @@
             autoDeleteDropdownContainer.innerHTML = '';
 
             const policies = [
+                { value: 'default', label: 'Default (27 Days)' },
                 { value: 'never', label: 'Do not delete' },
                 { value: '1day', label: '1 Day after' },
                 { value: '1week', label: '1 Week after' },
                 { value: 'custom', label: 'Custom duration' }
             ];
 
-            let chosenPolicyLabel = 'Do not delete';
+            let chosenPolicyLabel = 'Default (27 Days)';
             policies.forEach(p => {
                 const optBtn = document.createElement('button');
                 optBtn.type = 'button';
@@ -3654,7 +3708,7 @@
                 optBtn.textContent = p.label;
                 autoDeleteDropdownContainer.appendChild(optBtn);
 
-                if (task.autoDelete === p.value) chosenPolicyLabel = p.label;
+                if (task.autoDelete === p.value || (!task.autoDelete && p.value === 'default')) chosenPolicyLabel = p.label;
             });
             document.getElementById('ins-selected-autodelete-label').textContent = chosenPolicyLabel;
 
@@ -4342,6 +4396,76 @@
             if (activeMarker) activeMarker.classList.remove('hidden');
 
             renderTaskFeed();
+        }
+
+        function checkFiveDayAutoBackup() {
+            let backups = [];
+            try { backups = JSON.parse(localStorage.getItem('ANV_5DAY_SNAPSHOTS') || '[]'); } catch(e) {}
+            
+            const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
+            const lastBackupTime = backups.length > 0 ? backups[0].timestamp : 0;
+            
+            if (Date.now() - lastBackupTime >= FIVE_DAYS_MS || backups.length === 0) {
+                const snapshot = {
+                    id: 'snap-' + Date.now(),
+                    timestamp: Date.now(),
+                    label: `5-Day Full Backup (${new Date().toLocaleDateString()})`,
+                    taskCount: AppState.tasks.length,
+                    groupCount: AppState.groups.length,
+                    data: {
+                        tasks: JSON.parse(JSON.stringify(AppState.tasks)),
+                        projects: JSON.parse(JSON.stringify(AppState.projects)),
+                        groups: JSON.parse(JSON.stringify(AppState.groups))
+                    }
+                };
+                
+                // Rotation: Keep latest 5 snapshots, automatically replacing old 5-day backups
+                backups.unshift(snapshot);
+                if (backups.length > 5) backups = backups.slice(0, 5);
+                
+                try { localStorage.setItem('ANV_5DAY_SNAPSHOTS', JSON.stringify(backups)); } catch(e) {}
+            }
+        }
+
+        function triggerManualSnapshot() {
+            let backups = [];
+            try { backups = JSON.parse(localStorage.getItem('ANV_5DAY_SNAPSHOTS') || '[]'); } catch(e) {}
+            
+            const snapshot = {
+                id: 'snap-' + Date.now(),
+                timestamp: Date.now(),
+                label: `Manual 5-Day Snapshot (${new Date().toLocaleDateString()})`,
+                taskCount: AppState.tasks.length,
+                groupCount: AppState.groups.length,
+                data: {
+                    tasks: JSON.parse(JSON.stringify(AppState.tasks)),
+                    projects: JSON.parse(JSON.stringify(AppState.projects)),
+                    groups: JSON.parse(JSON.stringify(AppState.groups))
+                }
+            };
+            
+            backups.unshift(snapshot);
+            if (backups.length > 5) backups = backups.slice(0, 5);
+            
+            try { localStorage.setItem('ANV_5DAY_SNAPSHOTS', JSON.stringify(backups)); } catch(e) {}
+            if (AppState.currentTab === 'manage') renderManageDashboard();
+            showToast('5-Day Snapshot Created', 'Captured full task directory snapshot.');
+        }
+
+        function restoreAutoSnapshot(index) {
+            let backups = [];
+            try { backups = JSON.parse(localStorage.getItem('ANV_5DAY_SNAPSHOTS') || '[]'); } catch(e) {}
+            const target = backups[index];
+            if (!target || !target.data) return;
+            
+            showDeleteConfirmation(`Restore snapshot "${target.label}"? Current workspace data will be replaced.`, () => {
+                AppState.tasks = target.data.tasks || [];
+                AppState.projects = target.data.projects || [];
+                AppState.groups = target.data.groups || [];
+                syncDeviceDataChannels();
+                renderTaskFeed();
+                showToast('Backup Restored', `Restored ${target.taskCount} tasks from 5-day snapshot.`);
+            });
         }
 
         function exportData() {
