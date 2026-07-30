@@ -1913,8 +1913,8 @@
                                             </span>
                                         ` : ''}
                                         ${isTaskOnHold(task) && AppState.currentTab === 'done' ? `
-                                            <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 bg-[#2997ff]/15 text-[#2997ff] rounded text-[8px] font-bold border border-[#2997ff]/20 animate-fade-in" title="${task.holdUntil ? 'Auto-delete held until ' + new Date(task.holdUntil).toLocaleString() : 'Auto-delete held indefinitely'}">
-                                                <i data-lucide="lock" class="w-2.5 h-2.5 flex-shrink-0"></i>
+                                            <span class="inline-flex items-center space-x-1.5 px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded-md text-[10px] font-extrabold border border-amber-500/40 animate-fade-in shadow-sm" title="${task.holdUntil ? 'Auto-delete held until ' + new Date(task.holdUntil).toLocaleString() : 'Auto-delete held indefinitely'}">
+                                                <i data-lucide="pause-circle" class="w-3 h-3 text-amber-400 flex-shrink-0"></i>
                                                 <span>Deletion Held</span>
                                             </span>
                                         ` : ''}
@@ -1926,8 +1926,8 @@
                                             const hoursLeft = Math.floor((diffMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
                                             const text = daysLeft > 0 ? `${daysLeft}d ${hoursLeft}h left` : `${hoursLeft}h left`;
                                             return `
-                                                <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 bg-red-500/10 text-red-400 rounded text-[8px] font-bold border border-red-500/20" title="Deletes automatically in ${daysLeft} days, ${hoursLeft} hours">
-                                                    <i data-lucide="timer" class="w-2.5 h-2.5 flex-shrink-0"></i>
+                                                <span class="inline-flex items-center space-x-1.5 px-2 py-0.5 bg-red-500/20 text-red-300 rounded-md text-[10px] font-extrabold border border-red-500/40 shadow-sm" title="Deletes automatically in ${daysLeft} days, ${hoursLeft} hours">
+                                                    <i data-lucide="timer" class="w-3 h-3 text-red-400 flex-shrink-0"></i>
                                                     <span>${text}</span>
                                                 </span>
                                             `;
@@ -2397,28 +2397,25 @@
                 const isHeld = isDoneView ? (task ? task.holdDeletion : false) : (task ? !!task.isHeldTask : false);
                 
                 let holdLabel = 'Hold Task';
-                let holdIcon = 'pause-circle';
+                let holdIcon = isHeld ? 'play-circle' : 'pause-circle';
                 let holdColorClass = 'text-amber-400';
                 
                 if (isDoneView) {
                     holdLabel = isHeld ? 'Unhold Auto-Delete' : 'Hold Auto-Delete';
-                    holdIcon = isHeld ? 'unlock' : 'lock';
-                    holdColorClass = 'text-[#2997ff]';
                 } else {
                     holdLabel = isHeld ? 'Resume Task' : 'Hold Task';
-                    holdIcon = isHeld ? 'play-circle' : 'pause-circle';
                 }
 
                 menu.innerHTML = `
-                    <button onclick="contextToggleComplete()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-3 font-medium">
+                    <button onmouseenter="hideGroupSubmenu()" onclick="contextToggleComplete()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-3 font-medium">
                         <i data-lucide="check" class="w-4 h-4 text-gray-400"></i>
                         <span>Toggle Complete</span>
                     </button>
-                    <button onclick="handleUnifiedHoldAction()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-3 font-medium">
+                    <button onmouseenter="hideGroupSubmenu()" onclick="handleUnifiedHoldAction()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-3 font-medium">
                         <i data-lucide="${holdIcon}" class="w-4 h-4 ${holdColorClass}"></i>
                         <span>${holdLabel}</span>
                     </button>
-                    <button onclick="contextOpenDetails()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-3 font-medium">
+                    <button onmouseenter="hideGroupSubmenu()" onclick="contextOpenDetails()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-3 font-medium">
                         <i data-lucide="sliders" class="w-4 h-4 text-gray-400"></i>
                         <span>Edit Specifications</span>
                     </button>
@@ -2431,7 +2428,7 @@
                         <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-500"></i>
                     </button>
                     <div class="border-t border-white/5 my-1"></div>
-                    <button onclick="contextDeleteTask()" class="w-full text-left px-4 py-2 text-red-400 hover:bg-red-500/10 transition flex items-center space-x-3 font-medium">
+                    <button onmouseenter="hideGroupSubmenu()" onclick="contextDeleteTask()" class="w-full text-left px-4 py-2 text-red-400 hover:bg-red-500/10 transition flex items-center space-x-3 font-medium">
                         <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
                         <span>Delete Task</span>
                     </button>
@@ -2506,6 +2503,17 @@
         function hideGroupSubmenu() {
             const submenu = document.getElementById('group-submenu');
             if (submenu) hideFloatingElement(submenu);
+        }
+
+        function toggleHoldTaskState() {
+            hideContextMenu();
+            const task = AppState.tasks.find(t => t.id === contextSelectedTaskId);
+            if (task) {
+                task.isHeldTask = !task.isHeldTask;
+                syncDeviceDataChannels();
+                renderTaskFeed();
+                showToast(task.isHeldTask ? 'Task Placed on Hold' : 'Task Resumed', `"${task.title}" is ${task.isHeldTask ? 'now held on pause' : 'active again'}.`);
+            }
         }
 
         function handleUnifiedHoldAction() {
@@ -2735,6 +2743,10 @@
         window.closeHoldModal = closeHoldModal;
         window.toggleHoldUntilInput = toggleHoldUntilInput;
         window.handleApplyHold = handleApplyHold;
+        window.toggleHoldTaskState = toggleHoldTaskState;
+        window.handleUnifiedHoldAction = handleUnifiedHoldAction;
+        window.showGroupSubmenu = showGroupSubmenu;
+        window.hideGroupSubmenu = hideGroupSubmenu;
 
         function handleFeedContextMenu(event) {
             if (event.target.closest('.group-card') || 
