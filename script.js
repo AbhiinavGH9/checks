@@ -1350,16 +1350,16 @@
         }
 
         async function executeLogoutAction() {
-            if (supabaseClient) {
+            localStorage.removeItem('ANV_GUEST_MODE');
+            if (supabaseClient && AppState.session) {
                 const { error } = await supabaseClient.auth.signOut();
                 if (error) {
                     console.error("Supabase signOut error:", error);
                 }
-            } else {
-                clearLocalState();
-                document.getElementById('auth-guard-screen').classList.remove('hidden');
-                showToast('Session Closed', 'Local storage device synchronization disconnected.');
             }
+            clearLocalState();
+            document.getElementById('auth-guard-screen').classList.remove('hidden');
+            showToast('Session Closed', 'Session ended successfully.');
         }
 
         function openProfileCustomizerModal() {
