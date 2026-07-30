@@ -1720,6 +1720,16 @@
 
             container.innerHTML = '';
 
+            if (AppState.currentTab === 'done') {
+                const infoBanner = document.createElement('div');
+                infoBanner.className = "mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center space-x-3 text-xs text-blue-300";
+                infoBanner.innerHTML = `
+                    <i data-lucide="info" class="w-4 h-4 text-[#2997ff] flex-shrink-0"></i>
+                    <span>Completed tasks are automatically deleted after 27 days unless <strong>Auto-Delete Hold</strong> is applied.</span>
+                `;
+                container.appendChild(infoBanner);
+            }
+
             if (sorted.length === 0) {
                 emptyScreen.classList.remove('hidden');
                 emptyScreen.classList.add('flex');
@@ -1908,6 +1918,20 @@
                                                 <span>Deletion Held</span>
                                             </span>
                                         ` : ''}
+                                        ${task.done && task.completedAt && !isTaskOnHold(task) ? (() => {
+                                            const completedMs = new Date(task.completedAt).getTime();
+                                            const totalLifespan = 27 * 24 * 60 * 60 * 1000;
+                                            const diffMs = Math.max(0, (completedMs + totalLifespan) - Date.now());
+                                            const daysLeft = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+                                            const hoursLeft = Math.floor((diffMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+                                            const text = daysLeft > 0 ? `${daysLeft}d ${hoursLeft}h left` : `${hoursLeft}h left`;
+                                            return `
+                                                <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 bg-red-500/10 text-red-400 rounded text-[8px] font-bold border border-red-500/20" title="Deletes automatically in ${daysLeft} days, ${hoursLeft} hours">
+                                                    <i data-lucide="timer" class="w-2.5 h-2.5 flex-shrink-0"></i>
+                                                    <span>${text}</span>
+                                                </span>
+                                            `;
+                                        })() : ''}
                                     </div>
                                     ${task.notes && task.notes.length > 0 ? `
                                         <div class="flex flex-col gap-1 mt-2">
@@ -2369,53 +2393,49 @@
                 });
             } else {
                 const task = AppState.tasks.find(t => t.id === taskId);
-                const isHeldDel = task ? task.holdDeletion : false;
-                const isHeldTask = task ? !!task.isHeldTask : false;
+                const isDoneView = (AppState.currentTab === 'done');
+                const isHeld = isDoneView ? (task ? task.holdDeletion : false) : (task ? !!task.isHeldTask : false);
+                
+                let holdLabel = 'Hold Task';
+                let holdIcon = 'pause-circle';
+                let holdColorClass = 'text-amber-400';
+                
+                if (isDoneView) {
+                    holdLabel = isHeld ? 'Unhold Auto-Delete' : 'Hold Auto-Delete';
+                    holdIcon = isHeld ? 'unlock' : 'lock';
+                    holdColorClass = 'text-[#2997ff]';
+                } else {
+                    holdLabel = isHeld ? 'Resume Task' : 'Hold Task';
+                    holdIcon = isHeld ? 'play-circle' : 'pause-circle';
+                }
 
                 menu.innerHTML = `
-                    <button onclick="contextToggleComplete()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                        <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                    <button onclick="contextToggleComplete()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-3 font-medium">
+                        <i data-lucide="check" class="w-4 h-4 text-gray-400"></i>
                         <span>Toggle Complete</span>
                     </button>
-                    <button onclick="toggleHoldTaskState()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                        <i data-lucide="${isHeldTask ? 'play-circle' : 'pause-circle'}" class="w-3.5 h-3.5 text-amber-400"></i>
-                        <span>${isHeldTask ? 'Resume Task' : 'Hold Task'}</span>
+                    <button onclick="handleUnifiedHoldAction()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-3 font-medium">
+                        <i data-lucide="${holdIcon}" class="w-4 h-4 ${holdColorClass}"></i>
+                        <span>${holdLabel}</span>
                     </button>
-                    <button onclick="contextOpenDetails()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                        <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+                    <button onclick="contextOpenDetails()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-3 font-medium">
+                        <i data-lucide="sliders" class="w-4 h-4 text-gray-400"></i>
                         <span>Edit Specifications</span>
                     </button>
-                    <div class="border-t border-white/[0.03] my-1"></div>
-                    <button onclick="triggerTaskHold(${isHeldDel})" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                        <i data-lucide="${isHeldDel ? 'unlock' : 'lock'}" class="w-3.5 h-3.5 text-[#2997ff]"></i>
-                        <span>${isHeldDel ? 'Unhold Auto-Delete' : 'Hold Auto-Delete'}</span>
+                    <div class="border-t border-white/5 my-1"></div>
+                    <button onmouseenter="showGroupSubmenu(event)" onclick="showGroupSubmenu(event)" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium group">
+                        <div class="flex items-center space-x-3">
+                            <i data-lucide="folder-output" class="w-4 h-4 text-gray-400 group-hover:text-white"></i>
+                            <span>Move to group</span>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-500"></i>
                     </button>
-                    <div class="border-t border-white/[0.03] my-1"></div>
-                    <div class="px-4 py-1.5 text-[9px] font-bold tracking-widest uppercase text-gray-500">Add to group</div>
-                    <div id="context-groups-list" class="max-h-32 overflow-y-auto"></div>
-                    <div class="border-t border-white/[0.03] my-1"></div>
-                    <button onclick="contextDeleteTask()" class="w-full text-left px-4 py-2 hover:bg-red-500/10 hover:text-red-400 transition flex items-center space-x-2">
-                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    <div class="border-t border-white/5 my-1"></div>
+                    <button onclick="contextDeleteTask()" class="w-full text-left px-4 py-2 text-red-400 hover:bg-red-500/10 transition flex items-center space-x-3 font-medium">
+                        <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
                         <span>Delete Task</span>
                     </button>
                 `;
-                
-                const groupsList = menu.querySelector('#context-groups-list');
-                groupsList.innerHTML = '';
-                
-                const ungroupBtn = document.createElement('button');
-                ungroupBtn.onclick = () => contextMoveToGroup(null);
-                ungroupBtn.className = "w-full text-left px-4 py-1.5 hover:bg-white/5 hover:text-white transition truncate flex items-center space-x-1.5 text-xs text-gray-300";
-                ungroupBtn.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span><span>No Group / Ungrouped</span>`;
-                groupsList.appendChild(ungroupBtn);
-
-                AppState.groups.forEach(group => {
-                    const groupBtn = document.createElement('button');
-                    groupBtn.onclick = () => contextMoveToGroup(group.id);
-                    groupBtn.className = "w-full text-left px-4 py-1.5 hover:bg-white/5 hover:text-white transition truncate flex items-center space-x-1.5 text-xs text-gray-300";
-                    groupBtn.innerHTML = `<span class="w-1.5 h-1.5 rounded-full" style="background-color: ${group.color || '#2997ff'}"></span><span>${escapeHTML(group.title)}</span>`;
-                    groupsList.appendChild(groupBtn);
-                });
             }
             
             lucide.createIcons();
@@ -2443,6 +2463,59 @@
             if (menu) hideFloatingElement(menu);
             const counterMenu = document.getElementById('counter-context-menu');
             if (counterMenu) hideFloatingElement(counterMenu);
+            hideGroupSubmenu();
+        }
+
+        function showGroupSubmenu(event) {
+            if (event) event.stopPropagation();
+            const submenu = document.getElementById('group-submenu');
+            if (!submenu) return;
+
+            let html = `
+                <button onclick="contextMoveToGroup(null)" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2 font-medium truncate">
+                    <span class="w-2 h-2 rounded-full bg-gray-500 flex-shrink-0"></span>
+                    <span>No Group / Ungrouped</span>
+                </button>
+            `;
+
+            AppState.groups.forEach(g => {
+                html += `
+                    <button onclick="contextMoveToGroup('${g.id}')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2 font-medium truncate">
+                        <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${g.color || '#2997ff'}"></span>
+                        <span class="truncate">${escapeHTML(g.title)}</span>
+                    </button>
+                `;
+            });
+
+            submenu.innerHTML = html;
+            lucide.createIcons();
+
+            const parentMenu = document.getElementById('context-menu');
+            const parentRect = parentMenu ? parentMenu.getBoundingClientRect() : { right: event.clientX, top: event.clientY };
+            
+            positionFloatingElement(submenu, {
+                left: parentRect.right - 4,
+                top: parentRect.top,
+                right: parentRect.right,
+                bottom: parentRect.bottom,
+                width: 0,
+                height: 0
+            });
+        }
+
+        function hideGroupSubmenu() {
+            const submenu = document.getElementById('group-submenu');
+            if (submenu) hideFloatingElement(submenu);
+        }
+
+        function handleUnifiedHoldAction() {
+            if (AppState.currentTab === 'done') {
+                const task = AppState.tasks.find(t => t.id === contextSelectedTaskId);
+                const isHeld = task ? task.holdDeletion : false;
+                triggerTaskHold(isHeld);
+            } else {
+                toggleHoldTaskState();
+            }
         }
 
         function showGroupContextMenu(event, groupId) {

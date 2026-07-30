@@ -47,23 +47,23 @@
                 <button onclick="toggleCustomDropdown('nav-menu-dropdown-options', event)" class="btn-scale p-2 bg-white/5 text-white hover:bg-white/10 rounded-lg transition" title="More Options">
                     <i data-lucide="more-horizontal" class="w-4 h-4"></i>
                 </button>
-                <div id="nav-menu-dropdown-options" class="hidden w-44 bg-[#141414] rounded-xl shadow-2xl z-50 py-1 border border-white/[0.05]">
-                    <button type="button" onclick="openProfileCustomizerModal()" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                        <i data-lucide="user" class="w-3.5 h-3.5 text-gray-400"></i>
+                <div id="nav-menu-dropdown-options" class="hidden w-52 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-50 py-2 text-xs text-gray-200 backdrop-blur-xl">
+                    <button type="button" onclick="openProfileCustomizerModal()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2.5 font-medium">
+                        <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
                         <span>Account Options</span>
                     </button>
-                    <div class="border-t border-white/[0.04] my-1"></div>
-                    <button type="button" onclick="triggerImport()" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                        <i data-lucide="upload" class="w-3.5 h-3.5 text-gray-400"></i>
+                    <div class="border-t border-white/5 my-1"></div>
+                    <button type="button" onclick="triggerImport()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2.5 font-medium">
+                        <i data-lucide="upload" class="w-4 h-4 text-gray-400"></i>
                         <span>Import Backup</span>
                     </button>
-                    <button type="button" onclick="exportData()" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                        <i data-lucide="download" class="w-3.5 h-3.5 text-gray-400"></i>
+                    <button type="button" onclick="exportData()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2.5 font-medium">
+                        <i data-lucide="download" class="w-4 h-4 text-gray-400"></i>
                         <span>Export Backup</span>
                     </button>
-                    <div class="border-t border-white/[0.04] my-1"></div>
-                    <button type="button" onclick="executeLogoutAction()" class="w-full text-left px-4 py-2 text-xs text-red-400 hover:bg-red-500/10 transition flex items-center space-x-2">
-                        <i data-lucide="log-out" class="w-3.5 h-3.5 text-red-400"></i>
+                    <div class="border-t border-white/5 my-1"></div>
+                    <button type="button" onclick="executeLogoutAction()" class="w-full text-left px-4 py-2 text-red-400 hover:bg-red-500/10 transition flex items-center space-x-2.5 font-medium">
+                        <i data-lucide="log-out" class="w-4 h-4 text-red-400"></i>
                         <span>Disconnect Session</span>
                     </button>
                 </div>
@@ -234,20 +234,20 @@
                                 <span id="selected-sort-label">Date created</span>
                                 <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-400"></i>
                             </button>
-                            <div id="sort-dropdown-options" class="hidden w-44 bg-[#141414] rounded-xl shadow-2xl z-50 py-1 border border-white/[0.05]">
-                                <button type="button" onclick="selectSortOption('created', 'Date created')" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center justify-between">
+                            <div id="sort-dropdown-options" class="hidden w-48 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-50 py-2 text-xs text-gray-200 backdrop-blur-xl">
+                                <button type="button" onclick="selectSortOption('created', 'Date created')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium">
                                     <span>Date created</span>
                                     <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-created"><i data-lucide="check-square" class="w-3.5 h-3.5"></i></span>
                                 </button>
-                                <button type="button" onclick="selectSortOption('due', 'Due date')" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center justify-between">
+                                <button type="button" onclick="selectSortOption('due', 'Due date')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium">
                                     <span>Due date</span>
                                     <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-due"><i data-lucide="check-square" class="w-3.5 h-3.5"></i></span>
                                 </button>
-                                <button type="button" onclick="selectSortOption('priority', 'Priority level')" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center justify-between">
+                                <button type="button" onclick="selectSortOption('priority', 'Priority level')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium">
                                     <span>Priority level</span>
                                     <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-priority"><i data-lucide="check-square" class="w-3.5 h-3.5"></i></span>
                                 </button>
-                                <button type="button" onclick="selectSortOption('alphabetical', 'Alphabetical')" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center justify-between">
+                                <button type="button" onclick="selectSortOption('alphabetical', 'Alphabetical')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium">
                                     <span>Alphabetical</span>
                                     <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-alphabetical"><i data-lucide="check-square" class="w-3.5 h-3.5"></i></span>
                                 </button>
@@ -483,32 +483,33 @@
     </div>
 
     <!-- Toggling task counter parameter context window -->
-    <div id="counter-context-menu" class="hidden fixed bg-[#141414] border border-white/[0.05] rounded-xl shadow-2xl z-[100] py-1.5 w-48 text-xs text-gray-300 animate-fade-in">
-        <button onclick="changeCounterTargetPolicy('tasks')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between">
+    <div id="counter-context-menu" class="hidden fixed bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-[100] py-2 w-52 text-xs text-gray-200 animate-fade-in backdrop-blur-xl">
+        <button onclick="changeCounterTargetPolicy('tasks')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium">
             <span>Quantify Parent Tasks</span>
             <span id="counter-policy-tasks-marker" class="text-[#2997ff] hidden"><i data-lucide="check" class="w-3.5 h-3.5"></i></span>
         </button>
-        <button onclick="changeCounterTargetPolicy('subtasks')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between">
+        <button onclick="changeCounterTargetPolicy('subtasks')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium">
             <span>Quantify Subtasks Only</span>
             <span id="counter-policy-subtasks-marker" class="text-[#2997ff] hidden"><i data-lucide="check" class="w-3.5 h-3.5"></i></span>
         </button>
     </div>
 
-    <div id="context-menu" class="hidden fixed bg-[#141414] border border-white/[0.05] rounded-xl shadow-2xl z-[100] py-1.5 w-48 text-xs text-gray-300 animate-fade-in"></div>
+    <div id="context-menu" class="hidden fixed bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-[100] py-2 w-56 text-xs text-gray-200 animate-fade-in backdrop-blur-xl"></div>
+    <div id="group-submenu" class="hidden fixed bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-[110] py-2 w-52 text-xs text-gray-200 animate-fade-in backdrop-blur-xl"></div>
 
-    <div id="group-context-menu" class="hidden fixed bg-[#141414] border border-white/[0.05] rounded-xl shadow-2xl z-[100] py-1.5 w-48 text-xs text-gray-300 animate-fade-in">
-        <button onclick="openEditGroupModalTrigger()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-            <i data-lucide="edit" class="w-3.5 h-3.5"></i>
+    <div id="group-context-menu" class="hidden fixed bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-[100] py-2 w-52 text-xs text-gray-200 animate-fade-in backdrop-blur-xl">
+        <button onclick="openEditGroupModalTrigger()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2 font-medium">
+            <i data-lucide="edit" class="w-4 h-4 text-gray-400"></i>
             <span>Edit Group settings</span>
         </button>
-        <div class="border-t border-white/[0.03] my-1"></div>
-        <button onclick="contextDeleteGroupTrigger()" class="w-full text-left px-4 py-2 hover:bg-red-500/10 hover:text-red-400 transition flex items-center space-x-2">
-            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+        <div class="border-t border-white/5 my-1"></div>
+        <button onclick="contextDeleteGroupTrigger()" class="w-full text-left px-4 py-2 hover:bg-red-500/10 hover:text-red-400 transition flex items-center space-x-2 font-medium">
+            <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
             <span>Delete Group Column</span>
         </button>
     </div>
 
-    <div id="feed-context-menu" class="hidden fixed bg-[#141414] border border-white/[0.05] rounded-xl shadow-2xl z-[100] py-1.5 w-48 text-xs text-gray-300 animate-fade-in">
+    <div id="feed-context-menu" class="hidden fixed bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-[100] py-2 w-52 text-xs text-gray-200 animate-fade-in backdrop-blur-xl">
         <button onclick="bulkCompleteAllFiltered()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
             <i data-lucide="check-square" class="w-3.5 h-3.5"></i>
             <span>Complete all</span>
