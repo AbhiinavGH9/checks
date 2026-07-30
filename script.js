@@ -57,7 +57,8 @@
                 updated_at: task.updatedAt || new Date().toISOString(),
                 completed_at: task.completedAt || null,
                 hold_deletion: !!task.holdDeletion,
-                hold_until: task.holdUntil || null
+                hold_until: task.holdUntil || null,
+                is_held_task: !!task.isHeldTask
             };
         }
 
@@ -80,7 +81,8 @@
                 updatedAt: dbTask.updated_at || new Date().toISOString(),
                 completedAt: dbTask.completed_at || null,
                 holdDeletion: !!dbTask.hold_deletion,
-                holdUntil: dbTask.hold_until || null
+                holdUntil: dbTask.hold_until || null,
+                isHeldTask: !!dbTask.is_held_task
             };
         }
 
@@ -388,11 +390,11 @@
             }
 
             // Decide horizontal placement
-            let left = anchorRect.left;
+            let left = options.alignRight ? (anchorRect.right - menuWidth) : anchorRect.left;
             let fitsLeft = left + menuWidth + margin <= window.innerWidth;
             let fitsRight = anchorRect.right - menuWidth >= margin;
 
-            if (!fitsLeft && fitsRight) {
+            if (!options.alignRight && !fitsLeft && fitsRight) {
                 left = anchorRect.right - menuWidth;
             } else if (!fitsLeft && !fitsRight) {
                 left = margin;
@@ -1782,10 +1784,10 @@
                          </span>
                          <i data-lucide="${groupIcon}" class="w-4 h-4 flex-shrink-0" style="color: ${groupColor};"></i>
                          <span class="text-xs font-bold text-white uppercase tracking-wider">${escapeHTML(title)}</span>
-                         ${isGroupHeld ? `
+                         ${isGroupHeld && AppState.currentTab === 'done' ? `
                              <span class="inline-flex items-center px-1.5 py-0.5 bg-[#2997ff]/10 text-[#2997ff] rounded text-[8px] font-bold border border-[#2997ff]/20" title="${group.holdUntil ? 'Column auto-delete held until ' + new Date(group.holdUntil).toLocaleString() : 'Column auto-delete held indefinitely'}">
                                  <i data-lucide="lock" class="w-2.5 h-2.5 flex-shrink-0 mr-0.5"></i>
-                                 <span>Held</span>
+                                 <span>Deletion Held</span>
                              </span>
                          ` : ''}
                          <span class="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">${tasks.length}</span>
@@ -1894,10 +1896,16 @@
                                                 <span>${subDone}/${subTotal}</span>
                                             </span>
                                         ` : ''}
-                                        ${isTaskOnHold(task) ? `
+                                        ${task.isHeldTask ? `
+                                            <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 bg-amber-500/15 text-amber-400 rounded text-[8px] font-bold border border-amber-500/20 animate-fade-in" title="Task is paused on hold">
+                                                <i data-lucide="pause-circle" class="w-2.5 h-2.5 flex-shrink-0"></i>
+                                                <span>Task On Hold</span>
+                                            </span>
+                                        ` : ''}
+                                        ${isTaskOnHold(task) && AppState.currentTab === 'done' ? `
                                             <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 bg-[#2997ff]/15 text-[#2997ff] rounded text-[8px] font-bold border border-[#2997ff]/20 animate-fade-in" title="${task.holdUntil ? 'Auto-delete held until ' + new Date(task.holdUntil).toLocaleString() : 'Auto-delete held indefinitely'}">
                                                 <i data-lucide="lock" class="w-2.5 h-2.5 flex-shrink-0"></i>
-                                                <span>Held</span>
+                                                <span>Deletion Held</span>
                                             </span>
                                         ` : ''}
                                     </div>
@@ -2361,21 +2369,26 @@
                 });
             } else {
                 const task = AppState.tasks.find(t => t.id === taskId);
-                const isHeld = task ? task.holdDeletion : false;
+                const isHeldDel = task ? task.holdDeletion : false;
+                const isHeldTask = task ? !!task.isHeldTask : false;
 
                 menu.innerHTML = `
                     <button onclick="contextToggleComplete()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
                         <i data-lucide="check" class="w-3.5 h-3.5"></i>
                         <span>Toggle Complete</span>
                     </button>
+                    <button onclick="toggleHoldTaskState()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
+                        <i data-lucide="${isHeldTask ? 'play-circle' : 'pause-circle'}" class="w-3.5 h-3.5 text-amber-400"></i>
+                        <span>${isHeldTask ? 'Resume Task' : 'Hold Task'}</span>
+                    </button>
                     <button onclick="contextOpenDetails()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
                         <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
                         <span>Edit Specifications</span>
                     </button>
                     <div class="border-t border-white/[0.03] my-1"></div>
-                    <button onclick="triggerTaskHold(${isHeld})" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                        <i data-lucide="${isHeld ? 'unlock' : 'lock'}" class="w-3.5 h-3.5 text-[#2997ff]"></i>
-                        <span>${isHeld ? 'Unhold Auto-Delete' : 'Hold Auto-Delete'}</span>
+                    <button onclick="triggerTaskHold(${isHeldDel})" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
+                        <i data-lucide="${isHeldDel ? 'unlock' : 'lock'}" class="w-3.5 h-3.5 text-[#2997ff]"></i>
+                        <span>${isHeldDel ? 'Unhold Auto-Delete' : 'Hold Auto-Delete'}</span>
                     </button>
                     <div class="border-t border-white/[0.03] my-1"></div>
                     <div class="px-4 py-1.5 text-[9px] font-bold tracking-widest uppercase text-gray-500">Add to group</div>
@@ -3312,7 +3325,11 @@
                     if (!isModalDropdown) {
                         const triggerBtn = (event && event.currentTarget) || (event && event.target && event.target.closest('button'));
                         const rect = triggerBtn ? triggerBtn.getBoundingClientRect() : { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
-                        positionFloatingElement(targetMenu, rect);
+                        if (menuId === 'nav-menu-dropdown-options' && triggerBtn) {
+                            positionFloatingElement(targetMenu, rect, { margin: 4, alignRight: true });
+                        } else {
+                            positionFloatingElement(targetMenu, rect);
+                        }
                     }
                 } else {
                     hideFloatingElement(targetMenu);
@@ -4268,16 +4285,16 @@
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             
-            toast.className = "p-4 bg-[#121212] text-white rounded-xl shadow-2xl flex items-start space-x-3.5 max-w-sm pointer-events-auto opacity-0 transform translate-y-1 transition duration-150 ease-out border border-white/[0.04]";
+            toast.className = "px-4 py-2.5 bg-[#141414] text-white rounded-full shadow-2xl flex items-center space-x-3 max-w-sm pointer-events-auto opacity-0 transform translate-y-1 transition duration-200 ease-out border border-white/10 backdrop-blur-md";
             toast.innerHTML = `
-                <div class="p-1.5 rounded-lg bg-[#2997ff]/10 text-[#2997ff] flex-shrink-0">
-                    <i data-lucide="indigo" class="w-4 h-4"></i>
+                <div class="p-1 rounded-full bg-[#2997ff]/15 text-[#2997ff] flex-shrink-0">
+                    <i data-lucide="info" class="w-3.5 h-3.5"></i>
                 </div>
-                <div class="flex-1 min-w-0">
-                    <h5 class="text-xs font-bold tracking-tight">${escapeHTML(title)}</h5>
-                    <p class="text-[11px] text-gray-400 mt-0.5 leading-relaxed truncate">${escapeHTML(msg)}</p>
+                <div class="flex-1 min-w-0 flex items-center space-x-1.5">
+                    <span class="text-xs font-bold tracking-tight text-white whitespace-nowrap">${escapeHTML(title)}:</span>
+                    <span class="text-[11px] text-gray-300 truncate">${escapeHTML(msg)}</span>
                 </div>
-                <button onclick="this.closest('.pointer-events-auto').remove()" class="p-1 hover:bg-white/5 rounded-md text-gray-500 hover:text-white transition flex-shrink-0 btn-scale" title="Dismiss Alert">
+                <button onclick="this.closest('.pointer-events-auto').remove()" class="p-1 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition flex-shrink-0 btn-scale" title="Dismiss Alert">
                     <i data-lucide="x" class="w-3.5 h-3.5"></i>
                 </button>
             `;
