@@ -11,35 +11,46 @@
             transform-origin: top left;
             animation: pop-down-menu 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
+
         @keyframes pop-down-menu {
             0% {
                 opacity: 0;
                 transform: scale(0.94) translateY(-6px);
             }
+
             100% {
                 opacity: 1;
                 transform: scale(1) translateY(0);
             }
         }
-        
+
         @supports not (display: grid) {
-            .grid { display: flex; flex-wrap: wrap; }
+            .grid {
+                display: flex;
+                flex-wrap: wrap;
+            }
         }
+
         @supports not (backdrop-filter: blur(1px)) {
-            .backdrop-blur-md { background: rgba(0, 0, 0, 0.95) !important; }
+            .backdrop-blur-md {
+                background: rgba(0, 0, 0, 0.95) !important;
+            }
         }
-        
+
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
         }
+
         ::-webkit-scrollbar-track {
             background: #0A0A0A;
         }
+
         ::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.15);
             border-radius: 9999px;
         }
+
         ::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.3);
         }
@@ -47,6 +58,7 @@
         .btn-scale {
             transition: transform 0.1s ease, background-color 0.15s ease, opacity 0.15s ease;
         }
+
         .btn-scale:active {
             transform: scale(0.96);
         }
@@ -55,7 +67,9 @@
             width: 4px;
             transition: background-color 0.2s ease;
         }
-        .resize-handle:hover, .resize-handle.active {
+
+        .resize-handle:hover,
+        .resize-handle.active {
             background-color: #2997ff !important;
             cursor: col-resize;
         }
@@ -79,14 +93,23 @@
         .tick-animation {
             animation: tick-scale-pop 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards;
         }
+
         @keyframes tick-scale-pop {
-            0% { transform: scale(0.4); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
+            0% {
+                transform: scale(0.4);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
+
         .no-scrollbar {
             -ms-overflow-style: none;
             scrollbar-width: none;
@@ -112,21 +135,36 @@
             z-index: 90 !important;
             border-radius: 1rem !important;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
-            box-shadow: -10px 0 40px rgba(0, 0, 0, 0.7), 0 20px 40px rgba(0, 0, 0, 0.8) !important;
+            box-shadow: none !important;
             backdrop-filter: blur(20px) !important;
             background-color: #0d0d0d !important;
             transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, width 0.15s ease !important;
         }
-        #inspector-panel[style*="width: 0px"], #inspector-panel[style*="width:0px"] {
+
+        /* Hide scrollbars inside Inspector panel */
+        #inspector-panel *, #inspector-content {
+            -ms-overflow-style: none !important;
+            scrollbar-width: none !important;
+        }
+        #inspector-panel *::-webkit-scrollbar, #inspector-content::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        #inspector-panel[style*="width: 0px"],
+        #inspector-panel[style*="width:0px"] {
             transform: translateX(110%) !important;
             opacity: 0 !important;
             pointer-events: none !important;
         }
+
         #inspector-panel:not([style*="width: 0px"]):not([style*="width:0px"]) {
             transform: translateX(0) !important;
             opacity: 1 !important;
             pointer-events: auto !important;
         }
+
         #inspector-resizer {
             position: fixed !important;
             top: 65px !important;
@@ -135,7 +173,10 @@
         }
 
         @media (max-width: 767px) {
-            input, textarea, select {
+
+            input,
+            textarea,
+            select {
                 font-size: 16px !important;
             }
 
@@ -148,12 +189,14 @@
                 height: calc(100% - 53px) !important;
                 transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important;
             }
+
             #sidebar-panel {
                 transform: translateX(-100%) !important;
                 width: 0px !important;
                 opacity: 0;
                 pointer-events: none;
             }
+
             #sidebar-panel:not([style*="width: 0px"]):not([style*="width:0px"]) {
                 transform: translateX(0) !important;
                 width: 280px !important;
@@ -162,6 +205,7 @@
                 pointer-events: auto;
                 box-shadow: 10px 0 30px rgba(0, 0, 0, 0.6);
             }
+
             #sidebar-resizer {
                 display: none !important;
             }
@@ -173,6 +217,7 @@
                 height: calc(100vh - 53px) !important;
                 border-radius: 0 !important;
             }
+
             #inspector-resizer {
                 display: none !important;
             }
@@ -205,6 +250,7 @@
             #mobile-drawer-backdrop {
                 backdrop-filter: blur(4px);
             }
+
             #mobile-drawer {
                 box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
             }
@@ -215,20 +261,25 @@
                 overflow-y: auto !important;
                 max-width: 95vw !important;
             }
-            #task-modal-container > div:first-child {
+
+            #task-modal-container>div:first-child {
                 width: 100% !important;
                 flex-shrink: 1 !important;
             }
+
             #new-task-customization-panel {
                 width: 100% !important;
                 border-left: none !important;
                 border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
             }
-            #new-task-customization-panel > div {
+
+            #new-task-customization-panel>div {
                 width: 100% !important;
             }
 
-            #project-modal-container, #group-modal-container, #delete-modal-container {
+            #project-modal-container,
+            #group-modal-container,
+            #delete-modal-container {
                 max-width: 92% !important;
                 margin-left: auto !important;
                 margin-right: auto !important;
@@ -236,7 +287,10 @@
         }
 
         @media (min-width: 768px) {
-            input, textarea, select {
+
+            input,
+            textarea,
+            select {
                 font-size: 0.75rem !important;
             }
         }

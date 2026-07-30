@@ -2294,50 +2294,60 @@
                             <i data-lucide="alert-triangle" class="w-4 h-4"></i>
                             <span>Delete All Groups</span>
                         </button>
-                    <div class="bg-[#121212] p-5 rounded-2xl border border-white/[0.04] flex flex-col justify-between md:col-span-2">
+                    </div>
+
+                    <div class="bg-[#121212] p-6 rounded-2xl border border-white/[0.06] flex flex-col justify-between md:col-span-2 space-y-5 shadow-lg">
                         <div>
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="flex items-center space-x-2">
-                                    <span class="p-1.5 rounded-lg bg-white/5 text-[#2997ff]"><i data-lucide="database" class="w-4 h-4"></i></span>
-                                    <h4 class="text-xs font-bold text-white uppercase tracking-wider">Automated Studio Backups (5-Day Snapshots)</h4>
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center space-x-2.5">
+                                    <span class="p-2 rounded-xl bg-[#2997ff]/10 text-[#2997ff] border border-[#2997ff]/20"><i data-lucide="database" class="w-4 h-4"></i></span>
+                                    <div>
+                                        <h4 class="text-xs font-extrabold text-white uppercase tracking-wider">Automated Studio Backups</h4>
+                                        <p class="text-[11px] text-gray-400 mt-0.5 leading-relaxed">Full system snapshots captured automatically every 5 days with rolling rotation.</p>
+                                    </div>
                                 </div>
-                                <span class="bg-[#2997ff]/10 text-[#2997ff] text-xs font-mono px-3 py-1 rounded-full border border-[#2997ff]/20">Auto-Rolling</span>
+                                <span class="bg-[#2997ff]/10 text-[#2997ff] text-[10px] font-mono font-bold px-3 py-1 rounded-full border border-[#2997ff]/20 flex-shrink-0">Auto-Rolling</span>
                             </div>
-                            <p class="text-[11px] text-gray-500 mb-4 leading-relaxed">System automatically captures full data snapshots every 5 days. Old 5-day cycles are automatically rotated to conserve space.</p>
-                            
-                            <div class="space-y-2 max-h-60 overflow-y-auto pr-1 mb-4" id="auto-backups-list">
+
+                            <div class="space-y-2 max-h-60 overflow-y-auto pr-1 my-4" id="auto-backups-list">
                                 ${(() => {
                                     let backups = [];
                                     try { backups = JSON.parse(localStorage.getItem('ANV_5DAY_SNAPSHOTS') || '[]'); } catch(e) {}
                                     if (backups.length === 0) {
-                                        return `<div class="text-center py-6 text-xs text-gray-600 border border-dashed border-white/5 rounded-xl">No 5-day auto snapshots captured yet. Triggering first cycle...</div>`;
+                                        return `<div class="text-center py-6 text-xs text-gray-600 border border-dashed border-white/5 rounded-xl">No 5-day auto snapshots captured yet.</div>`;
                                     }
                                     return backups.map((b, idx) => `
-                                        <div class="flex items-center justify-between bg-white/5 p-3 rounded-xl text-xs hover:bg-white/10 transition border border-white/5">
-                                            <div class="flex items-center space-x-3">
-                                                <i data-lucide="archive" class="w-4 h-4 text-emerald-400"></i>
-                                                <div>
-                                                    <div class="text-white font-semibold">${escapeHTML(b.label || '5-Day Full Backup Snapshot')}</div>
-                                                    <div class="text-[10px] text-gray-400 font-mono mt-0.5">${new Date(b.timestamp).toLocaleString()} • ${b.taskCount || 0} Tasks • ${b.groupCount || 0} Groups</div>
+                                        <div class="flex items-center justify-between bg-white/[0.03] hover:bg-white/[0.06] p-3.5 rounded-xl text-xs transition border border-white/5 gap-3">
+                                            <div class="flex items-center space-x-3 min-w-0 flex-1">
+                                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0 text-emerald-400">
+                                                    <i data-lucide="archive" class="w-4 h-4"></i>
+                                                </div>
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="text-white font-bold truncate text-xs">${escapeHTML(b.label || '5-Day Full Backup Snapshot')}</div>
+                                                    <div class="text-[10px] text-gray-400 font-mono mt-0.5 flex items-center space-x-2">
+                                                        <span>${new Date(b.timestamp).toLocaleString()}</span>
+                                                        <span>•</span>
+                                                        <span class="text-[#2997ff] font-semibold">${b.taskCount || 0} Tasks</span>
+                                                        <span>•</span>
+                                                        <span class="text-purple-400 font-semibold">${b.groupCount || 0} Groups</span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="flex items-center space-x-2">
-                                                <button onclick="restoreAutoSnapshot(${idx})" class="btn-scale bg-[#2997ff]/15 hover:bg-[#2997ff] text-[#2997ff] hover:text-black font-bold px-3 py-1.5 rounded-lg text-xs transition flex items-center space-x-1.5">
-                                                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-                                                    <span>Restore Snapshot</span>
-                                                </button>
-                                            </div>
+                                            <button onclick="restoreAutoSnapshot(${idx})" class="btn-scale bg-[#2997ff]/15 hover:bg-[#2997ff] text-[#2997ff] hover:text-black font-bold px-3.5 py-2 rounded-xl text-xs transition flex items-center space-x-1.5 flex-shrink-0 border border-[#2997ff]/30">
+                                                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                                                <span>Restore Snapshot</span>
+                                            </button>
                                         </div>
                                     `).join('');
                                 })()}
                             </div>
                         </div>
-                        <div class="flex items-center space-x-3 pt-2">
-                            <button onclick="triggerManualSnapshot()" class="btn-scale flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold border border-white/5 transition flex items-center justify-center space-x-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-white/5">
+                            <button onclick="triggerManualSnapshot()" class="btn-scale py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold border border-white/10 transition flex items-center justify-center space-x-2">
                                 <i data-lucide="camera" class="w-4 h-4 text-[#2997ff]"></i>
-                                <span>Capture 5-Day Snapshot Now</span>
+                                <span>Capture Snapshot Now</span>
                             </button>
-                            <button onclick="triggerImport()" class="btn-scale flex-1 py-2.5 bg-[#2997ff] hover:bg-[#0066cc] text-black hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2">
+                            <button onclick="triggerImport()" class="btn-scale py-3 bg-[#2997ff] hover:bg-[#0066cc] text-black hover:text-white rounded-xl text-xs font-extrabold transition flex items-center justify-center space-x-2 shadow-md">
                                 <i data-lucide="upload-cloud" class="w-4 h-4"></i>
                                 <span>Import Previous Backup File</span>
                             </button>
