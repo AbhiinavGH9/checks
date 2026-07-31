@@ -1,3 +1,15 @@
+        window.addEventListener('error', function(e) {
+            console.error("Global Error Caught:", e.error);
+            const container = document.getElementById('toast-container') || document.body;
+            if (container) {
+                const toast = document.createElement('div');
+                toast.className = "fixed bottom-6 right-6 z-[999] bg-red-500/90 border border-red-400 text-white px-5 py-4 rounded-xl text-xs font-semibold shadow-2xl pointer-events-auto flex flex-col space-y-1.5 max-w-sm";
+                toast.innerHTML = `<div><strong>Application Error:</strong> ${e.message}</div><div class="text-[10px] text-white/80">${e.filename}:${e.lineno}</div>`;
+                container.appendChild(toast);
+                setTimeout(() => toast.remove(), 15000);
+            }
+        });
+
         const SYSTEM_COLORS = [
             '#FF3B30', '#FF9500', '#FFCC00', '#34C759', '#5AC8FA', '#007AFF',
             '#5856D6', '#FF2D55', '#AF52DE', '#A2845E', '#8E8E93', '#E4A3A1'
@@ -8,6 +20,115 @@
             'dollar-sign', 'briefcase', 'wallet', 'credit-card', 'shopping-bag', 'trophy',
             'zap', 'dumbbell', 'utensils', 'graduation-cap', 'map-pin', 'smile'
         ];
+
+        // Supabase client configuration placeholders
+        const SUPABASE_URL = "https://sbqjvrkdfmygjpfbtocs.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNicWp2cmtkZm15Z2pwZmJ0b2NzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwODA2NDEsImV4cCI6MjA5OTY1NjY0MX0.rjjZ8_TjfeQyq6Nw2ZOWdGQQpXb-T0xW98tz0RJB9Ic";
+        let supabaseClient = null;
+        try {
+            if (typeof supabase !== 'undefined') {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+        } catch (e) {
+            console.error("Supabase initialization failed:", e);
+        }
+
+        // Data mappers to convert between local state and Postgres DB schemas
+        function mapTaskToDB(task) {
+            // Verify that referenced project and group exist locally to prevent foreign key constraint violations (Postgres 409)
+            const projectExists = task.projectId ? AppState.projects.some(p => p.id === task.projectId) : false;
+            const groupExists = task.groupId ? AppState.groups.some(g => g.id === task.groupId) : false;
+
+            return {
+                id: task.id,
+                title: task.title,
+                description: task.description || '',
+                priority: task.color || '',
+                due_date: task.dueDate || '',
+                project_id: projectExists ? task.projectId : null,
+                group_id: groupExists ? task.groupId : null,
+                icon: task.icon || '',
+                done: !!task.done,
+                autodelete_policy: task.autoDelete || 'never',
+                subtasks: task.subtasks || [],
+                notes: task.notes || [],
+                expiry_time: task.expiryTime || null,
+                created_date: task.createdDate || new Date().toISOString(),
+                updated_at: task.updatedAt || new Date().toISOString(),
+                completed_at: task.completedAt || null,
+                hold_deletion: !!task.holdDeletion,
+                hold_until: task.holdUntil || null
+            };
+        }
+
+        function mapTaskFromDB(dbTask) {
+            return {
+                id: dbTask.id,
+                title: dbTask.title,
+                description: dbTask.description || '',
+                color: dbTask.priority || '',
+                dueDate: dbTask.due_date || '',
+                projectId: dbTask.project_id || null,
+                groupId: dbTask.group_id || null,
+                icon: dbTask.icon || '',
+                done: !!dbTask.done,
+                autoDelete: dbTask.autodelete_policy || 'never',
+                subtasks: dbTask.subtasks || [],
+                notes: dbTask.notes || [],
+                expiryTime: dbTask.expiry_time || null,
+                createdDate: dbTask.created_date || new Date().toISOString(),
+                updatedAt: dbTask.updated_at || new Date().toISOString(),
+                completedAt: dbTask.completed_at || null,
+                holdDeletion: !!dbTask.hold_deletion,
+                holdUntil: dbTask.hold_until || null
+            };
+        }
+
+        function mapProjectToDB(proj) {
+            return {
+                id: proj.id,
+                name: proj.title,
+                color: proj.color,
+                icon: proj.icon,
+                updated_at: proj.updatedAt || new Date().toISOString()
+            };
+        }
+
+        function mapProjectFromDB(dbProj) {
+            return {
+                id: dbProj.id,
+                title: dbProj.name,
+                color: dbProj.color,
+                icon: dbProj.icon,
+                updatedAt: dbProj.updated_at || new Date().toISOString()
+            };
+        }
+
+        function mapGroupToDB(group, position) {
+            return {
+                id: group.id,
+                name: group.title,
+                color: group.color,
+                icon: group.icon,
+                position: position,
+                updated_at: group.updatedAt || new Date().toISOString(),
+                hold_deletion: !!group.holdDeletion,
+                hold_until: group.holdUntil || null
+            };
+        }
+
+        function mapGroupFromDB(dbGroup) {
+            return {
+                id: dbGroup.id,
+                title: dbGroup.name,
+                color: dbGroup.color,
+                icon: dbGroup.icon,
+                position: dbGroup.position || 0,
+                updatedAt: dbGroup.updated_at || new Date().toISOString(),
+                holdDeletion: !!dbGroup.hold_deletion,
+                holdUntil: dbGroup.hold_until || null
+            };
+        }
 
         let AppState = {
             tasks: [],
@@ -37,6 +158,16 @@
             profilePass: 'anv_edt',
             profileDP: 'smile',
 
+            // Supabase cross-device sync properties
+            session: null,
+            syncing: false,
+            lastKnownState: {
+                tasks: [],
+                projects: [],
+                groups: [],
+                profile: {}
+            },
+
             // Metric tracking variables
             metricCardCollapsed: true,
             counterTargetPolicy: 'tasks' // Can be 'tasks' or 'subtasks'
@@ -45,6 +176,147 @@
         let contextSelectedTaskId = null;
         let contextSelectedGroupId = null;
         let deleteActionCallback = null;
+
+        function updateSyncStatusUI(status) {
+            const statusIndicator = document.getElementById('storage-status');
+            if (!statusIndicator) return;
+            statusIndicator.innerHTML = '';
+            
+            if (status === 'synced') {
+                statusIndicator.className = "flex items-center text-emerald-400 font-medium";
+                statusIndicator.innerHTML = '<i data-lucide="shield-check" class="w-3 h-3 mr-1"></i> Autosaved';
+            } else if (status === 'syncing') {
+                statusIndicator.className = "flex items-center text-blue-400 font-medium";
+                statusIndicator.innerHTML = '<i data-lucide="refresh-cw" class="w-3 h-3 mr-1 animate-spin"></i> Syncing...';
+            } else if (status === 'offline') {
+                statusIndicator.className = "flex items-center text-yellow-500 font-medium";
+                statusIndicator.innerHTML = '<i data-lucide="wifi-off" class="w-3 h-3 mr-1"></i> Offline Pending';
+            } else if (status === 'error') {
+                statusIndicator.className = "flex items-center text-red-400 font-medium";
+                statusIndicator.innerHTML = '<i data-lucide="alert-circle" class="w-3 h-3 mr-1"></i> Sync Error';
+            }
+            lucide.createIcons();
+        }
+
+        function queueSyncOperation(table, action, recordId, data) {
+            if (!AppState.session) return;
+            
+            const op = {
+                id: 'op-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                table,
+                action,
+                recordId,
+                data,
+                timestamp: Date.now()
+            };
+            
+            let queue = [];
+            try {
+                queue = JSON.parse(localStorage.getItem('CLIPBOARD_PENDING_WRITES') || '[]');
+            } catch(e) {}
+            
+            // Consolidate queue operations
+            queue = queue.filter(q => !(q.table === table && q.recordId === recordId));
+            queue.push(op);
+            
+            localStorage.setItem('CLIPBOARD_PENDING_WRITES', JSON.stringify(queue));
+            processSyncQueue();
+        }
+
+        function healSyncQueue() {
+            let queue = [];
+            try {
+                queue = JSON.parse(localStorage.getItem('CLIPBOARD_PENDING_WRITES') || '[]');
+            } catch(e) {}
+            
+            if (queue.length === 0) return;
+            
+            let healed = false;
+            queue.forEach(op => {
+                if (op.table === 'tasks' && op.action === 'upsert' && op.data) {
+                    const projectExists = op.data.project_id ? AppState.projects.some(p => p.id === op.data.project_id) : false;
+                    const groupExists = op.data.group_id ? AppState.groups.some(g => g.id === op.data.group_id) : false;
+                    
+                    if (op.data.project_id && !projectExists) {
+                        op.data.project_id = null;
+                        healed = true;
+                    }
+                    if (op.data.group_id && !groupExists) {
+                        op.data.group_id = null;
+                        healed = true;
+                    }
+                }
+            });
+            
+            if (healed) {
+                localStorage.setItem('CLIPBOARD_PENDING_WRITES', JSON.stringify(queue));
+            }
+        }
+
+        async function processSyncQueue() {
+            if (!supabaseClient || !AppState.session) {
+                updateSyncStatusUI('synced');
+                return;
+            }
+            
+            if (!navigator.onLine) {
+                updateSyncStatusUI('offline');
+                return;
+            }
+            
+            if (AppState.syncing) return;
+            
+            // Clean up any invalid foreign key references in the queue before processing
+            healSyncQueue();
+
+            AppState.syncing = true;
+            updateSyncStatusUI('syncing');
+            
+            try {
+                while (true) {
+                    let queue = [];
+                    try {
+                        queue = JSON.parse(localStorage.getItem('CLIPBOARD_PENDING_WRITES') || '[]');
+                    } catch(e) {}
+                    
+                    if (queue.length === 0) {
+                        AppState.syncing = false;
+                        updateSyncStatusUI('synced');
+                        break;
+                    }
+                    
+                    const op = queue[0];
+                    let error = null;
+                    
+                    if (op.action === 'upsert') {
+                        op.data.user_id = AppState.session.user.id;
+                        const res = await supabaseClient.from(op.table).upsert(op.data);
+                        error = res.error;
+                    } else if (op.action === 'delete') {
+                        const res = await supabaseClient.from(op.table).delete().eq('id', op.recordId);
+                        error = res.error;
+                    }
+                    
+                    if (error) {
+                        console.error(`Sync error on table ${op.table} for action ${op.action}:`, error);
+                        AppState.syncing = false;
+                        updateSyncStatusUI('error');
+                        return; // Halt and retry later
+                    }
+                    
+                    queue.shift();
+                    localStorage.setItem('CLIPBOARD_PENDING_WRITES', JSON.stringify(queue));
+                }
+            } catch (err) {
+                console.error("Unhandled sync queue worker error:", err);
+                AppState.syncing = false;
+                updateSyncStatusUI('error');
+            }
+        }
+
+        window.addEventListener('online', () => {
+            processSyncQueue();
+        });
 
         let calendarTargetInputId = null;
         let calendarMonth = 5; 
@@ -556,38 +828,538 @@
         }
 
         function syncDeviceDataChannels() {
+            const nowISO = new Date().toISOString();
+            
+            AppState.tasks.forEach(t => {
+                if (!t.updatedAt) t.updatedAt = nowISO;
+            });
+            AppState.projects.forEach(p => {
+                if (!p.updatedAt) p.updatedAt = nowISO;
+            });
+            AppState.groups.forEach(g => {
+                if (!g.updatedAt) g.updatedAt = nowISO;
+            });
+
             localStorage.setItem('CLIPBOARD_DEVICE_SYNC_FLAG', Date.now().toString());
             saveToLocalStorage();
+
+            if (!AppState.session) return;
+
+            // 1. Detect task creations / updates
+            AppState.tasks.forEach(task => {
+                const last = AppState.lastKnownState.tasks.find(t => t.id === task.id);
+                if (!last) {
+                    task.updatedAt = nowISO;
+                    queueSyncOperation('tasks', 'upsert', task.id, mapTaskToDB(task));
+                } else if (JSON.stringify(task) !== JSON.stringify(last)) {
+                    task.updatedAt = nowISO;
+                    queueSyncOperation('tasks', 'upsert', task.id, mapTaskToDB(task));
+                }
+            });
+            // Detect task deletions
+            AppState.lastKnownState.tasks.forEach(last => {
+                const exists = AppState.tasks.some(t => t.id === last.id);
+                if (!exists) {
+                    queueSyncOperation('tasks', 'delete', last.id);
+                }
+            });
+
+            // 2. Detect project creations / updates
+            AppState.projects.forEach(proj => {
+                const last = AppState.lastKnownState.projects.find(p => p.id === proj.id);
+                if (!last) {
+                    proj.updatedAt = nowISO;
+                    queueSyncOperation('projects', 'upsert', proj.id, mapProjectToDB(proj));
+                } else if (JSON.stringify(proj) !== JSON.stringify(last)) {
+                    proj.updatedAt = nowISO;
+                    queueSyncOperation('projects', 'upsert', proj.id, mapProjectToDB(proj));
+                }
+            });
+            // Detect project deletions
+            AppState.lastKnownState.projects.forEach(last => {
+                const exists = AppState.projects.some(p => p.id === last.id);
+                if (!exists) {
+                    queueSyncOperation('projects', 'delete', last.id);
+                }
+            });
+
+            // 3. Detect group creations / updates / position changes
+            AppState.groups.forEach((group, index) => {
+                const last = AppState.lastKnownState.groups.find(g => g.id === group.id);
+                const lastIndex = AppState.lastKnownState.groups.findIndex(g => g.id === group.id);
+                if (!last) {
+                    group.updatedAt = nowISO;
+                    queueSyncOperation('groups', 'upsert', group.id, mapGroupToDB(group, index));
+                } else if (lastIndex !== index || JSON.stringify(group) !== JSON.stringify(last)) {
+                    group.updatedAt = nowISO;
+                    queueSyncOperation('groups', 'upsert', group.id, mapGroupToDB(group, index));
+                }
+            });
+            // Detect group deletions
+            AppState.lastKnownState.groups.forEach(last => {
+                const exists = AppState.groups.some(g => g.id === last.id);
+                if (!exists) {
+                    queueSyncOperation('groups', 'delete', last.id);
+                }
+            });
+
+            // 4. Detect profile settings modifications
+            const currentProfile = {
+                name: AppState.profileName,
+                dp: AppState.profileDP,
+                counterPolicy: AppState.counterTargetPolicy
+            };
+            if (JSON.stringify(currentProfile) !== JSON.stringify(AppState.lastKnownState.profile)) {
+                queueSyncOperation('profiles', 'upsert', AppState.session.user.id, {
+                    user_id: AppState.session.user.id,
+                    display_name: AppState.profileName,
+                    avatar_glyph: AppState.profileDP,
+                    counter_policy: AppState.counterTargetPolicy,
+                    updated_at: nowISO
+                });
+            }
+
+            AppState.lastKnownState.tasks = JSON.parse(JSON.stringify(AppState.tasks));
+            AppState.lastKnownState.projects = JSON.parse(JSON.stringify(AppState.projects));
+            AppState.lastKnownState.groups = JSON.parse(JSON.stringify(AppState.groups));
+            AppState.lastKnownState.profile = JSON.parse(JSON.stringify(currentProfile));
         }
 
         function syncProfileUIElements() {
             lucide.createIcons();
         }
 
-        function executeLoginValidation(event) {
-            event.preventDefault();
-            const userInput = document.getElementById('auth-username-field').value;
-            const passInput = document.getElementById('auth-password-field').value;
-            const errorBanner = document.getElementById('auth-failure-error');
+        function clearLocalState() {
+            AppState.tasks = [];
+            AppState.projects = [];
+            AppState.groups = [];
+            AppState.profileName = 'Anv';
+            AppState.profileDP = 'smile';
+            AppState.counterTargetPolicy = 'tasks';
+            AppState.lastKnownState = {
+                tasks: [],
+                projects: [],
+                groups: [],
+                profile: {}
+            };
+            
+            localStorage.removeItem('CLIPBOARD_TASKS_DATA_V3');
+            localStorage.removeItem('CLIPBOARD_PROJECTS_DATA_V3');
+            localStorage.removeItem('CLIPBOARD_GROUPS_DATA_V3');
+            localStorage.removeItem('CLIPBOARD_PROFILE_DATA_V3');
+            localStorage.removeItem('CLIPBOARD_COUNTER_POLICY');
+            localStorage.removeItem('CLIPBOARD_PENDING_WRITES');
+            
+            renderTaskFeed();
+            updateGlobalBadges();
+            closeInspector();
+        }
 
-            if ((userInput === AppState.profileUser && passInput === AppState.profilePass) || (userInput === 'tyson' && passInput === 'anv_temp')) {
-                errorBanner.classList.add('hidden');
-                document.getElementById('auth-guard-screen').classList.add('hidden');
-                localStorage.setItem('CLIPBOARD_SESSION_ACTIVE', 'true');
-                syncDeviceDataChannels();
-                showToast('Sync Successful', 'Ecosystem multi-device data channels synchronized.');
-            } else {
-                errorBanner.classList.remove('hidden');
+        async function initSupabaseAuth() {
+            const isGuestMode = localStorage.getItem('ANV_GUEST_MODE') === 'true';
+
+            if (!supabaseClient) {
+                if (!isGuestMode) {
+                    document.getElementById('auth-guard-screen').classList.remove('hidden');
+                }
+                return;
+            }
+
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                const prevSession = AppState.session;
+                AppState.session = session;
+                
+                if (session) {
+                    localStorage.removeItem('ANV_GUEST_MODE');
+                    document.getElementById('auth-guard-screen').classList.add('hidden');
+                    if (!prevSession) {
+                        showToast('Sync Activated', 'Ecosystem multi-device data channels synchronized.');
+                        await performInitialDataSync();
+                        subscribeToRealtimeSync();
+                    }
+                } else {
+                    if (localStorage.getItem('ANV_GUEST_MODE') === 'true') {
+                        document.getElementById('auth-guard-screen').classList.add('hidden');
+                    } else {
+                        clearLocalState();
+                        document.getElementById('auth-guard-screen').classList.remove('hidden');
+                        showToast('Session Closed', 'Local storage device synchronization disconnected.');
+                    }
+                }
+            });
+        }
+
+        function executeGuestLogin() {
+            localStorage.setItem('ANV_GUEST_MODE', 'true');
+            document.getElementById('auth-guard-screen').classList.add('hidden');
+            showToast('Guest Mode Activated', 'Working in offline local guest mode.');
+        }
+
+        async function performInitialDataSync() {
+            if (!supabaseClient || !AppState.session) return;
+            
+            updateSyncStatusUI('syncing');
+            const userId = AppState.session.user.id;
+            
+            try {
+                // Fetch remote data
+                const [
+                    { data: dbTasks, error: errTasks },
+                    { data: dbProjects, error: errProjects },
+                    { data: dbGroups, error: errGroups },
+                    { data: dbProfiles, error: errProfiles }
+                ] = await Promise.all([
+                    supabaseClient.from('tasks').select('*'),
+                    supabaseClient.from('projects').select('*'),
+                    supabaseClient.from('groups').select('*'),
+                    supabaseClient.from('profiles').select('*')
+                ]);
+                
+                if (errTasks || errProjects || errGroups || errProfiles) {
+                    console.error("Initial data sync fetch failed:", { errTasks, errProjects, errGroups, errProfiles });
+                    updateSyncStatusUI('error');
+                    return;
+                }
+
+                // 1. Process Projects
+                let localProjects = [...AppState.projects];
+                let remoteProjects = (dbProjects || []).map(mapProjectFromDB);
+                let mergedProjects = [];
+                let projectsToPush = [];
+
+                remoteProjects.forEach(rp => {
+                    const lp = localProjects.find(p => p.id === rp.id);
+                    if (!lp) {
+                        mergedProjects.push(rp);
+                    } else {
+                        const lpTime = new Date(lp.updatedAt || 0).getTime();
+                        const rpTime = new Date(rp.updatedAt || 0).getTime();
+                        if (lpTime > rpTime) {
+                            mergedProjects.push(lp);
+                            projectsToPush.push(lp);
+                        } else {
+                            mergedProjects.push(rp);
+                        }
+                    }
+                });
+                localProjects.forEach(lp => {
+                    if (!mergedProjects.some(p => p.id === lp.id)) {
+                        mergedProjects.push(lp);
+                        projectsToPush.push(lp);
+                    }
+                });
+
+                // 2. Process Groups
+                let localGroups = [...AppState.groups];
+                let remoteGroups = (dbGroups || []).map(mapGroupFromDB);
+                let mergedGroups = [];
+                let groupsToPush = [];
+
+                remoteGroups.forEach(rg => {
+                    const lg = localGroups.find(g => g.id === rg.id);
+                    if (!lg) {
+                        mergedGroups.push(rg);
+                    } else {
+                        const lgTime = new Date(lg.updatedAt || 0).getTime();
+                        const rgTime = new Date(rg.updatedAt || 0).getTime();
+                        if (lgTime > rgTime) {
+                            mergedGroups.push(lg);
+                            groupsToPush.push(lg);
+                        } else {
+                            mergedGroups.push(rg);
+                        }
+                    }
+                });
+                localGroups.forEach(lg => {
+                    if (!mergedGroups.some(g => g.id === lg.id)) {
+                        mergedGroups.push(lg);
+                        groupsToPush.push(lg);
+                    }
+                });
+                mergedGroups.sort((a, b) => (a.position || 0) - (b.position || 0));
+
+                // 3. Process Tasks
+                let localTasks = [...AppState.tasks];
+                let remoteTasks = (dbTasks || []).map(mapTaskFromDB);
+                let mergedTasks = [];
+                let tasksToPush = [];
+
+                remoteTasks.forEach(rt => {
+                    const lt = localTasks.find(t => t.id === rt.id);
+                    if (!lt) {
+                        mergedTasks.push(rt);
+                    } else {
+                        const ltTime = new Date(lt.updatedAt || 0).getTime();
+                        const rtTime = new Date(rt.updatedAt || 0).getTime();
+                        if (ltTime > rtTime) {
+                            mergedTasks.push(lt);
+                            tasksToPush.push(lt);
+                        } else {
+                            mergedTasks.push(rt);
+                        }
+                    }
+                });
+                localTasks.forEach(lt => {
+                    if (!mergedTasks.some(t => t.id === lt.id)) {
+                        mergedTasks.push(lt);
+                        tasksToPush.push(lt);
+                    }
+                });
+
+                // 4. Process Profile
+                let remoteProfile = dbProfiles && dbProfiles[0];
+                let profileToPush = null;
+                if (remoteProfile) {
+                    AppState.profileName = remoteProfile.display_name;
+                    AppState.profileDP = remoteProfile.avatar_glyph;
+                    AppState.counterTargetPolicy = remoteProfile.counter_policy;
+                } else {
+                    profileToPush = {
+                        user_id: userId,
+                        display_name: AppState.profileName,
+                        avatar_glyph: AppState.profileDP,
+                        counter_policy: AppState.counterTargetPolicy,
+                        updated_at: new Date().toISOString()
+                    };
+                }
+
+                AppState.projects = mergedProjects;
+                AppState.groups = mergedGroups;
+                AppState.tasks = mergedTasks;
+
+                saveToLocalStorage();
+
+                AppState.lastKnownState.projects = JSON.parse(JSON.stringify(mergedProjects));
+                AppState.lastKnownState.groups = JSON.parse(JSON.stringify(mergedGroups));
+                AppState.lastKnownState.tasks = JSON.parse(JSON.stringify(mergedTasks));
+                AppState.lastKnownState.profile = {
+                    name: AppState.profileName,
+                    dp: AppState.profileDP,
+                    counterPolicy: AppState.counterTargetPolicy
+                };
+
+                // Push local migrations/updates up to Supabase
+                if (projectsToPush.length > 0) {
+                    projectsToPush.forEach(p => {
+                        queueSyncOperation('projects', 'upsert', p.id, mapProjectToDB(p));
+                    });
+                }
+                if (groupsToPush.length > 0) {
+                    groupsToPush.forEach(g => {
+                        const idx = mergedGroups.findIndex(mg => mg.id === g.id);
+                        queueSyncOperation('groups', 'upsert', g.id, mapGroupToDB(g, idx));
+                    });
+                }
+                if (tasksToPush.length > 0) {
+                    tasksToPush.forEach(t => {
+                        queueSyncOperation('tasks', 'upsert', t.id, mapTaskToDB(t));
+                    });
+                }
+                if (profileToPush) {
+                    queueSyncOperation('profiles', 'upsert', userId, profileToPush);
+                }
+
+                await processSyncQueue();
+                
+                renderTaskFeed();
+                updateGlobalBadges();
+                syncProfileUIElements();
+                if (AppState.selectedTaskId) {
+                    renderInspector();
+                }
+                
+                showToast('Sync Complete', 'Data synchronization successfully completed.');
+            } catch (err) {
+                console.error("Error during initial data sync:", err);
+                updateSyncStatusUI('error');
             }
         }
 
-        function executeLogoutAction() {
-            localStorage.removeItem('CLIPBOARD_SESSION_ACTIVE');
-            document.getElementById('auth-username-field').value = '';
-            document.getElementById('auth-password-field').value = '';
-            document.getElementById('auth-failure-error').classList.add('hidden');
-            document.getElementById('auth-guard-screen').classList.remove('hidden');
-            showToast('Session Closed', 'Local storage device synchronization disconnected.');
+        let realtimeSubscription = null;
+
+        function subscribeToRealtimeSync() {
+            if (!supabaseClient || !AppState.session) return;
+            
+            if (realtimeSubscription) {
+                supabaseClient.removeChannel(realtimeSubscription);
+            }
+            
+            const userId = AppState.session.user.id;
+            
+            realtimeSubscription = supabaseClient.channel('realtime-sync')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `user_id=eq.${userId}` }, handleRealtimeTaskChange)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'projects', filter: `user_id=eq.${userId}` }, handleRealtimeProjectChange)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'groups', filter: `user_id=eq.${userId}` }, handleRealtimeGroupChange)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `user_id=eq.${userId}` }, handleRealtimeProfileChange)
+                .subscribe();
+        }
+
+        function handleRealtimeTaskChange(payload) {
+            if (payload.eventType === 'DELETE') {
+                const targetId = payload.old.id;
+                if (AppState.tasks.some(t => t.id === targetId)) {
+                    AppState.tasks = AppState.tasks.filter(t => t.id !== targetId);
+                    AppState.lastKnownState.tasks = AppState.lastKnownState.tasks.filter(t => t.id !== targetId);
+                    saveToLocalStorage();
+                    renderTaskFeed();
+                    updateGlobalBadges();
+                    if (AppState.selectedTaskId === targetId) {
+                        closeInspector();
+                    }
+                }
+            } else {
+                const task = mapTaskFromDB(payload.new);
+                const localIdx = AppState.tasks.findIndex(t => t.id === task.id);
+                if (localIdx === -1) {
+                    AppState.tasks.push(task);
+                    AppState.lastKnownState.tasks.push(JSON.parse(JSON.stringify(task)));
+                    saveToLocalStorage();
+                    renderTaskFeed();
+                    updateGlobalBadges();
+                } else {
+                    const local = AppState.tasks[localIdx];
+                    const localTime = new Date(local.updatedAt || 0).getTime();
+                    const remoteTime = new Date(task.updatedAt || 0).getTime();
+                    if (remoteTime > localTime) {
+                        AppState.tasks[localIdx] = task;
+                        const lastIdx = AppState.lastKnownState.tasks.findIndex(t => t.id === task.id);
+                        if (lastIdx !== -1) {
+                            AppState.lastKnownState.tasks[lastIdx] = JSON.parse(JSON.stringify(task));
+                        } else {
+                            AppState.lastKnownState.tasks.push(JSON.parse(JSON.stringify(task)));
+                        }
+                        saveToLocalStorage();
+                        renderTaskFeed();
+                        updateGlobalBadges();
+                        if (AppState.selectedTaskId === task.id) {
+                            renderInspector();
+                        }
+                    }
+                }
+            }
+        }
+
+        function handleRealtimeProjectChange(payload) {
+            if (payload.eventType === 'DELETE') {
+                const targetId = payload.old.id;
+                if (AppState.projects.some(p => p.id === targetId)) {
+                    AppState.projects = AppState.projects.filter(p => p.id !== targetId);
+                    AppState.lastKnownState.projects = AppState.lastKnownState.projects.filter(p => p.id !== targetId);
+                    saveToLocalStorage();
+                    renderTaskFeed();
+                }
+            } else {
+                const proj = mapProjectFromDB(payload.new);
+                const localIdx = AppState.projects.findIndex(p => p.id === proj.id);
+                if (localIdx === -1) {
+                    AppState.projects.push(proj);
+                    AppState.lastKnownState.projects.push(JSON.parse(JSON.stringify(proj)));
+                    saveToLocalStorage();
+                    renderTaskFeed();
+                } else {
+                    const local = AppState.projects[localIdx];
+                    const localTime = new Date(local.updatedAt || 0).getTime();
+                    const remoteTime = new Date(proj.updatedAt || 0).getTime();
+                    if (remoteTime > localTime) {
+                        AppState.projects[localIdx] = proj;
+                        const lastIdx = AppState.lastKnownState.projects.findIndex(p => p.id === proj.id);
+                        if (lastIdx !== -1) {
+                            AppState.lastKnownState.projects[lastIdx] = JSON.parse(JSON.stringify(proj));
+                        }
+                        saveToLocalStorage();
+                        renderTaskFeed();
+                    }
+                }
+            }
+        }
+
+        function handleRealtimeGroupChange(payload) {
+            if (payload.eventType === 'DELETE') {
+                const targetId = payload.old.id;
+                if (AppState.groups.some(g => g.id === targetId)) {
+                    AppState.groups = AppState.groups.filter(g => g.id !== targetId);
+                    AppState.lastKnownState.groups = AppState.lastKnownState.groups.filter(g => g.id !== targetId);
+                    saveToLocalStorage();
+                    renderTaskFeed();
+                }
+            } else {
+                const group = mapGroupFromDB(payload.new);
+                const localIdx = AppState.groups.findIndex(g => g.id === group.id);
+                if (localIdx === -1) {
+                    AppState.groups.push(group);
+                    AppState.lastKnownState.groups.push(JSON.parse(JSON.stringify(group)));
+                    AppState.groups.sort((a, b) => (a.position || 0) - (b.position || 0));
+                    AppState.lastKnownState.groups.sort((a, b) => (a.position || 0) - (b.position || 0));
+                    saveToLocalStorage();
+                    renderTaskFeed();
+                } else {
+                    const local = AppState.groups[localIdx];
+                    const localTime = new Date(local.updatedAt || 0).getTime();
+                    const remoteTime = new Date(group.updatedAt || 0).getTime();
+                    if (remoteTime > localTime) {
+                        AppState.groups[localIdx] = group;
+                        const lastIdx = AppState.lastKnownState.groups.findIndex(g => g.id === group.id);
+                        if (lastIdx !== -1) {
+                            AppState.lastKnownState.groups[lastIdx] = JSON.parse(JSON.stringify(group));
+                        }
+                        AppState.groups.sort((a, b) => (a.position || 0) - (b.position || 0));
+                        AppState.lastKnownState.groups.sort((a, b) => (a.position || 0) - (b.position || 0));
+                        saveToLocalStorage();
+                        renderTaskFeed();
+                    }
+                }
+            }
+        }
+
+        function handleRealtimeProfileChange(payload) {
+            if (payload.eventType !== 'DELETE') {
+                const remoteProfile = payload.new;
+                const localTime = new Date(AppState.lastKnownState.profile.updatedAt || 0).getTime();
+                const remoteTime = new Date(remoteProfile.updated_at || 0).getTime();
+                
+                if (remoteTime > localTime) {
+                    AppState.profileName = remoteProfile.display_name;
+                    AppState.profileDP = remoteProfile.avatar_glyph;
+                    AppState.counterTargetPolicy = remoteProfile.counter_policy;
+                    
+                    AppState.lastKnownState.profile = {
+                        name: remoteProfile.display_name,
+                        dp: remoteProfile.avatar_glyph,
+                        counterPolicy: remoteProfile.counter_policy,
+                        updatedAt: remoteProfile.updated_at
+                    };
+                    
+                    saveToLocalStorage();
+                    syncProfileUIElements();
+                    updateGlobalBadges();
+                }
+            }
+        }
+
+        function executeGoogleLogin() {
+            if (supabaseClient) {
+                supabaseClient.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: window.location.origin + window.location.pathname
+                    }
+                });
+            } else {
+                showToast('Configuration Error', 'Supabase URL/Key placeholders are not configured yet.');
+            }
+        }
+
+        async function executeLogoutAction() {
+            if (supabaseClient) {
+                const { error } = await supabaseClient.auth.signOut();
+                if (error) {
+                    console.error("Supabase signOut error:", error);
+                }
+            } else {
+                clearLocalState();
+                document.getElementById('auth-guard-screen').classList.remove('hidden');
+                showToast('Session Closed', 'Local storage device synchronization disconnected.');
+            }
         }
 
         function openProfileCustomizerModal() {
@@ -595,8 +1367,6 @@
             const container = document.getElementById('profile-customizer-container');
             
             document.getElementById('profile-customizer-name-field').value = AppState.profileName;
-            document.getElementById('profile-customizer-user-field').value = AppState.profileUser;
-            document.getElementById('profile-customizer-pass-field').value = AppState.profilePass;
             
             updateProfileCustomizerDPPreview();
 
@@ -639,8 +1409,6 @@
         function handleProfileUpdates(event) {
             event.preventDefault();
             AppState.profileName = document.getElementById('profile-customizer-name-field').value.trim();
-            AppState.profileUser = document.getElementById('profile-customizer-user-field').value.trim();
-            AppState.profilePass = document.getElementById('profile-customizer-pass-field').value.trim();
             
             syncDeviceDataChannels();
             syncProfileUIElements();
@@ -917,6 +1685,15 @@
             const container = document.getElementById('tasks-list');
             const emptyScreen = document.getElementById('empty-state-screen');
 
+            const clearDoneBtn = document.getElementById('clear-done-archive-btn');
+            if (clearDoneBtn) {
+                if (AppState.currentTab === 'done' && AppState.tasks.some(t => t.done)) {
+                    clearDoneBtn.classList.remove('hidden');
+                } else {
+                    clearDoneBtn.classList.add('hidden');
+                }
+            }
+
             if (AppState.currentTab === 'manage') {
                 renderManageDashboard();
                 return;
@@ -992,29 +1769,38 @@
                 `;
             }
 
+            const group = AppState.groups.find(g => g.id === groupId);
+            const isGroupHeld = group ? group.holdDeletion : false;
+
             groupSection.innerHTML = `
                 <div class="flex items-center justify-between border-b border-white/[0.04] pb-2 cursor-pointer select-none" 
                      style="border-bottom-color: ${groupColor}25"
                      oncontextmenu="showGroupContextMenu(event, '${groupId}')">
-                    <div class="flex items-center space-x-2">
-                        <span class="w-2.5 h-2.5 rounded bg-white/10 flex items-center justify-center border border-white/20">
-                            <span class="w-1.5 h-1.5 rounded-sm" style="background-color: ${groupColor}; box-shadow: 0 0 8px ${groupColor}80;"></span>
-                        </span>
-                        <i data-lucide="${groupIcon}" class="w-4 h-4 flex-shrink-0" style="color: ${groupColor};"></i>
-                        <span class="text-xs font-bold text-white uppercase tracking-wider">${escapeHTML(title)}</span>
-                        <span class="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">${tasks.length}</span>
-                    </div>
-                    <div class="flex items-center space-x-1">
-                        ${navigationButtons}
-                        ${!isUngrouped ? `
-                            <button onclick="openEditGroupModalTriggerFromId('${groupId}', event)" class="text-gray-500 hover:text-white p-1 rounded hover:bg-white/5 transition" title="Edit Group Column">
-                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                            </button>
-                            <button onclick="handleDeleteGroup('${groupId}')" class="text-gray-500 hover:text-red-400 p-1 rounded hover:bg-white/5 transition" title="Delete Group Column">
-                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                            </button>
-                        ` : ''}
-                    </div>
+                     <div class="flex items-center space-x-2 flex-wrap">
+                         <span class="w-2.5 h-2.5 rounded bg-white/10 flex items-center justify-center border border-white/20">
+                             <span class="w-1.5 h-1.5 rounded-sm" style="background-color: ${groupColor}; box-shadow: 0 0 8px ${groupColor}80;"></span>
+                         </span>
+                         <i data-lucide="${groupIcon}" class="w-4 h-4 flex-shrink-0" style="color: ${groupColor};"></i>
+                         <span class="text-xs font-bold text-white uppercase tracking-wider">${escapeHTML(title)}</span>
+                         ${isGroupHeld ? `
+                             <span class="inline-flex items-center px-1.5 py-0.5 bg-[#2997ff]/10 text-[#2997ff] rounded text-[8px] font-bold border border-[#2997ff]/20" title="${group.holdUntil ? 'Column auto-delete held until ' + new Date(group.holdUntil).toLocaleString() : 'Column auto-delete held indefinitely'}">
+                                 <i data-lucide="lock" class="w-2.5 h-2.5 flex-shrink-0 mr-0.5"></i>
+                                 <span>Held</span>
+                             </span>
+                         ` : ''}
+                         <span class="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">${tasks.length}</span>
+                     </div>
+                     <div class="flex items-center space-x-1">
+                         ${navigationButtons}
+                         ${!isUngrouped ? `
+                             <button onclick="openEditGroupModalTriggerFromId('${groupId}', event)" class="text-gray-500 hover:text-white p-1 rounded hover:bg-white/5 transition" title="Edit Group Column">
+                                 <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                             </button>
+                             <button onclick="handleDeleteGroup('${groupId}')" class="text-gray-500 hover:text-red-400 p-1 rounded hover:bg-white/5 transition" title="Delete Group Column">
+                                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                             </button>
+                         ` : ''}
+                     </div>
                 </div>
                 <div class="space-y-2 min-h-[50px] transition-all duration-150" id="group-body-${groupId}"></div>
             `;
@@ -1106,6 +1892,12 @@
                                             <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 bg-white/5 rounded text-[8px] font-medium ${task.done ? 'text-gray-600' : 'text-gray-400'}">
                                                 <i data-lucide="list-checks" class="w-2.5 h-2.5 flex-shrink-0"></i>
                                                 <span>${subDone}/${subTotal}</span>
+                                            </span>
+                                        ` : ''}
+                                        ${isTaskOnHold(task) ? `
+                                            <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 bg-[#2997ff]/15 text-[#2997ff] rounded text-[8px] font-bold border border-[#2997ff]/20 animate-fade-in" title="${task.holdUntil ? 'Auto-delete held until ' + new Date(task.holdUntil).toLocaleString() : 'Auto-delete held indefinitely'}">
+                                                <i data-lucide="lock" class="w-2.5 h-2.5 flex-shrink-0"></i>
+                                                <span>Held</span>
                                             </span>
                                         ` : ''}
                                     </div>
@@ -1533,6 +2325,15 @@
                         <span>Mark all incomplete</span>
                     </button>
                     <div class="border-t border-white/[0.03] my-1"></div>
+                    <button onclick="triggerMultiTaskHold()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
+                        <i data-lucide="lock" class="w-3.5 h-3.5 text-[#2997ff]"></i>
+                        <span>Hold Auto-Delete</span>
+                    </button>
+                    <button onclick="clearMultiTaskHold()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
+                        <i data-lucide="unlock" class="w-3.5 h-3.5"></i>
+                        <span>Unhold Auto-Delete</span>
+                    </button>
+                    <div class="border-t border-white/[0.03] my-1"></div>
                     <div class="px-4 py-1.5 text-[9px] font-bold tracking-widest uppercase text-gray-500">Arrange all in group</div>
                     <div id="context-groups-list" class="max-h-32 overflow-y-auto"></div>
                     <div class="border-t border-white/[0.03] my-1"></div>
@@ -1559,6 +2360,9 @@
                     groupsList.appendChild(groupBtn);
                 });
             } else {
+                const task = AppState.tasks.find(t => t.id === taskId);
+                const isHeld = task ? task.holdDeletion : false;
+
                 menu.innerHTML = `
                     <button onclick="contextToggleComplete()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
                         <i data-lucide="check" class="w-3.5 h-3.5"></i>
@@ -1567,6 +2371,11 @@
                     <button onclick="contextOpenDetails()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
                         <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
                         <span>Edit Specifications</span>
+                    </button>
+                    <div class="border-t border-white/[0.03] my-1"></div>
+                    <button onclick="triggerTaskHold(${isHeld})" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
+                        <i data-lucide="${isHeld ? 'unlock' : 'lock'}" class="w-3.5 h-3.5 text-[#2997ff]"></i>
+                        <span>${isHeld ? 'Unhold Auto-Delete' : 'Hold Auto-Delete'}</span>
                     </button>
                     <div class="border-t border-white/[0.03] my-1"></div>
                     <div class="px-4 py-1.5 text-[9px] font-bold tracking-widest uppercase text-gray-500">Add to group</div>
@@ -1633,6 +2442,30 @@
             contextSelectedGroupId = groupId;
             const menu = document.getElementById('group-context-menu');
             
+            const group = AppState.groups.find(g => g.id === groupId);
+            if (!group) return;
+            
+            const isHeld = group.holdDeletion || false;
+            
+            menu.innerHTML = `
+                <button onclick="openEditGroupModalTrigger()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
+                    <i data-lucide="edit" class="w-3.5 h-3.5"></i>
+                    <span>Edit Group settings</span>
+                </button>
+                <div class="border-t border-white/[0.03] my-1"></div>
+                <button onclick="triggerGroupHold(${isHeld})" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
+                    <i data-lucide="${isHeld ? 'unlock' : 'lock'}" class="w-3.5 h-3.5 text-[#2997ff]"></i>
+                    <span>${isHeld ? 'Unhold Auto-Delete' : 'Hold Auto-Delete'}</span>
+                </button>
+                <div class="border-t border-white/[0.03] my-1"></div>
+                <button onclick="contextDeleteGroupTrigger()" class="w-full text-left px-4 py-2 hover:bg-red-500/10 hover:text-red-400 transition flex items-center space-x-2">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    <span>Delete Group Column</span>
+                </button>
+            `;
+            
+            lucide.createIcons();
+            
             if (window.innerWidth < 768) {
                 hideFloatingElement(menu);
                 const menuDef = parseMenuDOMToDefinition(menu, 'Group Options');
@@ -1655,6 +2488,167 @@
             const menu = document.getElementById('group-context-menu');
             if (menu) hideFloatingElement(menu);
         }
+
+        let holdTargetType = null;
+        let holdTargetId = null;
+
+        function triggerTaskHold(isHeld) {
+            hideContextMenu();
+            if (isHeld) {
+                const task = AppState.tasks.find(t => t.id === contextSelectedTaskId);
+                if (task) {
+                    task.holdDeletion = false;
+                    task.holdUntil = null;
+                    syncDeviceDataChannels();
+                    renderTaskFeed();
+                    showToast('Auto-Delete Unheld', `Auto-deletion hold removed for "${task.title}".`);
+                }
+            } else {
+                openHoldModal('task', contextSelectedTaskId);
+            }
+        }
+
+        function triggerMultiTaskHold() {
+            hideContextMenu();
+            openHoldModal('multi-task', AppState.selectedTaskIds);
+        }
+
+        function clearMultiTaskHold() {
+            hideContextMenu();
+            if (AppState.selectedTaskIds && AppState.selectedTaskIds.length > 0) {
+                AppState.tasks.forEach(t => {
+                    if (AppState.selectedTaskIds.includes(t.id)) {
+                        t.holdDeletion = false;
+                        t.holdUntil = null;
+                    }
+                });
+                syncDeviceDataChannels();
+                renderTaskFeed();
+                showToast('Auto-Delete Unheld', `Removed auto-deletion hold from ${AppState.selectedTaskIds.length} tasks.`);
+            }
+        }
+
+        function triggerGroupHold(isHeld) {
+            hideGroupContextMenu();
+            if (isHeld) {
+                const group = AppState.groups.find(g => g.id === contextSelectedGroupId);
+                if (group) {
+                    group.holdDeletion = false;
+                    group.holdUntil = null;
+                    syncDeviceDataChannels();
+                    renderTaskFeed();
+                    showToast('Auto-Delete Unheld', `Auto-deletion hold removed for Group column "${group.title}".`);
+                }
+            } else {
+                openHoldModal('group', contextSelectedGroupId);
+            }
+        }
+
+        function openHoldModal(type, targetId) {
+            holdTargetType = type;
+            holdTargetId = targetId;
+
+            let titleText = "Configure Auto-Delete Hold";
+            if (type === 'task') {
+                const task = AppState.tasks.find(t => t.id === targetId);
+                if (task) titleText = `Hold Deletion for "${task.title}"`;
+            } else if (type === 'group') {
+                const group = AppState.groups.find(g => g.id === targetId);
+                if (group) titleText = `Hold Deletion for Group "${group.title}"`;
+            } else if (type === 'multi-task') {
+                titleText = `Hold Deletion for ${targetId.length} selected tasks`;
+            }
+
+            document.getElementById('hold-modal-title').textContent = titleText;
+            document.getElementById('hold-indefinitely-checkbox').checked = true;
+            document.getElementById('hold-until-input').value = "";
+            document.getElementById('hold-until-container').classList.add('hidden');
+
+            const backdrop = document.getElementById('hold-modal-backdrop');
+            const container = document.getElementById('hold-modal-container');
+            
+            backdrop.classList.remove('hidden');
+            setTimeout(() => {
+                backdrop.classList.remove('opacity-0');
+                container.classList.remove('scale-95');
+                lucide.createIcons();
+            }, 10);
+        }
+
+        function closeHoldModal() {
+            const backdrop = document.getElementById('hold-modal-backdrop');
+            const container = document.getElementById('hold-modal-container');
+            backdrop.classList.add('opacity-0');
+            container.classList.add('scale-95');
+            setTimeout(() => { backdrop.classList.add('hidden'); }, 150);
+            holdTargetType = null;
+            holdTargetId = null;
+        }
+
+        function toggleHoldUntilInput() {
+            const checkbox = document.getElementById('hold-indefinitely-checkbox');
+            const container = document.getElementById('hold-until-container');
+            if (checkbox.checked) {
+                container.classList.add('hidden');
+            } else {
+                container.classList.remove('hidden');
+            }
+        }
+
+        function handleApplyHold(event) {
+            if (event) event.preventDefault();
+            
+            const indefinite = document.getElementById('hold-indefinitely-checkbox').checked;
+            const untilVal = document.getElementById('hold-until-input').value;
+            
+            let holdUntil = null;
+            if (!indefinite && untilVal) {
+                holdUntil = new Date(untilVal).toISOString();
+            }
+
+            if (holdTargetType === 'task') {
+                const task = AppState.tasks.find(t => t.id === holdTargetId);
+                if (task) {
+                    task.holdDeletion = true;
+                    task.holdUntil = holdUntil;
+                    syncDeviceDataChannels();
+                    renderTaskFeed();
+                    showToast('Auto-Delete Held', `Auto-deletion hold set for "${task.title}".`);
+                }
+            } else if (holdTargetType === 'group') {
+                const group = AppState.groups.find(g => g.id === holdTargetId);
+                if (group) {
+                    group.holdDeletion = true;
+                    group.holdUntil = holdUntil;
+                    syncDeviceDataChannels();
+                    renderTaskFeed();
+                    showToast('Auto-Delete Held', `Auto-deletion hold set for Group column "${group.title}".`);
+                }
+            } else if (holdTargetType === 'multi-task') {
+                if (Array.isArray(holdTargetId)) {
+                    AppState.tasks.forEach(t => {
+                        if (holdTargetId.includes(t.id)) {
+                            t.holdDeletion = true;
+                            t.holdUntil = holdUntil;
+                        }
+                    });
+                    syncDeviceDataChannels();
+                    renderTaskFeed();
+                    showToast('Auto-Delete Held', `Auto-deletion hold set for ${holdTargetId.length} tasks.`);
+                }
+            }
+
+            closeHoldModal();
+        }
+
+        window.triggerTaskHold = triggerTaskHold;
+        window.triggerMultiTaskHold = triggerMultiTaskHold;
+        window.clearMultiTaskHold = clearMultiTaskHold;
+        window.triggerGroupHold = triggerGroupHold;
+        window.openHoldModal = openHoldModal;
+        window.closeHoldModal = closeHoldModal;
+        window.toggleHoldUntilInput = toggleHoldUntilInput;
+        window.handleApplyHold = handleApplyHold;
 
         function handleFeedContextMenu(event) {
             if (event.target.closest('.group-card') || 
@@ -1707,7 +2701,7 @@
                 hideFeedContextMenu();
                 return;
             }
-            list.forEach(t => t.done = true);
+            list.forEach(t => setTaskDone(t, true));
             syncDeviceDataChannels();
             showToast('All Completed', `Marked ${list.length} tasks as completed.`);
             hideFeedContextMenu();
@@ -1762,7 +2756,7 @@
             if (AppState.selectedTaskIds && AppState.selectedTaskIds.length > 0) {
                 AppState.tasks.forEach(t => {
                     if (AppState.selectedTaskIds.includes(t.id)) {
-                        t.done = status;
+                        setTaskDone(t, status);
                     }
                 });
                 syncDeviceDataChannels();
@@ -2335,11 +3329,22 @@
             return 'Options';
         }
 
+        function setTaskDone(task, status) {
+            task.done = !!status;
+            if (task.done) {
+                if (!task.completedAt) {
+                    task.completedAt = new Date().toISOString();
+                }
+            } else {
+                task.completedAt = null;
+            }
+        }
+
         function toggleTaskDone(taskId, event) {
             if (event) event.stopPropagation();
             const task = AppState.tasks.find(t => t.id === taskId);
             if (task) {
-                task.done = !task.done;
+                setTaskDone(task, !task.done);
                 syncDeviceDataChannels();
                 
                 if (task.done) showToast('Task Completed', `"${task.title}" has been archived.`);
@@ -2863,6 +3868,20 @@
             closeDeleteModal(); 
         };
 
+        function clearCompletedTasks() {
+            const completedCount = AppState.tasks.filter(t => t.done).length;
+            if (completedCount === 0) return;
+            
+            showDeleteConfirmation(`Are you sure you want to permanently delete all ${completedCount} completed tasks? This action cannot be undone.`, () => {
+                AppState.tasks = AppState.tasks.filter(t => !t.done);
+                syncDeviceDataChannels();
+                renderTaskFeed();
+                updateGlobalBadges();
+                closeInspector();
+                showToast('Archive Cleared', `Successfully deleted all ${completedCount} completed tasks.`);
+            });
+        }
+
         function openNewProjectModal() {
             const backdrop = document.getElementById('project-modal-backdrop');
             const container = document.getElementById('project-modal-container');
@@ -3280,17 +4299,51 @@
             return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
         }
 
+        function isTaskOnHold(task) {
+            const now = Date.now();
+            
+            // Check task-level hold
+            if (task.holdDeletion) {
+                if (!task.holdUntil) return true; // Indefinite hold
+                if (new Date(task.holdUntil).getTime() > now) return true; // Active timed hold
+            }
+            
+            // Check group-level hold
+            if (task.groupId) {
+                const group = AppState.groups.find(g => g.id === task.groupId);
+                if (group && group.holdDeletion) {
+                    if (!group.holdUntil) return true; // Indefinite group hold
+                    if (new Date(group.holdUntil).getTime() > now) return true; // Active timed group hold
+                }
+            }
+            
+            return false;
+        }
+
         function checkAndAutoDeleteTasks() {
             const now = Date.now();
             let deletedAny = false;
             let deletedNames = [];
+            const lifespan = 27 * 24 * 60 * 60 * 1000;
 
             AppState.tasks = AppState.tasks.filter(task => {
+                // 1. Check custom auto-delete policy expiryTime
                 if (task.expiryTime && now > task.expiryTime) {
                     deletedAny = true;
                     deletedNames.push(task.title);
                     return false; 
                 }
+                
+                // 2. Check 27-day auto-delete for completed tasks
+                if (task.done && task.completedAt) {
+                    const completedTime = new Date(task.completedAt).getTime();
+                    if (now - completedTime > lifespan && !isTaskOnHold(task)) {
+                        deletedAny = true;
+                        deletedNames.push(task.title);
+                        return false;
+                    }
+                }
+                
                 return true;
             });
 
@@ -3479,9 +4532,7 @@
                 if (uncollapseBtn) uncollapseBtn.classList.remove('hidden');
             }
 
-            if (localStorage.getItem('CLIPBOARD_SESSION_ACTIVE') !== 'true') {
-                document.getElementById('auth-guard-screen').classList.remove('hidden');
-            }
+            initSupabaseAuth();
 
             switchTab('inbox');
             lucide.createIcons(); 
