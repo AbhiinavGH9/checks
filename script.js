@@ -57,7 +57,8 @@
                 updated_at: task.updatedAt || new Date().toISOString(),
                 completed_at: task.completedAt || null,
                 hold_deletion: !!task.holdDeletion,
-                hold_until: task.holdUntil || null
+                hold_until: task.holdUntil || null,
+                is_held_task: !!task.isHeldTask
             };
         }
 
@@ -80,7 +81,8 @@
                 updatedAt: dbTask.updated_at || new Date().toISOString(),
                 completedAt: dbTask.completed_at || null,
                 holdDeletion: !!dbTask.hold_deletion,
-                holdUntil: dbTask.hold_until || null
+                holdUntil: dbTask.hold_until || null,
+                isHeldTask: !!dbTask.is_held_task
             };
         }
 
@@ -388,11 +390,11 @@
             }
 
             // Decide horizontal placement
-            let left = anchorRect.left;
+            let left = options.alignRight ? (anchorRect.right - menuWidth) : anchorRect.left;
             let fitsLeft = left + menuWidth + margin <= window.innerWidth;
             let fitsRight = anchorRect.right - menuWidth >= margin;
 
-            if (!fitsLeft && fitsRight) {
+            if (!options.alignRight && !fitsLeft && fitsRight) {
                 left = anchorRect.right - menuWidth;
             } else if (!fitsLeft && !fitsRight) {
                 left = margin;
@@ -406,6 +408,7 @@
             el.style.left = `${left}px`;
             el.style.top = `${top}px`;
             el.style.visibility = 'visible';
+            el.classList.add('floating-menu-anim');
 
             // Keep track of the active floating element so we can reposition on resize or close on scroll
             activeFloatingElement = el;
@@ -416,7 +419,7 @@
         function hideFloatingElement(el) {
             if (!el) return;
             el.classList.add('hidden');
-            el.classList.remove('floating-positioned');
+            el.classList.remove('floating-positioned', 'floating-menu-anim');
             el.style.display = '';
             el.style.visibility = '';
             el.style.position = '';
@@ -431,23 +434,158 @@
             }
         }
 
-        window.addEventListener('resize', () => {
-            if (activeFloatingElement && !activeFloatingElement.classList.contains('hidden')) {
-                if (window.innerWidth < 768) {
-                    hideFloatingElement(activeFloatingElement);
-                } else if (activeFloatingElement.anchorRect) {
-                    positionFloatingElement(activeFloatingElement, activeFloatingElement.anchorRect, activeFloatingElement.positionOptions);
-                }
+        function openSidebarMobile() {
+            if (AppState.sidebarCollapsed) {
+                toggleSidebarCollapse();
             }
-        });
+        }
 
-        window.addEventListener('scroll', (e) => {
-            if (activeFloatingElement && !activeFloatingElement.classList.contains('hidden')) {
-                if (!activeFloatingElement.contains(e.target)) {
-                    hideFloatingElement(activeFloatingElement);
-                }
+        function closeSidebarMobile() {
+            if (!AppState.sidebarCollapsed) {
+                toggleSidebarCollapse();
             }
-        }, true);
+        }
+
+        // Mobile Touch Gestures System (Real-time dragging, dynamic blur/darkness fade)
+        (function initMobileTouchGestures() {
+            let touchStartX = 0;
+            let touchStartY = 0;
+            let currentTouchX = 0;
+            let currentTouchY = 0;
+            let isDraggingSidebar = false;
+            let isDraggingInspector = false;
+
+            const getSidebar = () => document.getElementById('sidebar-panel');
+            const getInspector = () => document.getElementById('inspector-panel');
+
+            let sidebarOverlay = document.getElementById('mobile-sidebar-backdrop');
+            if (!sidebarOverlay) {
+                sidebarOverlay = document.createElement('div');
+                sidebarOverlay.id = 'mobile-sidebar-backdrop';
+                sidebarOverlay.className = 'fixed inset-0 bg-black/60 backdrop-blur-md z-[35] hidden opacity-0 transition-opacity duration-150 pointer-events-auto';
+                sidebarOverlay.onclick = () => closeSidebarMobile();
+                document.body.appendChild(sidebarOverlay);
+            }
+
+            let inspectorOverlay = document.getElementById('mobile-inspector-backdrop');
+            if (!inspectorOverlay) {
+                inspectorOverlay = document.createElement('div');
+                inspectorOverlay.id = 'mobile-inspector-backdrop';
+                inspectorOverlay.className = 'fixed inset-0 bg-black/60 backdrop-blur-md z-[95] hidden opacity-0 transition-opacity duration-150 pointer-events-auto';
+                inspectorOverlay.onclick = () => closeInspector();
+                document.body.appendChild(inspectorOverlay);
+            }
+
+            document.addEventListener('touchstart', (e) => {
+                if (window.innerWidth >= 768) return;
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                currentTouchX = touchStartX;
+                currentTouchY = touchStartY;
+
+                const sidebar = getSidebar();
+                const isSidebarOpen = sidebar && !AppState.sidebarCollapsed;
+                const inspector = getInspector();
+                const isInspectorOpen = inspector && AppState.selectedTaskId !== null;
+
+                // Drag sidebar: if open, tap anywhere or drag left; if closed, edge swipe from left < 35px
+                if (isSidebarOpen) {
+                    if (touchStartX > 200 || e.target.closest('#sidebar-panel')) {
+                        isDraggingSidebar = true;
+                    }
+                } else if (touchStartX < 35) {
+                    isDraggingSidebar = true;
+                }
+
+                // Drag inspector sheet down
+                if (isInspectorOpen && e.target.closest('#inspector-panel')) {
+                    const scrollContainer = e.target.closest('.overflow-y-auto');
+                    if (!scrollContainer || scrollContainer.scrollTop <= 0) {
+                        isDraggingInspector = true;
+                    }
+                }
+            }, { passive: true });
+
+            document.addEventListener('touchmove', (e) => {
+                if (window.innerWidth >= 768) return;
+                currentTouchX = e.touches[0].clientX;
+                currentTouchY = e.touches[0].clientY;
+                const deltaX = currentTouchX - touchStartX;
+                const deltaY = currentTouchY - touchStartY;
+
+                const sidebar = getSidebar();
+                const isSidebarOpen = sidebar && !AppState.sidebarCollapsed;
+
+                if (isDraggingSidebar && sidebar) {
+                    if (isSidebarOpen && deltaX < 0) {
+                        const progress = Math.max(0, Math.min(1, 1 + (deltaX / 280)));
+                        sidebar.style.transform = `translateX(${deltaX}px)`;
+                        sidebarOverlay.classList.remove('hidden');
+                        sidebarOverlay.style.opacity = progress;
+                    } else if (!isSidebarOpen && deltaX > 0) {
+                        const progress = Math.max(0, Math.min(1, deltaX / 280));
+                        sidebar.classList.remove('hidden');
+                        sidebar.style.transform = `translateX(${-280 + deltaX}px)`;
+                        sidebarOverlay.classList.remove('hidden');
+                        sidebarOverlay.style.opacity = progress;
+                    }
+                }
+
+                const inspector = getInspector();
+                const isInspectorOpen = inspector && AppState.selectedTaskId !== null;
+
+                if (isDraggingInspector && inspector && isInspectorOpen && deltaY > 0) {
+                    const progress = Math.max(0, Math.min(1, 1 - (deltaY / (window.innerHeight * 0.5))));
+                    inspector.style.transform = `translateY(${deltaY}px)`;
+                    inspectorOverlay.classList.remove('hidden');
+                    inspectorOverlay.style.opacity = progress;
+                }
+            }, { passive: true });
+
+            document.addEventListener('touchend', (e) => {
+                if (window.innerWidth >= 768) return;
+                const deltaX = currentTouchX - touchStartX;
+                const deltaY = currentTouchY - touchStartY;
+
+                const sidebar = getSidebar();
+                const isSidebarOpen = sidebar && !AppState.sidebarCollapsed;
+
+                if (isDraggingSidebar && sidebar) {
+                    sidebar.style.transform = '';
+                    sidebarOverlay.style.opacity = '';
+                    if (isSidebarOpen && deltaX < -60) {
+                        closeSidebarMobile();
+                        sidebarOverlay.classList.add('hidden');
+                    } else if (!isSidebarOpen && touchStartX < 35 && deltaX > 60) {
+                        openSidebarMobile();
+                        sidebarOverlay.classList.remove('hidden');
+                    } else if (isSidebarOpen) {
+                        sidebarOverlay.classList.remove('hidden');
+                        sidebarOverlay.classList.add('opacity-100');
+                    } else {
+                        sidebarOverlay.classList.add('hidden');
+                    }
+                }
+
+                const inspector = getInspector();
+                const isInspectorOpen = inspector && AppState.selectedTaskId !== null;
+
+                if (isDraggingInspector && inspector && isInspectorOpen) {
+                    inspector.style.transform = '';
+                    inspectorOverlay.style.opacity = '';
+                    if (deltaY > 80) {
+                        closeInspector();
+                        inspectorOverlay.classList.add('hidden');
+                    } else {
+                        inspectorOverlay.classList.remove('hidden');
+                        inspectorOverlay.classList.add('opacity-100');
+                    }
+                }
+
+                isDraggingSidebar = false;
+                isDraggingInspector = false;
+            }, { passive: true });
+        })();
 
         // Mobile Bottom Drawer stack state
         let drawerStack = [];
@@ -976,10 +1114,12 @@
                         showToast('Sync Activated', 'Ecosystem multi-device data channels synchronized.');
                         await performInitialDataSync();
                         subscribeToRealtimeSync();
+                        checkFiveDayAutoBackup();
                     }
                 } else {
                     if (localStorage.getItem('ANV_GUEST_MODE') === 'true') {
                         document.getElementById('auth-guard-screen').classList.add('hidden');
+                        checkFiveDayAutoBackup();
                     } else {
                         clearLocalState();
                         document.getElementById('auth-guard-screen').classList.remove('hidden');
@@ -1350,16 +1490,16 @@
         }
 
         async function executeLogoutAction() {
-            if (supabaseClient) {
+            localStorage.removeItem('ANV_GUEST_MODE');
+            if (supabaseClient && AppState.session) {
                 const { error } = await supabaseClient.auth.signOut();
                 if (error) {
                     console.error("Supabase signOut error:", error);
                 }
-            } else {
-                clearLocalState();
-                document.getElementById('auth-guard-screen').classList.remove('hidden');
-                showToast('Session Closed', 'Local storage device synchronization disconnected.');
             }
+            clearLocalState();
+            document.getElementById('auth-guard-screen').classList.remove('hidden');
+            showToast('Session Closed', 'Session ended successfully.');
         }
 
         function openProfileCustomizerModal() {
@@ -1436,6 +1576,22 @@
                 chevron.style.transform = 'rotate(180deg)';
             }
             updateStreakCardMetrics();
+        }
+
+        function toggleMobileSearchBar() {
+            const container = document.getElementById('mobile-search-bar-container');
+            if (container) {
+                container.classList.toggle('hidden');
+                if (!container.classList.contains('hidden')) {
+                    const input = document.getElementById('mobile-search-input');
+                    if (input) input.focus();
+                }
+            }
+        }
+
+        function handleManageStudioContextMenu(event) {
+            event.preventDefault();
+            event.stopPropagation();
         }
 
         function handleCounterContextMenu(event) {
@@ -1522,6 +1678,16 @@
                 inspectorResizer.classList.remove('active');
                 document.removeEventListener('mousemove', resizeInspector);
                 document.removeEventListener('mouseup', stopResizeInspector);
+            }
+        }
+
+        function switchTab(tabId) {
+            AppState.currentTab = tabId;
+            renderTaskFeed();
+            updateGlobalBadges();
+
+            if (window.innerWidth < 768) {
+                closeSidebarMobile();
             }
         }
 
@@ -1694,9 +1860,16 @@
                 }
             }
 
+            const mobileActionHeader = document.getElementById('mobile-action-section-header');
+            const mobileSearchContainer = document.getElementById('mobile-search-bar-container');
+
             if (AppState.currentTab === 'manage') {
+                if (mobileActionHeader) mobileActionHeader.classList.add('hidden');
+                if (mobileSearchContainer) mobileSearchContainer.classList.add('hidden');
                 renderManageDashboard();
                 return;
+            } else {
+                if (mobileActionHeader) mobileActionHeader.classList.remove('hidden');
             }
 
             const filtered = getFilteredTasks();
@@ -1717,6 +1890,16 @@
             }
 
             container.innerHTML = '';
+
+            if (AppState.currentTab === 'done') {
+                const infoBanner = document.createElement('div');
+                infoBanner.className = "mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center space-x-3 text-xs text-blue-300";
+                infoBanner.innerHTML = `
+                    <i data-lucide="info" class="w-4 h-4 text-[#2997ff] flex-shrink-0"></i>
+                    <span>Completed tasks are automatically deleted after 27 days unless <strong>Auto-Delete Hold</strong> is applied.</span>
+                `;
+                container.appendChild(infoBanner);
+            }
 
             if (sorted.length === 0) {
                 emptyScreen.classList.remove('hidden');
@@ -1782,10 +1965,10 @@
                          </span>
                          <i data-lucide="${groupIcon}" class="w-4 h-4 flex-shrink-0" style="color: ${groupColor};"></i>
                          <span class="text-xs font-bold text-white uppercase tracking-wider">${escapeHTML(title)}</span>
-                         ${isGroupHeld ? `
+                         ${isGroupHeld && AppState.currentTab === 'done' ? `
                              <span class="inline-flex items-center px-1.5 py-0.5 bg-[#2997ff]/10 text-[#2997ff] rounded text-[8px] font-bold border border-[#2997ff]/20" title="${group.holdUntil ? 'Column auto-delete held until ' + new Date(group.holdUntil).toLocaleString() : 'Column auto-delete held indefinitely'}">
                                  <i data-lucide="lock" class="w-2.5 h-2.5 flex-shrink-0 mr-0.5"></i>
-                                 <span>Held</span>
+                                 <span>Deletion Held</span>
                              </span>
                          ` : ''}
                          <span class="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">${tasks.length}</span>
@@ -1822,9 +2005,19 @@
                     const isSelected = AppState.selectedTaskId === task.id || (AppState.selectedTaskIds && AppState.selectedTaskIds.includes(task.id));
 
                     const accentColor = task.done ? '#7a7a7a' : (task.color || '#2997ff');
-                    const cardBg = task.done ? 'bg-[#121212]/40 border-white/[0.01] opacity-50' : 'bg-[#121212] border-white/[0.02]';
-                    const textClass = task.done ? 'line-through text-gray-500 font-normal' : 'text-white font-bold';
-                    const subtextClass = task.done ? 'text-gray-600' : 'text-gray-400';
+                    let cardBg = 'bg-[#121212] border-white/[0.02]';
+                    let textClass = 'text-white font-bold';
+                    let subtextClass = 'text-gray-400';
+
+                    if (task.done) {
+                        cardBg = 'bg-[#121212]/40 border-white/[0.01] opacity-50';
+                        textClass = 'line-through text-gray-500 font-normal';
+                        subtextClass = 'text-gray-600';
+                    } else if (task.isHeldTask) {
+                        cardBg = 'bg-amber-500/[0.08] border-amber-500/30 opacity-70';
+                        textClass = 'text-gray-300 font-semibold';
+                        subtextClass = 'text-gray-500';
+                    }
 
                     let subtasksHTML = '';
                     if (task.subtasks && task.subtasks.length > 0) {
@@ -1894,10 +2087,16 @@
                                                 <span>${subDone}/${subTotal}</span>
                                             </span>
                                         ` : ''}
-                                        ${isTaskOnHold(task) ? `
-                                            <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 bg-[#2997ff]/15 text-[#2997ff] rounded text-[8px] font-bold border border-[#2997ff]/20 animate-fade-in" title="${task.holdUntil ? 'Auto-delete held until ' + new Date(task.holdUntil).toLocaleString() : 'Auto-delete held indefinitely'}">
-                                                <i data-lucide="lock" class="w-2.5 h-2.5 flex-shrink-0"></i>
-                                                <span>Held</span>
+                                        ${task.isHeldTask ? `
+                                            <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 bg-amber-500/15 text-amber-400 rounded text-[8px] font-bold border border-amber-500/20 animate-fade-in" title="Task is paused on hold">
+                                                <i data-lucide="pause-circle" class="w-2.5 h-2.5 flex-shrink-0"></i>
+                                                <span>Task On Hold</span>
+                                            </span>
+                                        ` : ''}
+                                        ${isTaskOnHold(task) && AppState.currentTab === 'done' ? `
+                                            <span class="inline-flex items-center space-x-1.5 px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded-md text-[10px] font-extrabold border border-amber-500/40 animate-fade-in shadow-sm" title="${task.holdUntil ? 'Auto-delete held until ' + new Date(task.holdUntil).toLocaleString() : 'Auto-delete held indefinitely'}">
+                                                <i data-lucide="pause-circle" class="w-3 h-3 text-amber-400 flex-shrink-0"></i>
+                                                <span>Deletion Held</span>
                                             </span>
                                         ` : ''}
                                     </div>
@@ -1914,13 +2113,29 @@
                                     ${subtasksHTML}
                                 </div>
                             </div>
-                            <div class="flex flex-col items-center space-y-0.5 text-gray-500 self-center flex-shrink-0 mr-1">
-                                <button onclick="moveTaskInGroup('${task.id}', -1, event)" class="p-0.5 hover:text-white transition" ${cardIndex === 0 ? 'disabled style="opacity: 0.2; cursor: not-allowed;"' : ''} title="Move Up">
-                                    <i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
-                                </button>
-                                <button onclick="moveTaskInGroup('${task.id}', 1, event)" class="p-0.5 hover:text-white transition" ${cardIndex === tasks.length - 1 ? 'disabled style="opacity: 0.2; cursor: not-allowed;"' : ''} title="Move Down">
-                                    <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
-                                </button>
+                            <div class="flex items-center space-x-2 flex-shrink-0 ml-1">
+                                ${task.done && task.completedAt && !isTaskOnHold(task) ? (() => {
+                                    const completedMs = new Date(task.completedAt).getTime();
+                                    const totalLifespan = 27 * 24 * 60 * 60 * 1000;
+                                    const diffMs = Math.max(0, (completedMs + totalLifespan) - Date.now());
+                                    const daysLeft = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+                                    const hoursLeft = Math.floor((diffMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+                                    const text = daysLeft > 0 ? `${daysLeft}d ${hoursLeft}h left` : `${hoursLeft}h left`;
+                                    return `
+                                        <span class="inline-flex items-center space-x-1.5 px-2 py-1 bg-red-500/25 text-red-300 rounded-md text-[10px] font-extrabold border border-red-500/50 shadow-md opacity-100 flex-shrink-0 pointer-events-none" title="Deletes automatically in ${daysLeft} days, ${hoursLeft} hours">
+                                            <i data-lucide="timer" class="w-3 h-3 text-red-400 flex-shrink-0"></i>
+                                            <span>${text}</span>
+                                        </span>
+                                    `;
+                                })() : ''}
+                                <div class="flex flex-col items-center space-y-0.5 text-gray-500 flex-shrink-0">
+                                    <button onclick="moveTaskInGroup('${task.id}', -1, event)" class="p-0.5 hover:text-white transition" ${cardIndex === 0 ? 'disabled style="opacity: 0.2; cursor: not-allowed;"' : ''} title="Move Up">
+                                        <i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                    <button onclick="moveTaskInGroup('${task.id}', 1, event)" class="p-0.5 hover:text-white transition" ${cardIndex === tasks.length - 1 ? 'disabled style="opacity: 0.2; cursor: not-allowed;"' : ''} title="Move Down">
+                                        <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -2250,6 +2465,72 @@
                             <span>Delete All Groups</span>
                         </button>
                     </div>
+
+                    <div class="bg-[#121212] p-6 rounded-2xl border border-white/[0.06] flex flex-col justify-between md:col-span-2 space-y-5 shadow-lg">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center space-x-2.5">
+                                    <span class="p-2 rounded-xl bg-[#2997ff]/10 text-[#2997ff] border border-[#2997ff]/20"><i data-lucide="database" class="w-4 h-4"></i></span>
+                                    <div>
+                                        <h4 class="text-xs font-extrabold text-white uppercase tracking-wider">Automated Studio Backups</h4>
+                                        <p class="text-[11px] text-gray-400 mt-0.5 leading-relaxed">Full system snapshots captured automatically every 5 days with rolling rotation.</p>
+                                    </div>
+                                </div>
+                                <span class="bg-[#2997ff]/10 text-[#2997ff] text-[10px] font-mono font-bold px-3 py-1 rounded-full border border-[#2997ff]/20 flex-shrink-0">Auto-Rolling</span>
+                            </div>
+
+                            <div class="space-y-2 max-h-60 overflow-y-auto pr-1 my-4" id="auto-backups-list">
+                                ${(() => {
+                                    let backups = [];
+                                    try { backups = JSON.parse(localStorage.getItem('ANV_5DAY_SNAPSHOTS') || '[]'); } catch(e) {}
+                                    if (backups.length === 0) {
+                                        return `<div class="text-center py-6 text-xs text-gray-600 border border-dashed border-white/5 rounded-xl">No 5-day auto snapshots captured yet.</div>`;
+                                    }
+                                    return backups.map((b, idx) => `
+                                        <div onclick="previewBackupSnapshot(${idx})" class="flex items-center justify-between bg-white/[0.03] hover:bg-white/[0.06] p-3.5 rounded-xl text-xs transition border border-white/5 gap-3 cursor-pointer group">
+                                            <div class="flex items-center space-x-3 min-w-0 flex-1">
+                                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0 text-emerald-400 group-hover:scale-105 transition">
+                                                    <i data-lucide="archive" class="w-4 h-4"></i>
+                                                </div>
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="text-white font-bold truncate text-xs group-hover:text-[#2997ff] transition flex items-center space-x-1.5">
+                                                        <span>${escapeHTML(b.label || '5-Day Full Backup Snapshot')}</span>
+                                                        <i data-lucide="eye" class="w-3.5 h-3.5 text-gray-500"></i>
+                                                    </div>
+                                                    <div class="text-[10px] text-gray-400 font-mono mt-0.5 flex items-center space-x-2">
+                                                        <span>${new Date(b.timestamp).toLocaleString()}</span>
+                                                        <span>•</span>
+                                                        <span class="text-[#2997ff] font-semibold">${b.taskCount || 0} Tasks</span>
+                                                        <span>•</span>
+                                                        <span class="text-purple-400 font-semibold">${b.groupCount || 0} Groups</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-2 flex-shrink-0">
+                                                <button onclick="event.stopPropagation(); restoreAutoSnapshot(${idx});" class="btn-scale bg-[#2997ff]/15 hover:bg-[#2997ff] text-[#2997ff] hover:text-black font-bold px-3 py-1.5 rounded-xl text-xs transition flex items-center space-x-1 border border-[#2997ff]/30">
+                                                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                                                    <span>Restore</span>
+                                                </button>
+                                                <button onclick="event.stopPropagation(); deleteAutoSnapshot(${idx});" class="btn-scale p-1.5 bg-red-500/10 hover:bg-red-500/25 text-red-400 rounded-xl transition" title="Delete Snapshot">
+                                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `).join('');
+                                })()}
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-white/5">
+                            <button onclick="triggerManualSnapshot()" class="btn-scale py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold border border-white/10 transition flex items-center justify-center space-x-2">
+                                <i data-lucide="camera" class="w-4 h-4 text-[#2997ff]"></i>
+                                <span>Capture Snapshot Now</span>
+                            </button>
+                            <button onclick="triggerImport()" class="btn-scale py-3 bg-[#2997ff] hover:bg-[#0066cc] text-black hover:text-white rounded-xl text-xs font-extrabold transition flex items-center justify-center space-x-2 shadow-md">
+                                <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                                <span>Import Previous Backup File</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             `;
             lucide.createIcons();
@@ -2361,48 +2642,46 @@
                 });
             } else {
                 const task = AppState.tasks.find(t => t.id === taskId);
-                const isHeld = task ? task.holdDeletion : false;
+                const isDoneView = (AppState.currentTab === 'done');
+                const isHeld = isDoneView ? (task ? task.holdDeletion : false) : (task ? !!task.isHeldTask : false);
+                
+                let holdLabel = 'Hold Task';
+                let holdIcon = isHeld ? 'play-circle' : 'pause-circle';
+                let holdColorClass = 'text-amber-400';
+                
+                if (isDoneView) {
+                    holdLabel = isHeld ? 'Unhold Auto-Delete' : 'Hold Auto-Delete';
+                } else {
+                    holdLabel = isHeld ? 'Resume Task' : 'Hold Task';
+                }
 
                 menu.innerHTML = `
-                    <button onclick="contextToggleComplete()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                        <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                    <button onmouseenter="hideGroupSubmenu()" onclick="contextToggleComplete()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-3 font-medium">
+                        <i data-lucide="check" class="w-4 h-4 text-gray-400"></i>
                         <span>Toggle Complete</span>
                     </button>
-                    <button onclick="contextOpenDetails()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                        <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+                    <button onmouseenter="hideGroupSubmenu()" onclick="handleUnifiedHoldAction()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-3 font-medium">
+                        <i data-lucide="${holdIcon}" class="w-4 h-4 ${holdColorClass}"></i>
+                        <span>${holdLabel}</span>
+                    </button>
+                    <button onmouseenter="hideGroupSubmenu()" onclick="contextOpenDetails()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-3 font-medium">
+                        <i data-lucide="sliders" class="w-4 h-4 text-gray-400"></i>
                         <span>Edit Specifications</span>
                     </button>
-                    <div class="border-t border-white/[0.03] my-1"></div>
-                    <button onclick="triggerTaskHold(${isHeld})" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                        <i data-lucide="${isHeld ? 'unlock' : 'lock'}" class="w-3.5 h-3.5 text-[#2997ff]"></i>
-                        <span>${isHeld ? 'Unhold Auto-Delete' : 'Hold Auto-Delete'}</span>
+                    <div class="border-t border-white/5 my-1"></div>
+                    <button onmouseenter="showGroupSubmenu(event)" onclick="showGroupSubmenu(event)" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium group">
+                        <div class="flex items-center space-x-3">
+                            <i data-lucide="folder-output" class="w-4 h-4 text-gray-400 group-hover:text-white"></i>
+                            <span>Move to group</span>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-500"></i>
                     </button>
-                    <div class="border-t border-white/[0.03] my-1"></div>
-                    <div class="px-4 py-1.5 text-[9px] font-bold tracking-widest uppercase text-gray-500">Add to group</div>
-                    <div id="context-groups-list" class="max-h-32 overflow-y-auto"></div>
-                    <div class="border-t border-white/[0.03] my-1"></div>
-                    <button onclick="contextDeleteTask()" class="w-full text-left px-4 py-2 hover:bg-red-500/10 hover:text-red-400 transition flex items-center space-x-2">
-                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    <div class="border-t border-white/5 my-1"></div>
+                    <button onmouseenter="hideGroupSubmenu()" onclick="contextDeleteTask()" class="w-full text-left px-4 py-2 text-red-400 hover:bg-red-500/10 transition flex items-center space-x-3 font-medium">
+                        <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
                         <span>Delete Task</span>
                     </button>
                 `;
-                
-                const groupsList = menu.querySelector('#context-groups-list');
-                groupsList.innerHTML = '';
-                
-                const ungroupBtn = document.createElement('button');
-                ungroupBtn.onclick = () => contextMoveToGroup(null);
-                ungroupBtn.className = "w-full text-left px-4 py-1.5 hover:bg-white/5 hover:text-white transition truncate flex items-center space-x-1.5 text-xs text-gray-300";
-                ungroupBtn.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span><span>No Group / Ungrouped</span>`;
-                groupsList.appendChild(ungroupBtn);
-
-                AppState.groups.forEach(group => {
-                    const groupBtn = document.createElement('button');
-                    groupBtn.onclick = () => contextMoveToGroup(group.id);
-                    groupBtn.className = "w-full text-left px-4 py-1.5 hover:bg-white/5 hover:text-white transition truncate flex items-center space-x-1.5 text-xs text-gray-300";
-                    groupBtn.innerHTML = `<span class="w-1.5 h-1.5 rounded-full" style="background-color: ${group.color || '#2997ff'}"></span><span>${escapeHTML(group.title)}</span>`;
-                    groupsList.appendChild(groupBtn);
-                });
             }
             
             lucide.createIcons();
@@ -2430,6 +2709,70 @@
             if (menu) hideFloatingElement(menu);
             const counterMenu = document.getElementById('counter-context-menu');
             if (counterMenu) hideFloatingElement(counterMenu);
+            hideGroupSubmenu();
+        }
+
+        function showGroupSubmenu(event) {
+            if (event) event.stopPropagation();
+            const submenu = document.getElementById('group-submenu');
+            if (!submenu) return;
+
+            let html = `
+                <button onclick="contextMoveToGroup(null)" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2 font-medium truncate">
+                    <span class="w-2 h-2 rounded-full bg-gray-500 flex-shrink-0"></span>
+                    <span>No Group / Ungrouped</span>
+                </button>
+            `;
+
+            AppState.groups.forEach(g => {
+                html += `
+                    <button onclick="contextMoveToGroup('${g.id}')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2 font-medium truncate">
+                        <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${g.color || '#2997ff'}"></span>
+                        <span class="truncate">${escapeHTML(g.title)}</span>
+                    </button>
+                `;
+            });
+
+            submenu.innerHTML = html;
+            lucide.createIcons();
+
+            const triggerBtn = (event && event.currentTarget) || (event && event.target && event.target.closest('button'));
+            const btnRect = triggerBtn ? triggerBtn.getBoundingClientRect() : { right: event.clientX, top: event.clientY, bottom: event.clientY + 30 };
+            
+            positionFloatingElement(submenu, {
+                left: btnRect.right + 4,
+                top: btnRect.top - 4,
+                right: btnRect.right + 4,
+                bottom: btnRect.bottom,
+                width: 0,
+                height: 0
+            }, { margin: 2 });
+        }
+
+        function hideGroupSubmenu() {
+            const submenu = document.getElementById('group-submenu');
+            if (submenu) hideFloatingElement(submenu);
+        }
+
+        function toggleHoldTaskState() {
+            hideContextMenu();
+            const task = AppState.tasks.find(t => t.id === contextSelectedTaskId);
+            if (task) {
+                task.isHeldTask = !task.isHeldTask;
+                syncDeviceDataChannels();
+                renderTaskFeed();
+                showToast(task.isHeldTask ? 'Task Placed on Hold' : 'Task Resumed', `"${task.title}" is ${task.isHeldTask ? 'now held on pause' : 'active again'}.`);
+            }
+        }
+
+        function handleUnifiedHoldAction() {
+            if (AppState.currentTab === 'done') {
+                const task = AppState.tasks.find(t => t.id === contextSelectedTaskId);
+                const isHeld = task ? task.holdDeletion : false;
+                triggerTaskHold(isHeld);
+            } else {
+                toggleHoldTaskState();
+            }
         }
 
         function showGroupContextMenu(event, groupId) {
@@ -2494,17 +2837,13 @@
 
         function triggerTaskHold(isHeld) {
             hideContextMenu();
-            if (isHeld) {
-                const task = AppState.tasks.find(t => t.id === contextSelectedTaskId);
-                if (task) {
-                    task.holdDeletion = false;
-                    task.holdUntil = null;
-                    syncDeviceDataChannels();
-                    renderTaskFeed();
-                    showToast('Auto-Delete Unheld', `Auto-deletion hold removed for "${task.title}".`);
-                }
-            } else {
-                openHoldModal('task', contextSelectedTaskId);
+            const task = AppState.tasks.find(t => t.id === contextSelectedTaskId);
+            if (task) {
+                task.holdDeletion = !isHeld;
+                task.holdUntil = null;
+                syncDeviceDataChannels();
+                renderTaskFeed();
+                showToast(task.holdDeletion ? 'Auto-Delete Held' : 'Auto-Delete Unheld', `Auto-deletion hold ${task.holdDeletion ? 'activated' : 'removed'} for "${task.title}".`);
             }
         }
 
@@ -2649,6 +2988,20 @@
         window.closeHoldModal = closeHoldModal;
         window.toggleHoldUntilInput = toggleHoldUntilInput;
         window.handleApplyHold = handleApplyHold;
+        window.toggleHoldTaskState = toggleHoldTaskState;
+        window.handleUnifiedHoldAction = handleUnifiedHoldAction;
+        window.showGroupSubmenu = showGroupSubmenu;
+        window.hideGroupSubmenu = hideGroupSubmenu;
+        window.exportSingleTask = exportSingleTask;
+        window.triggerManualSnapshot = triggerManualSnapshot;
+        window.restoreAutoSnapshot = restoreAutoSnapshot;
+        window.deleteAutoSnapshot = deleteAutoSnapshot;
+        window.previewBackupSnapshot = previewBackupSnapshot;
+        window.checkFiveDayAutoBackup = checkFiveDayAutoBackup;
+        window.setTaskModalStep = setTaskModalStep;
+        window.handleTaskModalNextStep = handleTaskModalNextStep;
+        window.handleTaskModalBackStep = handleTaskModalBackStep;
+        window.toggleTaskCustomizationPanel = toggleTaskCustomizationPanel;
 
         function handleFeedContextMenu(event) {
             if (event.target.closest('.group-card') || 
@@ -3071,11 +3424,16 @@
                 selectNewTaskAutodelete('never', 'Do not delete');
                 document.getElementById('custom-autodelete-container').classList.add('hidden');
                 
-                document.getElementById('new-task-customization-panel').style.display = 'none';
-                document.getElementById('new-task-customization-panel').style.width = '0px';
-                container.style.maxWidth = '440px';
-                document.getElementById('toggle-customization-icon').setAttribute('data-lucide', 'chevron-right');
-                document.getElementById('toggle-customization-text').textContent = "Customize Design";
+                const customizationPanel = document.getElementById('new-task-customization-panel');
+                if (customizationPanel) {
+                    customizationPanel.style.display = 'none';
+                    customizationPanel.style.width = '0px';
+                }
+                if (container) container.style.maxWidth = '440px';
+                const stepLabel = document.getElementById('btn-modal-step-label');
+                if (stepLabel) stepLabel.textContent = 'Customize';
+
+                setTaskModalStep(1);
             }
 
             backdrop.classList.remove('hidden');
@@ -3084,6 +3442,139 @@
                 container.classList.remove('scale-95');
                 lucide.createIcons();
             }, 10);
+        }
+
+        let currentTaskModalStep = 1;
+
+        function toggleTaskCustomizationPanel() {
+            const panel = document.getElementById('new-task-customization-panel');
+            const container = document.getElementById('task-modal-container');
+            const label = document.getElementById('btn-modal-step-label');
+
+            if (!panel || !container) return;
+
+            if (panel.style.display === 'none' || panel.style.width === '0px' || !panel.style.width) {
+                panel.style.display = 'flex';
+                panel.style.width = '320px';
+                container.style.maxWidth = '760px';
+                if (label) label.textContent = 'Collapse Styles';
+            } else {
+                panel.style.display = 'none';
+                panel.style.width = '0px';
+                container.style.maxWidth = '440px';
+                if (label) label.textContent = 'Customize';
+            }
+        }
+
+        function setTaskModalStep(step) {
+            currentTaskModalStep = step;
+            const titleEl = document.getElementById('task-modal-step-title');
+            const backBtn = document.getElementById('task-modal-back-btn');
+            const step1Fields = document.getElementById('task-modal-step-1-fields');
+            const step2Color = document.getElementById('task-modal-step-2-color');
+            const step2Icon = document.getElementById('task-modal-step-2-icon');
+            const btnStep = document.getElementById('btn-modal-customization-step');
+            const btnStepLabel = document.getElementById('btn-modal-step-label');
+
+            const l1 = document.getElementById('step-line-1');
+            const l2 = document.getElementById('step-line-2');
+            const l3 = document.getElementById('step-line-3');
+
+            if (window.innerWidth >= 768) {
+                toggleTaskCustomizationPanel();
+                return;
+            }
+
+            if (!step1Fields || !step2Color || !step2Icon) return;
+
+            if (step === 1) {
+                if (titleEl) titleEl.textContent = 'Create Task';
+                if (backBtn) backBtn.classList.add('hidden');
+                step1Fields.classList.remove('hidden');
+                step2Color.classList.add('hidden');
+                step2Icon.classList.add('hidden');
+                if (btnStepLabel) btnStepLabel.textContent = 'Customize';
+                if (btnStep) btnStep.setAttribute('onclick', 'handleTaskModalNextStep()');
+
+                if (l1) l1.className = 'h-1 flex-1 bg-[#2997ff] rounded-full transition-all duration-200';
+                if (l2) l2.className = 'h-1 flex-1 bg-white/10 rounded-full transition-all duration-200';
+                if (l3) l3.className = 'h-1 flex-1 bg-white/10 rounded-full transition-all duration-200';
+            } else if (step === 2) {
+                if (titleEl) titleEl.textContent = 'Choose Priority Color';
+                if (backBtn) backBtn.classList.remove('hidden');
+                step1Fields.classList.add('hidden');
+                step2Color.classList.remove('hidden');
+                step2Icon.classList.add('hidden');
+                if (btnStepLabel) btnStepLabel.textContent = 'Next: Choose Icon →';
+                if (btnStep) btnStep.setAttribute('onclick', 'setTaskModalStep(3)');
+
+                if (l1) l1.className = 'h-1 flex-1 bg-[#2997ff] rounded-full transition-all duration-200';
+                if (l2) l2.className = 'h-1 flex-1 bg-[#2997ff] rounded-full transition-all duration-200';
+                if (l3) l3.className = 'h-1 flex-1 bg-white/10 rounded-full transition-all duration-200';
+                renderMobileColorGrid();
+            } else if (step === 3) {
+                if (titleEl) titleEl.textContent = 'Choose Icon Glyph';
+                if (backBtn) backBtn.classList.remove('hidden');
+                step1Fields.classList.add('hidden');
+                step2Color.classList.add('hidden');
+                step2Icon.classList.remove('hidden');
+                if (btnStepLabel) btnStepLabel.textContent = '← Back to Color';
+                if (btnStep) btnStep.setAttribute('onclick', 'setTaskModalStep(2)');
+
+                if (l1) l1.className = 'h-1 flex-1 bg-[#2997ff] rounded-full transition-all duration-200';
+                if (l2) l2.className = 'h-1 flex-1 bg-[#2997ff] rounded-full transition-all duration-200';
+                if (l3) l3.className = 'h-1 flex-1 bg-[#2997ff] rounded-full transition-all duration-200';
+                renderMobileIconGrid();
+            }
+            lucide.createIcons();
+        }
+
+        function handleTaskModalBackStep() {
+            if (currentTaskModalStep === 3) setTaskModalStep(2);
+            else if (currentTaskModalStep === 2) setTaskModalStep(1);
+        }
+
+        function handleTaskModalNextStep() {
+            if (window.innerWidth >= 768) {
+                toggleTaskCustomizationPanel();
+            } else {
+                setTaskModalStep(2);
+            }
+        }
+
+        function renderMobileColorGrid() {
+            const grid = document.getElementById('new-task-color-grid-mobile');
+            if (!grid) return;
+            grid.innerHTML = '';
+            SYSTEM_COLORS.slice(0, 18).forEach(color => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `w-9 h-9 rounded-full flex items-center justify-center transition-all ${AppState.tempCreatePriority === color ? 'ring-2 ring-white scale-110' : 'opacity-80 hover:opacity-100'}`;
+                btn.style.backgroundColor = color;
+                btn.onclick = () => {
+                    selectCreatePriority(color);
+                    renderMobileColorGrid();
+                };
+                grid.appendChild(btn);
+            });
+        }
+
+        function renderMobileIconGrid() {
+            const grid = document.getElementById('new-task-icon-grid-mobile');
+            if (!grid) return;
+            grid.innerHTML = '';
+            SYSTEM_ICONS.slice(0, 18).forEach(icon => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `w-9 h-9 rounded-xl flex items-center justify-center transition-all ${AppState.tempCreateIcon === icon ? 'bg-white text-black scale-110' : 'bg-white/5 text-gray-400 hover:text-white'}`;
+                btn.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4"></i>`;
+                btn.onclick = () => {
+                    selectCreateIcon(icon);
+                    renderMobileIconGrid();
+                };
+                grid.appendChild(btn);
+            });
+            lucide.createIcons();
         }
 
         function switchToGroupCreationFromTaskModal() {
@@ -3114,6 +3605,16 @@
             const backdrop = document.getElementById('task-modal-backdrop');
             const container = document.getElementById('task-modal-container');
             
+            if (shouldClearDraft) {
+                const titleVal = document.getElementById('new-task-title') ? document.getElementById('new-task-title').value.trim() : '';
+                const descVal = document.getElementById('new-task-desc') ? document.getElementById('new-task-desc').value.trim() : '';
+                if (titleVal || descVal || (AppState.tempCreateNotes && AppState.tempCreateNotes.length > 0)) {
+                    if (!confirm("You have unsaved task details. Are you sure you want to close and discard changes?")) {
+                        return;
+                    }
+                }
+            }
+
             hideFloatingElement(document.getElementById('new-task-project-options'));
             hideFloatingElement(document.getElementById('new-task-group-options'));
             hideFloatingElement(document.getElementById('new-task-autodelete-options'));
@@ -3312,7 +3813,12 @@
                     if (!isModalDropdown) {
                         const triggerBtn = (event && event.currentTarget) || (event && event.target && event.target.closest('button'));
                         const rect = triggerBtn ? triggerBtn.getBoundingClientRect() : { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
-                        positionFloatingElement(targetMenu, rect);
+                        if (menuId === 'nav-menu-dropdown-options' && triggerBtn) {
+                            const rect = triggerBtn.getBoundingClientRect();
+                            positionFloatingElement(targetMenu, rect, { margin: 6, alignRight: true });
+                        } else {
+                            positionFloatingElement(targetMenu, rect);
+                        }
                     }
                 } else {
                     hideFloatingElement(targetMenu);
@@ -3335,8 +3841,14 @@
                 if (!task.completedAt) {
                     task.completedAt = new Date().toISOString();
                 }
+                if (task.subtasks && Array.isArray(task.subtasks)) {
+                    task.subtasks.forEach(s => s.done = true);
+                }
             } else {
                 task.completedAt = null;
+                if (task.subtasks && Array.isArray(task.subtasks)) {
+                    task.subtasks.forEach(s => s.done = false);
+                }
             }
         }
 
@@ -3529,13 +4041,14 @@
             autoDeleteDropdownContainer.innerHTML = '';
 
             const policies = [
+                { value: 'default', label: 'Default (27 Days)' },
                 { value: 'never', label: 'Do not delete' },
                 { value: '1day', label: '1 Day after' },
                 { value: '1week', label: '1 Week after' },
                 { value: 'custom', label: 'Custom duration' }
             ];
 
-            let chosenPolicyLabel = 'Do not delete';
+            let chosenPolicyLabel = 'Default (27 Days)';
             policies.forEach(p => {
                 const optBtn = document.createElement('button');
                 optBtn.type = 'button';
@@ -3544,7 +4057,7 @@
                 optBtn.textContent = p.label;
                 autoDeleteDropdownContainer.appendChild(optBtn);
 
-                if (task.autoDelete === p.value) chosenPolicyLabel = p.label;
+                if (task.autoDelete === p.value || (!task.autoDelete && p.value === 'default')) chosenPolicyLabel = p.label;
             });
             document.getElementById('ins-selected-autodelete-label').textContent = chosenPolicyLabel;
 
@@ -3612,6 +4125,19 @@
                 syncDeviceDataChannels();
                 renderInspector();
             }
+        }
+
+        function exportSingleTask() {
+            const task = AppState.tasks.find(t => t.id === AppState.selectedTaskId);
+            if (!task) return;
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(task, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `task-${task.title.toLowerCase().replace(/[^a-z0-9]/g, '-')}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast('Task Exported', `Exported "${task.title}" to JSON.`);
         }
 
         function updateInspectorPriority(colorHex) {
@@ -4221,6 +4747,287 @@
             renderTaskFeed();
         }
 
+        function checkFiveDayAutoBackup() {
+            let backups = [];
+            try { backups = JSON.parse(localStorage.getItem('ANV_5DAY_SNAPSHOTS') || '[]'); } catch(e) {}
+            
+            const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
+            const lastBackupTime = backups.length > 0 ? backups[0].timestamp : 0;
+            
+            if (Date.now() - lastBackupTime >= FIVE_DAYS_MS || backups.length === 0) {
+                const snapshot = {
+                    id: 'snap-' + Date.now(),
+                    timestamp: Date.now(),
+                    label: `5-Day Full Backup (${new Date().toLocaleDateString()})`,
+                    taskCount: AppState.tasks.length,
+                    groupCount: AppState.groups.length,
+                    data: {
+                        tasks: JSON.parse(JSON.stringify(AppState.tasks)),
+                        projects: JSON.parse(JSON.stringify(AppState.projects)),
+                        groups: JSON.parse(JSON.stringify(AppState.groups))
+                    }
+                };
+                
+                // Rotation: Keep latest 5 snapshots, automatically replacing old 5-day backups
+                backups.unshift(snapshot);
+                if (backups.length > 5) backups = backups.slice(0, 5);
+                
+                try { localStorage.setItem('ANV_5DAY_SNAPSHOTS', JSON.stringify(backups)); } catch(e) {}
+            }
+        }
+
+        function triggerManualSnapshot() {
+            let backups = [];
+            try { backups = JSON.parse(localStorage.getItem('ANV_5DAY_SNAPSHOTS') || '[]'); } catch(e) {}
+            
+            const snapshot = {
+                id: 'snap-' + Date.now(),
+                timestamp: Date.now(),
+                label: `Manual 5-Day Snapshot (${new Date().toLocaleDateString()})`,
+                taskCount: AppState.tasks.length,
+                groupCount: AppState.groups.length,
+                data: {
+                    tasks: JSON.parse(JSON.stringify(AppState.tasks)),
+                    projects: JSON.parse(JSON.stringify(AppState.projects)),
+                    groups: JSON.parse(JSON.stringify(AppState.groups))
+                }
+            };
+            
+            backups.unshift(snapshot);
+            if (backups.length > 5) backups = backups.slice(0, 5);
+            
+            try { localStorage.setItem('ANV_5DAY_SNAPSHOTS', JSON.stringify(backups)); } catch(e) {}
+            if (AppState.currentTab === 'manage') renderManageDashboard();
+            showToast('5-Day Snapshot Created', 'Captured full task directory snapshot.');
+        }
+
+        function deleteAutoSnapshot(index) {
+            let backups = [];
+            try { backups = JSON.parse(localStorage.getItem('ANV_5DAY_SNAPSHOTS') || '[]'); } catch(e) {}
+            if (index < 0 || index >= backups.length) return;
+            const target = backups[index];
+            showDeleteConfirmation(`Delete backup snapshot "${target.label || 'Snapshot'}"?`, () => {
+                backups.splice(index, 1);
+                try { localStorage.setItem('ANV_5DAY_SNAPSHOTS', JSON.stringify(backups)); } catch(e) {}
+                if (AppState.currentTab === 'manage') renderManageDashboard();
+                showToast('Snapshot Deleted', 'Backup removed successfully.');
+            });
+        }
+
+        function deleteAllTasksStudio() {
+            if (AppState.tasks.length === 0) return;
+            showDeleteConfirmation(`Are you sure you want to permanently delete ALL ${AppState.tasks.length} task(s)? This action cannot be undone.`, () => {
+                AppState.tasks = [];
+                syncDeviceDataChannels();
+                renderTaskFeed();
+                updateGlobalBadges();
+                closeInspector();
+                showToast('All Tasks Deleted', 'Entire task directory cleared.');
+            });
+        }
+
+        function deleteAllGroupsStudio() {
+            if (AppState.groups.length === 0) return;
+            showDeleteConfirmation(`Are you sure you want to permanently delete ALL ${AppState.groups.length} group column(s) and their contained tasks? This action cannot be undone.`, () => {
+                AppState.groups = [];
+                AppState.tasks = AppState.tasks.filter(t => !t.groupId);
+                syncDeviceDataChannels();
+                renderTaskFeed();
+                updateGlobalBadges();
+                closeInspector();
+                showToast('All Groups Deleted', 'Cleared all group columns.');
+            });
+        }
+
+        function renderManageDashboard() {
+            const container = document.getElementById('tasks-list');
+            if (!container) return;
+            const feedTitle = document.getElementById('feed-current-title');
+            if (feedTitle) feedTitle.textContent = 'Manage Studio';
+
+            let backups = [];
+            try { backups = JSON.parse(localStorage.getItem('ANV_5DAY_SNAPSHOTS') || '[]'); } catch(e) {}
+
+            let backupListHTML = '';
+            if (backups.length === 0) {
+                backupListHTML = `
+                    <div class="text-center py-6 text-xs text-gray-500 border border-dashed border-white/5 rounded-xl">
+                        No 5-day snapshots available. Click "Capture Snapshot" to store a backup.
+                    </div>
+                `;
+            } else {
+                backupListHTML = backups.map((b, idx) => `
+                    <div class="bg-white/5 p-3.5 rounded-2xl border border-white/5 hover:bg-white/10 transition flex flex-col md:flex-row md:items-center justify-between gap-3">
+                        <div class="flex items-center justify-between md:justify-start space-x-3 w-full md:w-auto">
+                            <div class="flex items-center space-x-3 min-w-0">
+                                <div class="p-2 bg-[#2997ff]/10 text-[#2997ff] rounded-xl flex-shrink-0">
+                                    <i data-lucide="archive" class="w-4 h-4"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex items-center space-x-2 flex-wrap">
+                                        <h4 class="text-xs font-bold text-white truncate">${escapeHTML(b.label || 'Snapshot')}</h4>
+                                    </div>
+                                    <div class="flex items-center space-x-2 mt-1 flex-wrap gap-y-1">
+                                        <span class="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-white/10 text-gray-300 border border-white/5">${new Date(b.timestamp).toLocaleDateString()} ${new Date(b.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                        <span class="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-[#2997ff]/15 text-[#2997ff] border border-[#2997ff]/20">${b.taskCount} Tasks</span>
+                                        <span class="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-purple-500/15 text-purple-300 border border-purple-500/20">${b.groupCount || 0} Groups</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="deleteAutoSnapshot(${idx})" class="p-2 text-gray-400 hover:text-red-400 rounded-full hover:bg-white/10 transition md:hidden" title="Delete Snapshot">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div class="flex flex-col sm:flex-row md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto">
+                            <button type="button" onclick="previewBackupSnapshot(${idx})" class="btn-scale px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-semibold border border-white/10 transition flex items-center justify-center space-x-1.5">
+                                <i data-lucide="eye" class="w-3.5 h-3.5 text-[#2997ff]"></i>
+                                <span>Preview</span>
+                            </button>
+                            <button type="button" onclick="restoreAutoSnapshot(${idx})" class="btn-scale px-4 py-2 bg-[#2997ff] text-black hover:bg-[#0066cc] hover:text-white rounded-full text-xs font-bold transition flex items-center justify-center space-x-1.5 shadow-md">
+                                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                                <span>Restore</span>
+                            </button>
+                            <button type="button" onclick="deleteAutoSnapshot(${idx})" class="hidden md:flex btn-scale p-2 text-gray-400 hover:text-red-400 rounded-full hover:bg-white/5 transition items-center justify-center" title="Delete Snapshot">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            container.innerHTML = `
+                <div class="space-y-6 max-w-4xl mx-auto p-2 sm:p-4 animate-fade-in" id="manage-studio" oncontextmenu="handleManageStudioContextMenu(event)">
+                    
+                    <!-- 5-Day Backups Box -->
+                    <div class="bg-[#121212] border border-white/5 rounded-2xl p-4 sm:p-6 space-y-4 shadow-xl">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-4 gap-3">
+                            <div>
+                                <h3 class="text-sm font-extrabold text-white flex items-center space-x-2">
+                                    <i data-lucide="database" class="w-4 h-4 text-[#2997ff]"></i>
+                                    <span>5-Day Directory Backups & Snapshots</span>
+                                </h3>
+                                <p class="text-xs text-gray-400 mt-1">Automatic 5-day rotation & manual system snapshots.</p>
+                            </div>
+                            <button type="button" onclick="triggerManualSnapshot()" class="btn-scale px-4 py-2.5 bg-[#2997ff] text-black font-bold rounded-full text-xs hover:bg-[#0066cc] hover:text-white transition shadow-md flex items-center justify-center space-x-2">
+                                <i data-lucide="camera" class="w-4 h-4"></i>
+                                <span>Capture Snapshot</span>
+                            </button>
+                        </div>
+                        <div class="space-y-3">
+                            ${backupListHTML}
+                        </div>
+                    </div>
+
+                    <!-- Reset & Clearance Actions Section -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Delete All Tasks Box -->
+                        <div class="bg-[#121212] border border-red-500/20 rounded-2xl p-5 space-y-3 shadow-xl flex flex-col justify-between">
+                            <div class="space-y-1.5">
+                                <div class="flex items-center space-x-2 text-red-400">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    <h4 class="text-xs font-extrabold uppercase tracking-wider text-white">Delete All Tasks</h4>
+                                </div>
+                                <p class="text-xs text-gray-400 leading-relaxed">Permanently clear all task items from your workspace. Existing group column structures will remain intact.</p>
+                            </div>
+                            <button type="button" onclick="deleteAllTasksStudio()" class="btn-scale w-full py-2.5 bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 rounded-full text-xs font-bold transition flex items-center justify-center space-x-2">
+                                <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+                                <span>Delete All Tasks</span>
+                            </button>
+                        </div>
+
+                        <!-- Delete All Groups Box -->
+                        <div class="bg-[#121212] border border-red-500/20 rounded-2xl p-5 space-y-3 shadow-xl flex flex-col justify-between">
+                            <div class="space-y-1.5">
+                                <div class="flex items-center space-x-2 text-red-400">
+                                    <i data-lucide="folder-x" class="w-4 h-4"></i>
+                                    <h4 class="text-xs font-extrabold uppercase tracking-wider text-white">Delete All Groups</h4>
+                                </div>
+                                <p class="text-xs text-gray-400 leading-relaxed">Remove all custom group columns and clear all tasks assigned inside them from your directory.</p>
+                            </div>
+                            <button type="button" onclick="deleteAllGroupsStudio()" class="btn-scale w-full py-2.5 bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 rounded-full text-xs font-bold transition flex items-center justify-center space-x-2">
+                                <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+                                <span>Delete All Group Columns</span>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function previewBackupSnapshot(index) {
+            let backups = [];
+            try { backups = JSON.parse(localStorage.getItem('ANV_5DAY_SNAPSHOTS') || '[]'); } catch(e) {}
+            const target = backups[index];
+            if (!target || !target.data) return;
+
+            const snapTasks = target.data.tasks || [];
+            const snapGroups = target.data.groups || [];
+
+            const existingModal = document.getElementById('snapshot-preview-modal');
+            if (existingModal) existingModal.remove();
+
+            const modal = document.createElement('div');
+            modal.id = 'snapshot-preview-modal';
+            modal.className = "fixed inset-0 bg-black/85 backdrop-blur-md z-[200] flex items-end sm:items-center justify-center p-3 sm:p-4 animate-fade-in";
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+            modal.innerHTML = `
+                <div class="bg-[#121212] border border-white/10 rounded-2xl w-full max-w-lg p-5 shadow-2xl space-y-4 max-h-[80vh] flex flex-col">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-3">
+                        <div>
+                            <h3 class="text-xs font-extrabold text-white flex items-center space-x-2 uppercase tracking-wider">
+                                <i data-lucide="archive" class="w-4 h-4 text-[#2997ff]"></i>
+                                <span>${escapeHTML(target.label || 'Snapshot Preview')}</span>
+                            </h3>
+                            <div class="text-[10px] text-gray-400 font-mono mt-0.5">${new Date(target.timestamp).toLocaleString()} • ${snapTasks.length} Tasks • ${snapGroups.length} Groups</div>
+                        </div>
+                        <button type="button" onclick="document.getElementById('snapshot-preview-modal').remove()" class="p-1.5 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                        ${snapTasks.length === 0 ? '<div class="text-center py-8 text-xs text-gray-600 border border-dashed border-white/5 rounded-xl">No tasks saved in this snapshot</div>' : snapTasks.map(t => {
+                            const group = snapGroups.find(g => g.id === t.groupId);
+                            return `
+                                <div class="flex items-center justify-between bg-white/5 p-2.5 rounded-xl text-xs border border-white/5">
+                                    <div class="flex items-center space-x-2.5 min-w-0 flex-1">
+                                        <span class="w-2.5 h-2.5 rounded-full border flex-shrink-0" style="border-color: ${t.color || '#2997ff'}; background-color: ${t.done ? (t.color || '#2997ff') : 'transparent'};"></span>
+                                        <span class="text-white font-medium truncate ${t.done ? 'line-through text-gray-500' : ''}">${escapeHTML(t.title)}</span>
+                                    </div>
+                                    ${group ? `<span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-white/5 text-gray-400 flex-shrink-0">${escapeHTML(group.title)}</span>` : ''}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    <div class="pt-3 border-t border-white/5 flex items-center justify-center">
+                        <button type="button" onclick="document.getElementById('snapshot-preview-modal').remove()" class="btn-scale w-full py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-bold transition border border-white/10">
+                            Close Preview
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            lucide.createIcons();
+        }
+
+        function restoreAutoSnapshot(index) {
+            let backups = [];
+            try { backups = JSON.parse(localStorage.getItem('ANV_5DAY_SNAPSHOTS') || '[]'); } catch(e) {}
+            const target = backups[index];
+            if (!target || !target.data) return;
+            
+            showDeleteConfirmation(`Restore snapshot "${target.label}"? Current workspace data will be replaced.`, () => {
+                AppState.tasks = target.data.tasks || [];
+                AppState.projects = target.data.projects || [];
+                AppState.groups = target.data.groups || [];
+                syncDeviceDataChannels();
+                renderTaskFeed();
+                showToast('Backup Restored', `Restored ${target.taskCount} tasks from 5-day snapshot.`);
+            });
+        }
+
         function exportData() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
                 tasks: AppState.tasks,
@@ -4268,16 +5075,16 @@
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             
-            toast.className = "p-4 bg-[#121212] text-white rounded-xl shadow-2xl flex items-start space-x-3.5 max-w-sm pointer-events-auto opacity-0 transform translate-y-1 transition duration-150 ease-out border border-white/[0.04]";
+            toast.className = "px-4 py-2.5 bg-[#141414] text-white rounded-full shadow-2xl flex items-center space-x-3 max-w-sm pointer-events-auto opacity-0 transform translate-y-1 transition duration-200 ease-out border border-white/10 backdrop-blur-md";
             toast.innerHTML = `
-                <div class="p-1.5 rounded-lg bg-[#2997ff]/10 text-[#2997ff] flex-shrink-0">
-                    <i data-lucide="indigo" class="w-4 h-4"></i>
+                <div class="p-1 rounded-full bg-[#2997ff]/15 text-[#2997ff] flex-shrink-0">
+                    <i data-lucide="info" class="w-3.5 h-3.5"></i>
                 </div>
-                <div class="flex-1 min-w-0">
-                    <h5 class="text-xs font-bold tracking-tight">${escapeHTML(title)}</h5>
-                    <p class="text-[11px] text-gray-400 mt-0.5 leading-relaxed truncate">${escapeHTML(msg)}</p>
+                <div class="flex-1 min-w-0 flex items-center space-x-1.5">
+                    <span class="text-xs font-bold tracking-tight text-white whitespace-nowrap">${escapeHTML(title)}:</span>
+                    <span class="text-[11px] text-gray-300 truncate">${escapeHTML(msg)}</span>
                 </div>
-                <button onclick="this.closest('.pointer-events-auto').remove()" class="p-1 hover:bg-white/5 rounded-md text-gray-500 hover:text-white transition flex-shrink-0 btn-scale" title="Dismiss Alert">
+                <button onclick="this.closest('.pointer-events-auto').remove()" class="p-1 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition flex-shrink-0 btn-scale" title="Dismiss Alert">
                     <i data-lucide="x" class="w-3.5 h-3.5"></i>
                 </button>
             `;
