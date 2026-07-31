@@ -488,14 +488,21 @@
                 const inspector = getInspector();
                 const isInspectorOpen = inspector && AppState.selectedTaskId !== null;
 
-                if (isSidebarOpen && touchStartX > 200) {
-                    isDraggingSidebar = true;
-                } else if (touchStartX < 30 && !isSidebarOpen) {
+                // Drag sidebar: if open, tap anywhere or drag left; if closed, edge swipe from left < 35px
+                if (isSidebarOpen) {
+                    if (touchStartX > 200 || e.target.closest('#sidebar-panel')) {
+                        isDraggingSidebar = true;
+                    }
+                } else if (touchStartX < 35) {
                     isDraggingSidebar = true;
                 }
 
-                if (isInspectorOpen && touchStartY < window.innerHeight * 0.7) {
-                    isDraggingInspector = true;
+                // Drag inspector sheet down
+                if (isInspectorOpen && e.target.closest('#inspector-panel')) {
+                    const scrollContainer = e.target.closest('.overflow-y-auto');
+                    if (!scrollContainer || scrollContainer.scrollTop <= 0) {
+                        isDraggingInspector = true;
+                    }
                 }
             }, { passive: true });
 
@@ -518,7 +525,6 @@
                     } else if (!isSidebarOpen && deltaX > 0) {
                         const progress = Math.max(0, Math.min(1, deltaX / 280));
                         sidebar.classList.remove('hidden');
-                        sidebar.style.width = '280px';
                         sidebar.style.transform = `translateX(${-280 + deltaX}px)`;
                         sidebarOverlay.classList.remove('hidden');
                         sidebarOverlay.style.opacity = progress;
@@ -529,7 +535,7 @@
                 const isInspectorOpen = inspector && AppState.selectedTaskId !== null;
 
                 if (isDraggingInspector && inspector && isInspectorOpen && deltaY > 0) {
-                    const progress = Math.max(0, Math.min(1, 1 - (deltaY / (window.innerHeight * 0.66))));
+                    const progress = Math.max(0, Math.min(1, 1 - (deltaY / (window.innerHeight * 0.5))));
                     inspector.style.transform = `translateY(${deltaY}px)`;
                     inspectorOverlay.classList.remove('hidden');
                     inspectorOverlay.style.opacity = progress;
@@ -544,13 +550,13 @@
                 const sidebar = getSidebar();
                 const isSidebarOpen = sidebar && !AppState.sidebarCollapsed;
 
-                if (sidebar) {
+                if (isDraggingSidebar && sidebar) {
                     sidebar.style.transform = '';
                     sidebarOverlay.style.opacity = '';
-                    if (isSidebarOpen && deltaX < -70) {
+                    if (isSidebarOpen && deltaX < -60) {
                         closeSidebarMobile();
                         sidebarOverlay.classList.add('hidden');
-                    } else if (!isSidebarOpen && touchStartX < 40 && deltaX > 70) {
+                    } else if (!isSidebarOpen && touchStartX < 35 && deltaX > 60) {
                         openSidebarMobile();
                         sidebarOverlay.classList.remove('hidden');
                     } else if (isSidebarOpen) {
@@ -564,17 +570,15 @@
                 const inspector = getInspector();
                 const isInspectorOpen = inspector && AppState.selectedTaskId !== null;
 
-                if (inspector) {
+                if (isDraggingInspector && inspector && isInspectorOpen) {
                     inspector.style.transform = '';
                     inspectorOverlay.style.opacity = '';
-                    if (isInspectorOpen && deltaY > 90) {
+                    if (deltaY > 80) {
                         closeInspector();
                         inspectorOverlay.classList.add('hidden');
-                    } else if (isInspectorOpen) {
+                    } else {
                         inspectorOverlay.classList.remove('hidden');
                         inspectorOverlay.classList.add('opacity-100');
-                    } else {
-                        inspectorOverlay.classList.add('hidden');
                     }
                 }
 
@@ -1856,9 +1860,16 @@
                 }
             }
 
+            const mobileActionHeader = document.getElementById('mobile-action-section-header');
+            const mobileSearchContainer = document.getElementById('mobile-search-bar-container');
+
             if (AppState.currentTab === 'manage') {
+                if (mobileActionHeader) mobileActionHeader.classList.add('hidden');
+                if (mobileSearchContainer) mobileSearchContainer.classList.add('hidden');
                 renderManageDashboard();
                 return;
+            } else {
+                if (mobileActionHeader) mobileActionHeader.classList.remove('hidden');
             }
 
             const filtered = getFilteredTasks();
@@ -4803,6 +4814,31 @@
             });
         }
 
+        function deleteAllTasksStudio() {
+            if (AppState.tasks.length === 0) return;
+            showDeleteConfirmation(`Are you sure you want to permanently delete ALL ${AppState.tasks.length} task(s)? This action cannot be undone.`, () => {
+                AppState.tasks = [];
+                syncDeviceDataChannels();
+                renderTaskFeed();
+                updateGlobalBadges();
+                closeInspector();
+                showToast('All Tasks Deleted', 'Entire task directory cleared.');
+            });
+        }
+
+        function deleteAllGroupsStudio() {
+            if (AppState.groups.length === 0) return;
+            showDeleteConfirmation(`Are you sure you want to permanently delete ALL ${AppState.groups.length} group column(s) and their contained tasks? This action cannot be undone.`, () => {
+                AppState.groups = [];
+                AppState.tasks = AppState.tasks.filter(t => !t.groupId);
+                syncDeviceDataChannels();
+                renderTaskFeed();
+                updateGlobalBadges();
+                closeInspector();
+                showToast('All Groups Deleted', 'Cleared all group columns.');
+            });
+        }
+
         function renderManageDashboard() {
             const container = document.getElementById('tasks-list');
             if (!container) return;
@@ -4821,24 +4857,37 @@
                 `;
             } else {
                 backupListHTML = backups.map((b, idx) => `
-                    <div class="flex items-center justify-between bg-white/5 p-3.5 rounded-xl border border-white/5 hover:bg-white/10 transition">
-                        <div class="flex items-center space-x-3">
-                            <div class="p-2 bg-[#2997ff]/10 text-[#2997ff] rounded-lg">
-                                <i data-lucide="archive" class="w-4 h-4"></i>
+                    <div class="bg-white/5 p-3.5 rounded-2xl border border-white/5 hover:bg-white/10 transition flex flex-col md:flex-row md:items-center justify-between gap-3">
+                        <div class="flex items-center justify-between md:justify-start space-x-3 w-full md:w-auto">
+                            <div class="flex items-center space-x-3 min-w-0">
+                                <div class="p-2 bg-[#2997ff]/10 text-[#2997ff] rounded-xl flex-shrink-0">
+                                    <i data-lucide="archive" class="w-4 h-4"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex items-center space-x-2 flex-wrap">
+                                        <h4 class="text-xs font-bold text-white truncate">${escapeHTML(b.label || 'Snapshot')}</h4>
+                                    </div>
+                                    <div class="flex items-center space-x-2 mt-1 flex-wrap gap-y-1">
+                                        <span class="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-white/10 text-gray-300 border border-white/5">${new Date(b.timestamp).toLocaleDateString()} ${new Date(b.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                        <span class="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-[#2997ff]/15 text-[#2997ff] border border-[#2997ff]/20">${b.taskCount} Tasks</span>
+                                        <span class="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-purple-500/15 text-purple-300 border border-purple-500/20">${b.groupCount || 0} Groups</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <h4 class="text-xs font-bold text-white">${escapeHTML(b.label || 'Snapshot')}</h4>
-                                <div class="text-[10px] text-gray-400 font-mono">${new Date(b.timestamp).toLocaleString()} • ${b.taskCount} Tasks</div>
-                            </div>
+                            <button type="button" onclick="deleteAutoSnapshot(${idx})" class="p-2 text-gray-400 hover:text-red-400 rounded-full hover:bg-white/10 transition md:hidden" title="Delete Snapshot">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
                         </div>
-                        <div class="flex items-center space-x-2">
-                            <button type="button" onclick="previewBackupSnapshot(${idx})" class="btn-scale px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white rounded-lg text-xs font-semibold border border-white/10 transition">
-                                Preview
+                        <div class="flex flex-col sm:flex-row md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto">
+                            <button type="button" onclick="previewBackupSnapshot(${idx})" class="btn-scale px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-semibold border border-white/10 transition flex items-center justify-center space-x-1.5">
+                                <i data-lucide="eye" class="w-3.5 h-3.5 text-[#2997ff]"></i>
+                                <span>Preview</span>
                             </button>
-                            <button type="button" onclick="restoreAutoSnapshot(${idx})" class="btn-scale px-3 py-1.5 bg-[#2997ff] text-black hover:bg-[#0066cc] hover:text-white rounded-lg text-xs font-bold transition">
-                                Restore
+                            <button type="button" onclick="restoreAutoSnapshot(${idx})" class="btn-scale px-4 py-2 bg-[#2997ff] text-black hover:bg-[#0066cc] hover:text-white rounded-full text-xs font-bold transition flex items-center justify-center space-x-1.5 shadow-md">
+                                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                                <span>Restore</span>
                             </button>
-                            <button type="button" onclick="deleteAutoSnapshot(${idx})" class="btn-scale p-1.5 text-gray-400 hover:text-red-400 rounded-lg hover:bg-white/5 transition" title="Delete Snapshot">
+                            <button type="button" onclick="deleteAutoSnapshot(${idx})" class="hidden md:flex btn-scale p-2 text-gray-400 hover:text-red-400 rounded-full hover:bg-white/5 transition items-center justify-center" title="Delete Snapshot">
                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                             </button>
                         </div>
@@ -4847,25 +4896,61 @@
             }
 
             container.innerHTML = `
-                <div class="space-y-6 max-w-4xl mx-auto p-4" id="manage-studio" oncontextmenu="handleManageStudioContextMenu(event)">
-                    <div class="bg-[#121212] border border-white/5 rounded-2xl p-6 space-y-4">
-                        <div class="flex items-center justify-between border-b border-white/5 pb-4">
+                <div class="space-y-6 max-w-4xl mx-auto p-2 sm:p-4 animate-fade-in" id="manage-studio" oncontextmenu="handleManageStudioContextMenu(event)">
+                    
+                    <!-- 5-Day Backups Box -->
+                    <div class="bg-[#121212] border border-white/5 rounded-2xl p-4 sm:p-6 space-y-4 shadow-xl">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-4 gap-3">
                             <div>
                                 <h3 class="text-sm font-extrabold text-white flex items-center space-x-2">
                                     <i data-lucide="database" class="w-4 h-4 text-[#2997ff]"></i>
                                     <span>5-Day Directory Backups & Snapshots</span>
                                 </h3>
-                                <p class="text-xs text-gray-400 mt-1">Automatic & manual system backups stored locally in browser storage.</p>
+                                <p class="text-xs text-gray-400 mt-1">Automatic 5-day rotation & manual system snapshots.</p>
                             </div>
-                            <button type="button" onclick="triggerManualSnapshot()" class="btn-scale px-4 py-2 bg-[#2997ff] text-black font-bold rounded-xl text-xs hover:bg-[#0066cc] hover:text-white transition shadow-md flex items-center space-x-2">
-                                <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+                            <button type="button" onclick="triggerManualSnapshot()" class="btn-scale px-4 py-2.5 bg-[#2997ff] text-black font-bold rounded-full text-xs hover:bg-[#0066cc] hover:text-white transition shadow-md flex items-center justify-center space-x-2">
+                                <i data-lucide="camera" class="w-4 h-4"></i>
                                 <span>Capture Snapshot</span>
                             </button>
                         </div>
-                        <div class="space-y-2">
+                        <div class="space-y-3">
                             ${backupListHTML}
                         </div>
                     </div>
+
+                    <!-- Reset & Clearance Actions Section -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Delete All Tasks Box -->
+                        <div class="bg-[#121212] border border-red-500/20 rounded-2xl p-5 space-y-3 shadow-xl flex flex-col justify-between">
+                            <div class="space-y-1.5">
+                                <div class="flex items-center space-x-2 text-red-400">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    <h4 class="text-xs font-extrabold uppercase tracking-wider text-white">Delete All Tasks</h4>
+                                </div>
+                                <p class="text-xs text-gray-400 leading-relaxed">Permanently clear all task items from your workspace. Existing group column structures will remain intact.</p>
+                            </div>
+                            <button type="button" onclick="deleteAllTasksStudio()" class="btn-scale w-full py-2.5 bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 rounded-full text-xs font-bold transition flex items-center justify-center space-x-2">
+                                <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+                                <span>Delete All Tasks</span>
+                            </button>
+                        </div>
+
+                        <!-- Delete All Groups Box -->
+                        <div class="bg-[#121212] border border-red-500/20 rounded-2xl p-5 space-y-3 shadow-xl flex flex-col justify-between">
+                            <div class="space-y-1.5">
+                                <div class="flex items-center space-x-2 text-red-400">
+                                    <i data-lucide="folder-x" class="w-4 h-4"></i>
+                                    <h4 class="text-xs font-extrabold uppercase tracking-wider text-white">Delete All Groups</h4>
+                                </div>
+                                <p class="text-xs text-gray-400 leading-relaxed">Remove all custom group columns and clear all tasks assigned inside them from your directory.</p>
+                            </div>
+                            <button type="button" onclick="deleteAllGroupsStudio()" class="btn-scale w-full py-2.5 bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 rounded-full text-xs font-bold transition flex items-center justify-center space-x-2">
+                                <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+                                <span>Delete All Group Columns</span>
+                            </button>
+                        </div>
+                    </div>
+
                 </div>
             `;
             lucide.createIcons();
@@ -4885,24 +4970,24 @@
 
             const modal = document.createElement('div');
             modal.id = 'snapshot-preview-modal';
-            modal.className = "fixed inset-0 bg-black/85 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-fade-in";
+            modal.className = "fixed inset-0 bg-black/85 backdrop-blur-md z-[200] flex items-end sm:items-center justify-center p-3 sm:p-4 animate-fade-in";
             modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
 
             modal.innerHTML = `
-                <div class="bg-[#121212] border border-white/10 rounded-2xl w-full max-w-lg p-5 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+                <div class="bg-[#121212] border border-white/10 rounded-2xl w-full max-w-lg p-5 shadow-2xl space-y-4 max-h-[80vh] flex flex-col">
                     <div class="flex items-center justify-between border-b border-white/5 pb-3">
                         <div>
                             <h3 class="text-xs font-extrabold text-white flex items-center space-x-2 uppercase tracking-wider">
-                                <i data-lucide="archive" class="w-4 h-4 text-emerald-400"></i>
+                                <i data-lucide="archive" class="w-4 h-4 text-[#2997ff]"></i>
                                 <span>${escapeHTML(target.label || 'Snapshot Preview')}</span>
                             </h3>
-                            <div class="text-[10px] text-gray-400 font-mono mt-0.5">${new Date(target.timestamp).toLocaleString()} • ${snapTasks.length} Tasks</div>
+                            <div class="text-[10px] text-gray-400 font-mono mt-0.5">${new Date(target.timestamp).toLocaleString()} • ${snapTasks.length} Tasks • ${snapGroups.length} Groups</div>
                         </div>
-                        <button type="button" onclick="document.getElementById('snapshot-preview-modal').remove()" class="p-1 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg">
+                        <button type="button" onclick="document.getElementById('snapshot-preview-modal').remove()" class="p-1.5 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </button>
                     </div>
-                    <div class="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar">
+                    <div class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                         ${snapTasks.length === 0 ? '<div class="text-center py-8 text-xs text-gray-600 border border-dashed border-white/5 rounded-xl">No tasks saved in this snapshot</div>' : snapTasks.map(t => {
                             const group = snapGroups.find(g => g.id === t.groupId);
                             return `
@@ -4916,19 +5001,10 @@
                             `;
                         }).join('')}
                     </div>
-                    <div class="pt-2 border-t border-white/5 flex items-center justify-between space-x-2">
-                        <button type="button" onclick="document.getElementById('snapshot-preview-modal').remove(); deleteAutoSnapshot(${index});" class="btn-scale bg-red-500/15 hover:bg-red-500/25 text-red-400 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1 border border-red-500/30">
-                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                            <span>Delete Snapshot</span>
+                    <div class="pt-3 border-t border-white/5 flex items-center justify-center">
+                        <button type="button" onclick="document.getElementById('snapshot-preview-modal').remove()" class="btn-scale w-full py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-bold transition border border-white/10">
+                            Close Preview
                         </button>
-                        <div class="flex items-center space-x-2 flex-1 justify-end">
-                            <button type="button" onclick="document.getElementById('snapshot-preview-modal').remove()" class="btn-scale px-3 py-2 bg-white/5 text-gray-300 rounded-xl text-xs font-semibold hover:bg-white/10 transition">
-                                Close
-                            </button>
-                            <button type="button" onclick="document.getElementById('snapshot-preview-modal').remove(); restoreAutoSnapshot(${index});" class="btn-scale px-4 py-2 bg-[#2997ff] text-black font-bold rounded-xl text-xs transition hover:bg-[#0066cc] hover:text-white shadow-md">
-                                Restore Snapshot
-                            </button>
-                        </div>
                     </div>
                 </div>
             `;
