@@ -57,8 +57,7 @@
                 updated_at: task.updatedAt || new Date().toISOString(),
                 completed_at: task.completedAt || null,
                 hold_deletion: !!task.holdDeletion,
-                hold_until: task.holdUntil || null,
-                is_held_task: !!task.isHeldTask
+                hold_until: task.holdUntil || null
             };
         }
 
@@ -82,7 +81,7 @@
                 completedAt: dbTask.completed_at || null,
                 holdDeletion: !!dbTask.hold_deletion,
                 holdUntil: dbTask.hold_until || null,
-                isHeldTask: !!dbTask.is_held_task
+                isHeldTask: !!(dbTask.hold_deletion || dbTask.isHeldTask)
             };
         }
 
@@ -1696,14 +1695,16 @@
             const resizer = document.getElementById('sidebar-resizer');
             const uncollapseBtn = document.getElementById('sidebar-uncollapse-btn');
 
+            if (!sidebar) return;
+
             if (AppState.sidebarCollapsed) {
                 sidebar.style.width = '280px';
-                resizer.style.display = 'block';
-                uncollapseBtn.classList.add('hidden');
+                if (resizer) resizer.style.display = 'block';
+                if (uncollapseBtn) uncollapseBtn.classList.add('hidden');
             } else {
                 sidebar.style.width = '0px';
-                resizer.style.display = 'none';
-                uncollapseBtn.classList.remove('hidden');
+                if (resizer) resizer.style.display = 'none';
+                if (uncollapseBtn) uncollapseBtn.classList.remove('hidden');
             }
             AppState.sidebarCollapsed = !AppState.sidebarCollapsed;
         }
@@ -5073,10 +5074,18 @@
         }
 
         function showToast(title, msg) {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-xs z-[300] space-y-2.5 pointer-events-none flex flex-col items-center sm:items-end';
+                document.body.appendChild(container);
+            }
+            const wrapper = document.createElement('div');
+            wrapper.className = "p-[1px] bg-gradient-to-r from-[#2997ff]/40 via-white/10 to-transparent rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.9)] max-w-sm w-full pointer-events-auto opacity-0 transform translate-y-2 transition duration-250 ease-out";
             
-            toast.className = "px-4 py-3 bg-gradient-to-r from-[#181818] via-[#121212] to-[#0A0A0A] text-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.95)] flex items-center space-x-3 max-w-sm w-full pointer-events-auto opacity-0 transform translate-y-2 transition duration-250 ease-out border border-white/15 relative overflow-hidden";
+            const toast = document.createElement('div');
+            toast.className = "px-4 py-2.5 bg-[#141414] text-white rounded-full flex items-center space-x-3 w-full border border-white/10 relative overflow-hidden";
             toast.innerHTML = `
                 <div class="p-1 rounded-full bg-[#2997ff]/15 text-[#2997ff] flex-shrink-0">
                     <i data-lucide="info" class="w-3.5 h-3.5"></i>
@@ -5089,15 +5098,16 @@
                     <i data-lucide="x" class="w-3.5 h-3.5"></i>
                 </button>
             `;
+            wrapper.appendChild(toast);
             
-            container.appendChild(toast);
+            container.appendChild(wrapper);
             lucide.createIcons();
 
-            setTimeout(() => { toast.classList.remove('opacity-0', 'translate-y-1'); }, 10);
+            setTimeout(() => { wrapper.classList.remove('opacity-0', 'translate-y-2'); }, 10);
             setTimeout(() => {
-                if (toast && toast.parentNode) {
-                    toast.classList.add('opacity-0', 'translate-y-1');
-                    setTimeout(() => { toast.remove(); }, 150);
+                if (wrapper && wrapper.parentNode) {
+                    wrapper.classList.add('opacity-0', 'translate-y-2');
+                    setTimeout(() => { wrapper.remove(); }, 150);
                 }
             }, 4000);
         }
