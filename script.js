@@ -434,48 +434,152 @@
             }
         }
 
-        // Mobile Touch Gestures System
+        function openSidebarMobile() {
+            if (AppState.sidebarCollapsed) {
+                toggleSidebarCollapse();
+            }
+        }
+
+        function closeSidebarMobile() {
+            if (!AppState.sidebarCollapsed) {
+                toggleSidebarCollapse();
+            }
+        }
+
+        // Mobile Touch Gestures System (Real-time dragging, dynamic blur/darkness fade)
         (function initMobileTouchGestures() {
             let touchStartX = 0;
             let touchStartY = 0;
-            let touchEndX = 0;
-            let touchEndY = 0;
+            let currentTouchX = 0;
+            let currentTouchY = 0;
+            let isDraggingSidebar = false;
+            let isDraggingInspector = false;
+
+            const getSidebar = () => document.getElementById('sidebar-panel');
+            const getInspector = () => document.getElementById('inspector-panel');
+
+            let sidebarOverlay = document.getElementById('mobile-sidebar-backdrop');
+            if (!sidebarOverlay) {
+                sidebarOverlay = document.createElement('div');
+                sidebarOverlay.id = 'mobile-sidebar-backdrop';
+                sidebarOverlay.className = 'fixed inset-0 bg-black/60 backdrop-blur-md z-[35] hidden opacity-0 transition-opacity duration-150 pointer-events-auto';
+                sidebarOverlay.onclick = () => closeSidebarMobile();
+                document.body.appendChild(sidebarOverlay);
+            }
+
+            let inspectorOverlay = document.getElementById('mobile-inspector-backdrop');
+            if (!inspectorOverlay) {
+                inspectorOverlay = document.createElement('div');
+                inspectorOverlay.id = 'mobile-inspector-backdrop';
+                inspectorOverlay.className = 'fixed inset-0 bg-black/60 backdrop-blur-md z-[95] hidden opacity-0 transition-opacity duration-150 pointer-events-auto';
+                inspectorOverlay.onclick = () => closeInspector();
+                document.body.appendChild(inspectorOverlay);
+            }
 
             document.addEventListener('touchstart', (e) => {
                 if (window.innerWidth >= 768) return;
-                touchStartX = e.changedTouches[0].screenX;
-                touchStartY = e.changedTouches[0].screenY;
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                currentTouchX = touchStartX;
+                currentTouchY = touchStartY;
+
+                const sidebar = getSidebar();
+                const isSidebarOpen = sidebar && !AppState.sidebarCollapsed;
+                const inspector = getInspector();
+                const isInspectorOpen = inspector && AppState.selectedTaskId !== null;
+
+                if (isSidebarOpen && touchStartX > 200) {
+                    isDraggingSidebar = true;
+                } else if (touchStartX < 30 && !isSidebarOpen) {
+                    isDraggingSidebar = true;
+                }
+
+                if (isInspectorOpen && touchStartY < window.innerHeight * 0.7) {
+                    isDraggingInspector = true;
+                }
+            }, { passive: true });
+
+            document.addEventListener('touchmove', (e) => {
+                if (window.innerWidth >= 768) return;
+                currentTouchX = e.touches[0].clientX;
+                currentTouchY = e.touches[0].clientY;
+                const deltaX = currentTouchX - touchStartX;
+                const deltaY = currentTouchY - touchStartY;
+
+                const sidebar = getSidebar();
+                const isSidebarOpen = sidebar && !AppState.sidebarCollapsed;
+
+                if (isDraggingSidebar && sidebar) {
+                    if (isSidebarOpen && deltaX < 0) {
+                        const progress = Math.max(0, Math.min(1, 1 + (deltaX / 280)));
+                        sidebar.style.transform = `translateX(${deltaX}px)`;
+                        sidebarOverlay.classList.remove('hidden');
+                        sidebarOverlay.style.opacity = progress;
+                    } else if (!isSidebarOpen && deltaX > 0) {
+                        const progress = Math.max(0, Math.min(1, deltaX / 280));
+                        sidebar.classList.remove('hidden');
+                        sidebar.style.width = '280px';
+                        sidebar.style.transform = `translateX(${-280 + deltaX}px)`;
+                        sidebarOverlay.classList.remove('hidden');
+                        sidebarOverlay.style.opacity = progress;
+                    }
+                }
+
+                const inspector = getInspector();
+                const isInspectorOpen = inspector && AppState.selectedTaskId !== null;
+
+                if (isDraggingInspector && inspector && isInspectorOpen && deltaY > 0) {
+                    const progress = Math.max(0, Math.min(1, 1 - (deltaY / (window.innerHeight * 0.66))));
+                    inspector.style.transform = `translateY(${deltaY}px)`;
+                    inspectorOverlay.classList.remove('hidden');
+                    inspectorOverlay.style.opacity = progress;
+                }
             }, { passive: true });
 
             document.addEventListener('touchend', (e) => {
                 if (window.innerWidth >= 768) return;
-                touchEndX = e.changedTouches[0].screenX;
-                touchEndY = e.changedTouches[0].screenY;
+                const deltaX = currentTouchX - touchStartX;
+                const deltaY = currentTouchY - touchStartY;
 
-                const deltaX = touchEndX - touchStartX;
-                const deltaY = touchEndY - touchStartY;
+                const sidebar = getSidebar();
+                const isSidebarOpen = sidebar && !AppState.sidebarCollapsed;
 
-                // Swipe right -> left to close sidebar (deltaX < -60)
-                // Swipe left -> right from screen edge to open sidebar (touchStartX < 40 && deltaX > 60)
-                if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                    const sidebar = document.getElementById('sidebar-panel');
-                    const isSidebarCollapsed = AppState.sidebarCollapsed || (sidebar && (sidebar.style.width === '0px' || sidebar.style.width === ''));
-
-                    if (touchStartX < 40 && deltaX > 60 && isSidebarCollapsed) {
-                        toggleSidebarCollapse();
-                    } else if (!isSidebarCollapsed && deltaX < -60) {
-                        toggleSidebarCollapse();
+                if (sidebar) {
+                    sidebar.style.transform = '';
+                    sidebarOverlay.style.opacity = '';
+                    if (isSidebarOpen && deltaX < -70) {
+                        closeSidebarMobile();
+                        sidebarOverlay.classList.add('hidden');
+                    } else if (!isSidebarOpen && touchStartX < 40 && deltaX > 70) {
+                        openSidebarMobile();
+                        sidebarOverlay.classList.remove('hidden');
+                    } else if (isSidebarOpen) {
+                        sidebarOverlay.classList.remove('hidden');
+                        sidebarOverlay.classList.add('opacity-100');
+                    } else {
+                        sidebarOverlay.classList.add('hidden');
                     }
                 }
 
-                // Swipe down to close inspector (deltaY > 80)
-                if (deltaY > 80 && Math.abs(deltaY) > Math.abs(deltaX)) {
-                    const inspector = document.getElementById('inspector-panel');
-                    const isInspectorOpen = inspector && inspector.style.width !== '0px' && inspector.style.width !== '';
-                    if (isInspectorOpen) {
+                const inspector = getInspector();
+                const isInspectorOpen = inspector && AppState.selectedTaskId !== null;
+
+                if (inspector) {
+                    inspector.style.transform = '';
+                    inspectorOverlay.style.opacity = '';
+                    if (isInspectorOpen && deltaY > 90) {
                         closeInspector();
+                        inspectorOverlay.classList.add('hidden');
+                    } else if (isInspectorOpen) {
+                        inspectorOverlay.classList.remove('hidden');
+                        inspectorOverlay.classList.add('opacity-100');
+                    } else {
+                        inspectorOverlay.classList.add('hidden');
                     }
                 }
+
+                isDraggingSidebar = false;
+                isDraggingInspector = false;
             }, { passive: true });
         })();
 
@@ -1470,6 +1574,22 @@
             updateStreakCardMetrics();
         }
 
+        function toggleMobileSearchBar() {
+            const container = document.getElementById('mobile-search-bar-container');
+            if (container) {
+                container.classList.toggle('hidden');
+                if (!container.classList.contains('hidden')) {
+                    const input = document.getElementById('mobile-search-input');
+                    if (input) input.focus();
+                }
+            }
+        }
+
+        function handleManageStudioContextMenu(event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
         function handleCounterContextMenu(event) {
             event.preventDefault();
             event.stopPropagation();
@@ -1554,6 +1674,16 @@
                 inspectorResizer.classList.remove('active');
                 document.removeEventListener('mousemove', resizeInspector);
                 document.removeEventListener('mouseup', stopResizeInspector);
+            }
+        }
+
+        function switchTab(tabId) {
+            AppState.currentTab = tabId;
+            renderTaskFeed();
+            updateGlobalBadges();
+
+            if (window.innerWidth < 768) {
+                closeSidebarMobile();
             }
         }
 
@@ -2863,11 +2993,6 @@
         window.toggleTaskCustomizationPanel = toggleTaskCustomizationPanel;
 
         function handleFeedContextMenu(event) {
-            if (AppState.currentTab === 'manage') {
-                event.preventDefault();
-                hideContextMenu();
-                return;
-            }
             if (event.target.closest('.group-card') || 
                 event.target.closest('button') || 
                 event.target.closest('input') || 
@@ -3287,6 +3412,16 @@
 
                 selectNewTaskAutodelete('never', 'Do not delete');
                 document.getElementById('custom-autodelete-container').classList.add('hidden');
+                
+                const customizationPanel = document.getElementById('new-task-customization-panel');
+                if (customizationPanel) {
+                    customizationPanel.style.display = 'none';
+                    customizationPanel.style.width = '0px';
+                }
+                if (container) container.style.maxWidth = '440px';
+                const stepLabel = document.getElementById('btn-modal-step-label');
+                if (stepLabel) stepLabel.textContent = 'Customize';
+
                 setTaskModalStep(1);
             }
 
@@ -3455,24 +3590,20 @@
             setTimeout(openAddGroupModal, 150);
         }
 
-        function isTaskModalDirty() {
-            const title = document.getElementById('new-task-title') ? document.getElementById('new-task-title').value.trim() : '';
-            const desc = document.getElementById('new-task-desc') ? document.getElementById('new-task-desc').value.trim() : '';
-            const hasNotes = AppState.tempCreateNotes && AppState.tempCreateNotes.length > 0;
-            return title.length > 0 || desc.length > 0 || hasNotes;
-        }
-
-        function closeAddTaskModal(shouldClearDraft = true, force = false) {
-            if (shouldClearDraft && !force && isTaskModalDirty()) {
-                showDeleteConfirmation("Discard unfinished task details?", () => {
-                    closeAddTaskModal(true, true);
-                });
-                return;
-            }
-
+        function closeAddTaskModal(shouldClearDraft = true) {
             const backdrop = document.getElementById('task-modal-backdrop');
             const container = document.getElementById('task-modal-container');
             
+            if (shouldClearDraft) {
+                const titleVal = document.getElementById('new-task-title') ? document.getElementById('new-task-title').value.trim() : '';
+                const descVal = document.getElementById('new-task-desc') ? document.getElementById('new-task-desc').value.trim() : '';
+                if (titleVal || descVal || (AppState.tempCreateNotes && AppState.tempCreateNotes.length > 0)) {
+                    if (!confirm("You have unsaved task details. Are you sure you want to close and discard changes?")) {
+                        return;
+                    }
+                }
+            }
+
             hideFloatingElement(document.getElementById('new-task-project-options'));
             hideFloatingElement(document.getElementById('new-task-group-options'));
             hideFloatingElement(document.getElementById('new-task-autodelete-options'));
@@ -4672,6 +4803,74 @@
             });
         }
 
+        function renderManageDashboard() {
+            const container = document.getElementById('tasks-list');
+            if (!container) return;
+            const feedTitle = document.getElementById('feed-current-title');
+            if (feedTitle) feedTitle.textContent = 'Manage Studio';
+
+            let backups = [];
+            try { backups = JSON.parse(localStorage.getItem('ANV_5DAY_SNAPSHOTS') || '[]'); } catch(e) {}
+
+            let backupListHTML = '';
+            if (backups.length === 0) {
+                backupListHTML = `
+                    <div class="text-center py-6 text-xs text-gray-500 border border-dashed border-white/5 rounded-xl">
+                        No 5-day snapshots available. Click "Capture Snapshot" to store a backup.
+                    </div>
+                `;
+            } else {
+                backupListHTML = backups.map((b, idx) => `
+                    <div class="flex items-center justify-between bg-white/5 p-3.5 rounded-xl border border-white/5 hover:bg-white/10 transition">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2 bg-[#2997ff]/10 text-[#2997ff] rounded-lg">
+                                <i data-lucide="archive" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-white">${escapeHTML(b.label || 'Snapshot')}</h4>
+                                <div class="text-[10px] text-gray-400 font-mono">${new Date(b.timestamp).toLocaleString()} • ${b.taskCount} Tasks</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button type="button" onclick="previewBackupSnapshot(${idx})" class="btn-scale px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white rounded-lg text-xs font-semibold border border-white/10 transition">
+                                Preview
+                            </button>
+                            <button type="button" onclick="restoreAutoSnapshot(${idx})" class="btn-scale px-3 py-1.5 bg-[#2997ff] text-black hover:bg-[#0066cc] hover:text-white rounded-lg text-xs font-bold transition">
+                                Restore
+                            </button>
+                            <button type="button" onclick="deleteAutoSnapshot(${idx})" class="btn-scale p-1.5 text-gray-400 hover:text-red-400 rounded-lg hover:bg-white/5 transition" title="Delete Snapshot">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            container.innerHTML = `
+                <div class="space-y-6 max-w-4xl mx-auto p-4" id="manage-studio" oncontextmenu="handleManageStudioContextMenu(event)">
+                    <div class="bg-[#121212] border border-white/5 rounded-2xl p-6 space-y-4">
+                        <div class="flex items-center justify-between border-b border-white/5 pb-4">
+                            <div>
+                                <h3 class="text-sm font-extrabold text-white flex items-center space-x-2">
+                                    <i data-lucide="database" class="w-4 h-4 text-[#2997ff]"></i>
+                                    <span>5-Day Directory Backups & Snapshots</span>
+                                </h3>
+                                <p class="text-xs text-gray-400 mt-1">Automatic & manual system backups stored locally in browser storage.</p>
+                            </div>
+                            <button type="button" onclick="triggerManualSnapshot()" class="btn-scale px-4 py-2 bg-[#2997ff] text-black font-bold rounded-xl text-xs hover:bg-[#0066cc] hover:text-white transition shadow-md flex items-center space-x-2">
+                                <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+                                <span>Capture Snapshot</span>
+                            </button>
+                        </div>
+                        <div class="space-y-2">
+                            ${backupListHTML}
+                        </div>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
         function previewBackupSnapshot(index) {
             let backups = [];
             try { backups = JSON.parse(localStorage.getItem('ANV_5DAY_SNAPSHOTS') || '[]'); } catch(e) {}
@@ -4684,55 +4883,56 @@
             const existingModal = document.getElementById('snapshot-preview-modal');
             if (existingModal) existingModal.remove();
 
-            let html = `
-                <div class="fixed inset-0 bg-black/85 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-fade-in" id="snapshot-preview-modal">
-                    <div class="bg-[#121212] border border-white/10 rounded-2xl w-full max-w-lg p-5 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
-                        <div class="flex items-center justify-between border-b border-white/5 pb-3">
-                            <div>
-                                <h3 class="text-xs font-extrabold text-white flex items-center space-x-2 uppercase tracking-wider">
-                                    <i data-lucide="archive" class="w-4 h-4 text-emerald-400"></i>
-                                    <span>${escapeHTML(target.label || 'Snapshot Preview')}</span>
-                                </h3>
-                                <div class="text-[10px] text-gray-400 font-mono mt-0.5">${new Date(target.timestamp).toLocaleString()} • ${snapTasks.length} Tasks</div>
-                            </div>
-                            <button onclick="document.getElementById('snapshot-preview-modal').remove()" class="p-1 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg">
-                                <i data-lucide="x" class="w-4 h-4"></i>
-                            </button>
+            const modal = document.createElement('div');
+            modal.id = 'snapshot-preview-modal';
+            modal.className = "fixed inset-0 bg-black/85 backdrop-blur-md z-[200] flex items-center justify-center p-4 animate-fade-in";
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+            modal.innerHTML = `
+                <div class="bg-[#121212] border border-white/10 rounded-2xl w-full max-w-lg p-5 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+                    <div class="flex items-center justify-between border-b border-white/5 pb-3">
+                        <div>
+                            <h3 class="text-xs font-extrabold text-white flex items-center space-x-2 uppercase tracking-wider">
+                                <i data-lucide="archive" class="w-4 h-4 text-emerald-400"></i>
+                                <span>${escapeHTML(target.label || 'Snapshot Preview')}</span>
+                            </h3>
+                            <div class="text-[10px] text-gray-400 font-mono mt-0.5">${new Date(target.timestamp).toLocaleString()} • ${snapTasks.length} Tasks</div>
                         </div>
-                        <div class="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar">
-                            ${snapTasks.length === 0 ? '<div class="text-center py-8 text-xs text-gray-600 border border-dashed border-white/5 rounded-xl">No tasks saved in this snapshot</div>' : snapTasks.map(t => {
-                                const group = snapGroups.find(g => g.id === t.groupId);
-                                return `
-                                    <div class="flex items-center justify-between bg-white/5 p-2.5 rounded-xl text-xs border border-white/5">
-                                        <div class="flex items-center space-x-2.5 min-w-0 flex-1">
-                                            <span class="w-2.5 h-2.5 rounded-full border flex-shrink-0" style="border-color: ${t.color || '#2997ff'}; background-color: ${t.done ? (t.color || '#2997ff') : 'transparent'};"></span>
-                                            <span class="text-white font-medium truncate ${t.done ? 'line-through text-gray-500' : ''}">${escapeHTML(t.title)}</span>
-                                        </div>
-                                        ${group ? `<span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-white/5 text-gray-400 flex-shrink-0">${escapeHTML(group.title)}</span>` : ''}
+                        <button type="button" onclick="document.getElementById('snapshot-preview-modal').remove()" class="p-1 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar">
+                        ${snapTasks.length === 0 ? '<div class="text-center py-8 text-xs text-gray-600 border border-dashed border-white/5 rounded-xl">No tasks saved in this snapshot</div>' : snapTasks.map(t => {
+                            const group = snapGroups.find(g => g.id === t.groupId);
+                            return `
+                                <div class="flex items-center justify-between bg-white/5 p-2.5 rounded-xl text-xs border border-white/5">
+                                    <div class="flex items-center space-x-2.5 min-w-0 flex-1">
+                                        <span class="w-2.5 h-2.5 rounded-full border flex-shrink-0" style="border-color: ${t.color || '#2997ff'}; background-color: ${t.done ? (t.color || '#2997ff') : 'transparent'};"></span>
+                                        <span class="text-white font-medium truncate ${t.done ? 'line-through text-gray-500' : ''}">${escapeHTML(t.title)}</span>
                                     </div>
-                                `;
-                            }).join('')}
-                        </div>
-                        <div class="pt-2 border-t border-white/5 flex items-center justify-between space-x-2">
-                            <button onclick="document.getElementById('snapshot-preview-modal').remove(); deleteAutoSnapshot(${index});" class="btn-scale bg-red-500/15 hover:bg-red-500/25 text-red-400 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1 border border-red-500/30">
-                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                                <span>Delete Snapshot</span>
+                                    ${group ? `<span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-white/5 text-gray-400 flex-shrink-0">${escapeHTML(group.title)}</span>` : ''}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    <div class="pt-2 border-t border-white/5 flex items-center justify-between space-x-2">
+                        <button type="button" onclick="document.getElementById('snapshot-preview-modal').remove(); deleteAutoSnapshot(${index});" class="btn-scale bg-red-500/15 hover:bg-red-500/25 text-red-400 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1 border border-red-500/30">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            <span>Delete Snapshot</span>
+                        </button>
+                        <div class="flex items-center space-x-2 flex-1 justify-end">
+                            <button type="button" onclick="document.getElementById('snapshot-preview-modal').remove()" class="btn-scale px-3 py-2 bg-white/5 text-gray-300 rounded-xl text-xs font-semibold hover:bg-white/10 transition">
+                                Close
                             </button>
-                            <div class="flex items-center space-x-2 flex-1 justify-end">
-                                <button onclick="document.getElementById('snapshot-preview-modal').remove()" class="btn-scale px-3 py-2 bg-white/5 text-gray-300 rounded-xl text-xs font-semibold hover:bg-white/10 transition">
-                                    Close
-                                </button>
-                                <button onclick="document.getElementById('snapshot-preview-modal').remove(); restoreAutoSnapshot(${index});" class="btn-scale px-4 py-2 bg-[#2997ff] text-black font-bold rounded-xl text-xs transition hover:bg-[#0066cc] hover:text-white shadow-md">
-                                    Restore Snapshot
-                                </button>
-                            </div>
+                            <button type="button" onclick="document.getElementById('snapshot-preview-modal').remove(); restoreAutoSnapshot(${index});" class="btn-scale px-4 py-2 bg-[#2997ff] text-black font-bold rounded-xl text-xs transition hover:bg-[#0066cc] hover:text-white shadow-md">
+                                Restore Snapshot
+                            </button>
                         </div>
                     </div>
                 </div>
             `;
-            const wrapper = document.createElement('div');
-            wrapper.innerHTML = html;
-            document.body.appendChild(wrapper.firstElementChild);
+            document.body.appendChild(modal);
             lucide.createIcons();
         }
 
