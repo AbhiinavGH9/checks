@@ -462,7 +462,7 @@
             if (!sidebarOverlay) {
                 sidebarOverlay = document.createElement('div');
                 sidebarOverlay.id = 'mobile-sidebar-backdrop';
-                sidebarOverlay.className = 'fixed inset-0 bg-black/60 backdrop-blur-md z-[35] hidden opacity-0 transition-opacity duration-150 pointer-events-auto';
+                sidebarOverlay.className = 'fixed inset-0 bg-black/60 z-[35] hidden opacity-0 transition-opacity duration-150 pointer-events-auto';
                 sidebarOverlay.onclick = () => closeSidebarMobile();
                 document.body.appendChild(sidebarOverlay);
             }
@@ -471,7 +471,7 @@
             if (!inspectorOverlay) {
                 inspectorOverlay = document.createElement('div');
                 inspectorOverlay.id = 'mobile-inspector-backdrop';
-                inspectorOverlay.className = 'fixed inset-0 bg-black/60 backdrop-blur-md z-[95] hidden opacity-0 transition-opacity duration-150 pointer-events-auto';
+                inspectorOverlay.className = 'fixed inset-0 bg-black/60 z-[95] hidden opacity-0 transition-opacity duration-150 pointer-events-auto';
                 inspectorOverlay.onclick = () => closeInspector();
                 document.body.appendChild(inspectorOverlay);
             }
@@ -488,12 +488,12 @@
                 const inspector = getInspector();
                 const isInspectorOpen = inspector && AppState.selectedTaskId !== null;
 
-                // Drag sidebar: if open, tap anywhere or drag left; if closed, edge swipe from left < 35px
+                // Drag sidebar: if open, drag left; if closed, drag right from anywhere on screen
                 if (isSidebarOpen) {
                     if (touchStartX > 200 || e.target.closest('#sidebar-panel')) {
                         isDraggingSidebar = true;
                     }
-                } else if (touchStartX < 35) {
+                } else {
                     isDraggingSidebar = true;
                 }
 
@@ -1959,19 +1959,19 @@
                 <div class="flex items-center justify-between border-b border-white/[0.04] pb-2 cursor-pointer select-none" 
                      style="border-bottom-color: ${groupColor}25"
                      oncontextmenu="showGroupContextMenu(event, '${groupId}')">
-                     <div class="flex items-center space-x-2 flex-wrap">
-                         <span class="w-2.5 h-2.5 rounded bg-white/10 flex items-center justify-center border border-white/20">
+                     <div class="flex items-center space-x-2 min-w-0 flex-1 pr-2">
+                         <span class="w-2.5 h-2.5 rounded bg-white/10 flex items-center justify-center border border-white/20 flex-shrink-0">
                              <span class="w-1.5 h-1.5 rounded-sm" style="background-color: ${groupColor}; box-shadow: 0 0 8px ${groupColor}80;"></span>
                          </span>
                          <i data-lucide="${groupIcon}" class="w-4 h-4 flex-shrink-0" style="color: ${groupColor};"></i>
-                         <span class="text-xs font-bold text-white uppercase tracking-wider">${escapeHTML(title)}</span>
+                         <span class="text-xs font-bold text-white uppercase tracking-wider truncate min-w-0 max-w-[200px] sm:max-w-none">${escapeHTML(title)}</span>
                          ${isGroupHeld && AppState.currentTab === 'done' ? `
-                             <span class="inline-flex items-center px-1.5 py-0.5 bg-[#2997ff]/10 text-[#2997ff] rounded text-[8px] font-bold border border-[#2997ff]/20" title="${group.holdUntil ? 'Column auto-delete held until ' + new Date(group.holdUntil).toLocaleString() : 'Column auto-delete held indefinitely'}">
+                             <span class="inline-flex items-center px-1.5 py-0.5 bg-[#2997ff]/10 text-[#2997ff] rounded text-[8px] font-bold border border-[#2997ff]/20 flex-shrink-0" title="${group.holdUntil ? 'Column auto-delete held until ' + new Date(group.holdUntil).toLocaleString() : 'Column auto-delete held indefinitely'}">
                                  <i data-lucide="lock" class="w-2.5 h-2.5 flex-shrink-0 mr-0.5"></i>
                                  <span>Deletion Held</span>
                              </span>
                          ` : ''}
-                         <span class="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded-full font-mono">${tasks.length}</span>
+                         <span class="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded-full font-mono flex-shrink-0">${tasks.length}</span>
                      </div>
                      <div class="flex items-center space-x-1">
                          ${navigationButtons}
@@ -4409,6 +4409,7 @@
         }
 
         function openNewProjectModal() {
+            if (window.innerWidth < 768) closeSidebarMobile();
             const backdrop = document.getElementById('project-modal-backdrop');
             const container = document.getElementById('project-modal-container');
             
@@ -4987,7 +4988,7 @@
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </button>
                     </div>
-                    <div class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                    <div class="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar" style="scrollbar-width: none; -ms-overflow-style: none;">
                         ${snapTasks.length === 0 ? '<div class="text-center py-8 text-xs text-gray-600 border border-dashed border-white/5 rounded-xl">No tasks saved in this snapshot</div>' : snapTasks.map(t => {
                             const group = snapGroups.find(g => g.id === t.groupId);
                             return `
@@ -5075,7 +5076,7 @@
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             
-            toast.className = "px-4 py-2.5 bg-[#141414] text-white rounded-full shadow-2xl flex items-center space-x-3 max-w-sm pointer-events-auto opacity-0 transform translate-y-1 transition duration-200 ease-out border border-white/10 backdrop-blur-md";
+            toast.className = "px-4 py-3 bg-gradient-to-r from-[#181818] via-[#121212] to-[#0A0A0A] text-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.95)] flex items-center space-x-3 max-w-sm w-full pointer-events-auto opacity-0 transform translate-y-2 transition duration-250 ease-out border border-white/15 relative overflow-hidden";
             toast.innerHTML = `
                 <div class="p-1 rounded-full bg-[#2997ff]/15 text-[#2997ff] flex-shrink-0">
                     <i data-lucide="info" class="w-3.5 h-3.5"></i>

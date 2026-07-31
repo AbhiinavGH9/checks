@@ -141,6 +141,15 @@
             transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, width 0.15s ease !important;
         }
 
+        .group-card {
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+        }
+
+        .group-column-card {
+            border: 1px solid rgba(255, 255, 255, 0.06) !important;
+        }
+
         /* Hide scrollbars inside Inspector panel */
         #inspector-panel *, #inspector-content {
             -ms-overflow-style: none !important;
@@ -190,9 +199,9 @@
                 width: 100vw !important;
                 max-width: 100vw !important;
                 height: 100vh !important;
+                min-height: 100vh !important;
                 border-radius: 0 !important;
                 border: none !important;
-                backdrop-filter: blur(24px) !important;
                 background-color: #0D0D0D !important;
                 transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease !important;
             }
@@ -293,7 +302,8 @@
                 display: none !important;
             }
 
-            #task-modal-actions-container {
+            #task-modal-actions-container,
+            .modal-sticky-actions {
                 position: sticky !important;
                 bottom: 0 !important;
                 z-index: 30 !important;
