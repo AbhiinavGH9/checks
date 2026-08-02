@@ -3215,9 +3215,12 @@
         function updateGlobalBadges() {
             const todayStr = getTodayDateString();
             
-            document.getElementById('badge-inbox').textContent = AppState.tasks.filter(t => !t.done).length;
-            document.getElementById('badge-today').textContent = AppState.tasks.filter(t => t.dueDate === todayStr).length;
-            document.getElementById('badge-done').textContent = AppState.tasks.filter(t => t.done).length;
+            const badgeInbox = document.getElementById('badge-inbox');
+            if (badgeInbox) badgeInbox.textContent = AppState.tasks.filter(t => !t.done).length;
+            const badgeToday = document.getElementById('badge-today');
+            if (badgeToday) badgeToday.textContent = AppState.tasks.filter(t => t.dueDate === todayStr).length;
+            const badgeDone = document.getElementById('badge-done');
+            if (badgeDone) badgeDone.textContent = AppState.tasks.filter(t => t.done).length;
 
             const activeBadgePill = document.getElementById('active-tab-badge');
             if (AppState.counterTargetPolicy === 'tasks') {
@@ -3918,8 +3921,12 @@
                     AppState.selectedTaskId = AppState.selectedTaskIds[0];
                     renderInspector();
                     const inspector = document.getElementById('inspector-panel');
-                    inspector.style.width = '320px';
-                    document.getElementById('inspector-resizer').style.display = 'block';
+                    if (inspector) {
+                        inspector.classList.remove('hidden');
+                        setTimeout(() => {
+                            inspector.classList.remove('translate-x-full');
+                        }, 10);
+                    }
                 } else {
                     closeInspector();
                 }

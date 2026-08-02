@@ -38,6 +38,9 @@
 
         <nav class="bg-[#0D0D0D] border-b border-white/[0.04] px-4 md:px-6 py-3 flex items-center justify-between z-40 flex-shrink-0 relative">
             <div class="flex items-center space-x-3">
+                <button onclick="toggleSidebarCollapse()" id="sidebar-uncollapse-btn" class="hidden p-1.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-lg transition" title="Open Sidebar">
+                    <i data-lucide="sidebar" class="w-4 h-4"></i>
+                </button>
                 <h1 class="text-sm font-bold tracking-tight text-white mr-1">Anv Checks</h1>
                 <span id="active-tab-badge" oncontextmenu="handleCounterContextMenu(event)" class="ui-badge cursor-pointer select-none" data-variant="secondary">0 items</span>
             </div>
