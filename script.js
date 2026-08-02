@@ -5705,9 +5705,9 @@
             }
 
             // Bind draggable bottom sheet gesture logic to all app sheets & modals
-            makeModalDraggable(document.getElementById('task-modal-container'), closeAddTaskModal);
+            makeModalDraggable(document.getElementById('task-modal-container'), () => closeAddTaskModal(true));
             makeModalDraggable(document.getElementById('project-modal-container'), closeProjectModal);
-            makeModalDraggable(document.getElementById('group-modal-container'), closeGroupModal);
+            makeModalDraggable(document.getElementById('group-modal-container'), closeAddGroupModal);
             makeModalDraggable(document.getElementById('archive-modal-container'), closeArchiveModal);
             makeModalDraggable(document.getElementById('profile-customizer-container'), closeProfileCustomizerModal);
             makeModalDraggable(document.getElementById('mobile-drawer'), closeMobileDrawer);
