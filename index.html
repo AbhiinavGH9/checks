@@ -386,7 +386,7 @@
             <div id="inspector-backdrop" onclick="closeInspector()" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[149] hidden opacity-0 transition-opacity duration-200" aria-hidden="true"></div>
 
             <!-- Base UI Inspector Responsive Sheet Container -->
-            <div id="inspector-panel" role="dialog" aria-modal="true" aria-label="Task Details Inspector" class="fixed z-[150] hidden modal-shell border border-white/10 flex flex-col overflow-hidden shadow-2xl">
+            <div id="inspector-panel" role="dialog" aria-modal="true" aria-label="Task Details Inspector" class="modal-shell fixed z-[150] hidden border border-white/10 flex flex-col overflow-hidden shadow-2xl">
                 <!-- Mobile Handle (Top) -->
                 <div class="drawer-swipe-handle my-2 md:hidden flex-shrink-0"></div>
                 <!-- Desktop Handle Strip (Left Edge) -->
@@ -411,97 +411,101 @@
                 </div>
 
                 <!-- Scrollable Content Area -->
-                <div id="inspector-content" class="flex-1 overflow-y-auto px-6 py-4 space-y-4 hidden">
+                <div id="inspector-content" class="flex-1 overflow-y-auto hidden">
                     
-                    <!-- Category 1: Task Details (Collapsible) -->
-                    <div class="border-b border-white/[0.04] pb-3">
-                        <button type="button" onclick="toggleInspectorSection('details')" class="w-full flex items-center justify-between py-1.5 text-[10px] font-bold text-white uppercase tracking-wider hover:text-[#2997ff] transition">
-                            <span>Details</span>
-                            <i id="ins-sec-icon-details" data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
-                        </button>
+                    <!-- Section 1: Details -->
+                    <div class="modal-section">
+                        <div class="modal-section__label-row mb-2 cursor-pointer" onclick="toggleInspectorSection('details')">
+                            <span class="modal-section__label">Task Details</span>
+                            <i id="ins-sec-icon-details" data-lucide="chevron-down" class="modal-section__chevron is-open w-3.5 h-3.5"></i>
+                        </div>
                         <div id="ins-sec-content-details" class="space-y-3 mt-2">
                             <div class="space-y-1">
-                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Title</label>
-                                <input type="text" id="ins-task-title" onchange="updateInspectorField('title', this.value)" class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition font-semibold border border-white/5">
+                                <span class="modal-section__label block mb-1">Title</span>
+                                <div class="modal-field">
+                                    <input type="text" id="ins-task-title" onchange="updateInspectorField('title', this.value)" class="modal-field__control font-semibold">
+                                </div>
                             </div>
                             <div class="space-y-1">
-                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Description</label>
-                                <textarea id="ins-task-desc" rows="3" onchange="updateInspectorField('description', this.value)" onkeydown="handleDescriptionKeydown(event)" placeholder="Write descriptions... (Shift+Enter for • bullets)" class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition leading-relaxed resize-none border border-white/5"></textarea>
+                                <span class="modal-section__label block mb-1">Description</span>
+                                <div class="modal-field">
+                                    <textarea id="ins-task-desc" rows="3" onchange="updateInspectorField('description', this.value)" onkeydown="handleDescriptionKeydown(event)" placeholder="Write descriptions... (Shift+Enter for • bullets)" class="modal-field__control resize-none"></textarea>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Category 2: Short Notes (Collapsible) -->
-                    <div class="border-b border-white/[0.04] pb-3">
-                        <button type="button" onclick="toggleInspectorSection('notes')" class="w-full flex items-center justify-between py-1.5 text-[10px] font-bold text-white uppercase tracking-wider hover:text-[#2997ff] transition">
-                            <span>Short Notes</span>
-                            <i id="ins-sec-icon-notes" data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
-                        </button>
+                    <!-- Section 2: Short Notes -->
+                    <div class="modal-section">
+                        <div class="modal-section__label-row mb-2 cursor-pointer" onclick="toggleInspectorSection('notes')">
+                            <span class="modal-section__label">Short Notes (Yellow Pills)</span>
+                            <i id="ins-sec-icon-notes" data-lucide="chevron-down" class="modal-section__chevron is-open w-3.5 h-3.5"></i>
+                        </div>
                         <div id="ins-sec-content-notes" class="space-y-3 mt-2">
                             <div id="inspector-notes-list" class="space-y-1.5 max-h-32 overflow-y-auto pr-1"></div>
-                            <div class="flex items-center space-x-1.5">
-                                <input type="text" id="new-task-note-input-ins" placeholder="Add a short note..." class="flex-1 bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
-                                <button type="button" onclick="addInspectorNote()" class="btn-scale bg-[#2997ff] hover:bg-[#0066cc] text-black hover:text-white p-2.5 rounded-xl transition">
+                            <div class="modal-field">
+                                <input type="text" id="new-task-note-input-ins" placeholder="Add a short note..." class="modal-field__control">
+                                <button type="button" onclick="addInspectorNote()" class="modal-field__action">
                                     <i data-lucide="plus" class="w-4 h-4"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Category 3: Subtasks (Collapsible) -->
-                    <div class="border-b border-white/[0.04] pb-3">
-                        <button type="button" onclick="toggleInspectorSection('subtasks')" class="w-full flex items-center justify-between py-1.5 text-[10px] font-bold text-white uppercase tracking-wider hover:text-[#2997ff] transition">
-                            <span class="flex items-center">Subtasks <span id="subtask-fraction" class="text-xs text-[#2997ff] font-mono font-bold ml-2">0 / 0</span></span>
-                            <i id="ins-sec-icon-subtasks" data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
-                        </button>
+                    <!-- Section 3: Subtasks -->
+                    <div class="modal-section">
+                        <div class="modal-section__label-row mb-2 cursor-pointer" onclick="toggleInspectorSection('subtasks')">
+                            <span class="modal-section__label flex items-center">Subtasks <span id="subtask-fraction" class="modal-section__badge ml-2 font-mono">0 / 0</span></span>
+                            <i id="ins-sec-icon-subtasks" data-lucide="chevron-down" class="modal-section__chevron is-open w-3.5 h-3.5"></i>
+                        </div>
                         <div id="ins-sec-content-subtasks" class="space-y-3 mt-2">
                             <div id="inspector-subtasks-list" class="space-y-1.5 max-h-60 overflow-y-auto pr-1"></div>
-                            <form onsubmit="handleAddSubtask(event)" class="flex items-center space-x-1.5 mt-2">
-                                <input type="text" id="new-subtask-input" placeholder="Create new subtask..." class="flex-1 bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
-                                <button type="submit" class="btn-scale bg-[#2997ff] hover:bg-[#0066cc] text-black hover:text-white p-2.5 rounded-xl transition">
+                            <form onsubmit="handleAddSubtask(event)" class="modal-field mt-2">
+                                <input type="text" id="new-subtask-input" placeholder="Create new subtask..." class="modal-field__control">
+                                <button type="submit" class="modal-field__action">
                                     <i data-lucide="plus" class="w-4 h-4"></i>
                                 </button>
                             </form>
                         </div>
                     </div>
 
-                    <!-- Category 4: Design Customization (Collapsible - Collapsed by Default) -->
-                    <div class="border-b border-white/[0.04] pb-3">
-                        <button type="button" onclick="toggleInspectorSection('customization')" class="w-full flex items-center justify-between py-1.5 text-[10px] font-bold text-white uppercase tracking-wider hover:text-[#2997ff] transition">
-                            <span>Design Customization</span>
-                            <i id="ins-sec-icon-customization" data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-500"></i>
-                        </button>
+                    <!-- Section 4: Design Customization -->
+                    <div class="modal-section">
+                        <div class="modal-section__label-row mb-2 cursor-pointer" onclick="toggleInspectorSection('customization')">
+                            <span class="modal-section__label">Design Customization</span>
+                            <i id="ins-sec-icon-customization" data-lucide="chevron-right" class="modal-section__chevron w-3.5 h-3.5"></i>
+                        </div>
                         <div id="ins-sec-content-customization" class="space-y-3 mt-2 hidden">
                             <div class="space-y-1.5">
-                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block">Priority Color (Slide Right for more)</label>
+                                <span class="modal-section__label block mb-1">Priority Color</span>
                                 <div class="flex items-center overflow-x-auto space-x-2 py-1.5 no-scrollbar" id="ins-task-priority-options"></div>
                             </div>
                             <div class="space-y-1.5">
-                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block mb-1">Select Icon Glyph</label>
+                                <span class="modal-section__label block mb-1">Select Icon Glyph</span>
                                 <div id="ins-task-icon-grid" class="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1.5 bg-[#141414] rounded-xl border border-white/[0.05]"></div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Category 5: Location & Settings (Collapsible - Collapsed by Default) -->
-                    <div class="pb-2">
-                        <button type="button" onclick="toggleInspectorSection('settings')" class="w-full flex items-center justify-between py-1.5 text-[10px] font-bold text-white uppercase tracking-wider hover:text-[#2997ff] transition">
-                            <span>Location & Settings</span>
-                            <i id="ins-sec-icon-settings" data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-500"></i>
-                        </button>
+                    <!-- Section 5: Location & Settings -->
+                    <div class="modal-section">
+                        <div class="modal-section__label-row mb-2 cursor-pointer" onclick="toggleInspectorSection('settings')">
+                            <span class="modal-section__label">Location & Settings</span>
+                            <i id="ins-sec-icon-settings" data-lucide="chevron-right" class="modal-section__chevron w-3.5 h-3.5"></i>
+                        </div>
                         <div id="ins-sec-content-settings" class="space-y-3 mt-2 hidden">
                             <!-- Side-by-Side: Collection Folder & Target Column -->
                             <div class="grid grid-cols-2 gap-3 items-start">
                                 <div class="space-y-1 relative" id="project-dropdown-container">
-                                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block mb-1">Collection Folder</label>
-                                    <button type="button" onclick="toggleCustomDropdown('ins-project-dropdown-options', event)" class="w-full min-h-[2.5rem] py-2 flex items-center justify-between bg-white/5 rounded-xl px-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] text-left border border-white/5 leading-snug">
+                                    <span class="modal-section__label block mb-1">Collection</span>
+                                    <button type="button" onclick="toggleCustomDropdown('ins-project-dropdown-options', event)" class="modal-field__control w-full min-h-[2.5rem] py-2 flex items-center justify-between text-left leading-snug">
                                         <span id="ins-selected-project-label" class="flex items-center space-x-2 truncate min-w-0 pr-1">None / Inbox</span>
                                         <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500 flex-shrink-0"></i>
                                     </button>
                                 </div>
                                 <div class="space-y-1 relative" id="ins-group-dropdown-container">
-                                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block mb-1">Target Column</label>
-                                    <button type="button" onclick="toggleCustomDropdown('ins-group-dropdown-options', event)" class="w-full min-h-[2.5rem] py-2 flex items-center justify-between bg-white/5 rounded-xl px-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] text-left border border-white/5 leading-snug">
+                                    <span class="modal-section__label block mb-1">Target Column</span>
+                                    <button type="button" onclick="toggleCustomDropdown('ins-group-dropdown-options', event)" class="modal-field__control w-full min-h-[2.5rem] py-2 flex items-center justify-between text-left leading-snug">
                                         <span id="ins-selected-group-label" class="flex items-center space-x-2 truncate min-w-0 pr-1">Select Column</span>
                                         <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500 flex-shrink-0"></i>
                                     </button>
@@ -511,16 +515,16 @@
                             <!-- Side-by-Side: Auto-Deletion & Deadline -->
                             <div class="grid grid-cols-2 gap-3 items-start">
                                 <div class="space-y-1 relative" id="ins-autodelete-dropdown-container">
-                                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block mb-1">Auto-Deletion</label>
-                                    <button type="button" onclick="toggleCustomDropdown('ins-autodelete-options', event)" class="w-full min-h-[2.5rem] py-2 flex items-center justify-between bg-white/5 rounded-xl px-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] text-left border border-white/5 leading-snug">
+                                    <span class="modal-section__label block mb-1">Auto-Deletion</span>
+                                    <button type="button" onclick="toggleCustomDropdown('ins-autodelete-options', event)" class="modal-field__control w-full min-h-[2.5rem] py-2 flex items-center justify-between text-left leading-snug">
                                         <span id="ins-selected-autodelete-label" class="flex items-center space-x-2 truncate min-w-0 pr-1">Default (27 Days)</span>
                                         <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500 flex-shrink-0"></i>
                                     </button>
                                 </div>
                                 <div class="space-y-1 relative">
-                                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block mb-1">Deadline</label>
+                                    <span class="modal-section__label block mb-1">Deadline</span>
                                     <div class="flex items-center space-x-1">
-                                        <button type="button" onclick="openCustomCalendar('ins-task-date', event)" id="ins-task-date-btn" class="flex-1 min-h-[2.5rem] py-2 bg-white/5 rounded-xl px-3 text-xs text-white border border-white/5 hover:bg-white/10 text-left flex items-center justify-between leading-snug min-w-0">
+                                        <button type="button" onclick="openCustomCalendar('ins-task-date', event)" id="ins-task-date-btn" class="modal-field__control flex-1 min-h-[2.5rem] py-2 text-left flex items-center justify-between leading-snug min-w-0">
                                             <span id="ins-task-date-label" class="truncate min-w-0 pr-1">No Deadline</span>
                                             <i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-400 flex-shrink-0"></i>
                                         </button>
@@ -533,13 +537,13 @@
                             </div>
 
                             <div id="ins-custom-autodelete-container" class="space-y-1 hidden">
-                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500 block">Duration (Hours)</label>
-                                <input type="number" id="ins-task-autodelete-custom" min="1" max="8760" value="24" onchange="updateInspectorCustomAutodelete(this.value)" class="w-full h-11 bg-white/5 text-xs text-white rounded-xl px-3.5 border border-white/5 focus:outline-none focus:ring-1 focus:ring-[#2997ff]">
+                                <span class="modal-section__label block mb-1">Duration (Hours)</span>
+                                <input type="number" id="ins-task-autodelete-custom" min="1" max="8760" value="24" onchange="updateInspectorCustomAutodelete(this.value)" class="modal-field__control h-10">
                             </div>
 
-                            <!-- Export Task Action Inside Location & Settings -->
+                            <!-- Export Task Action -->
                             <div class="pt-2">
-                                <button type="button" onclick="exportSingleTask()" class="w-full btn-scale flex items-center justify-center space-x-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white py-2.5 rounded-xl text-xs font-semibold border border-white/5 transition">
+                                <button type="button" onclick="exportSingleTask()" class="modal-btn modal-btn--secondary">
                                     <i data-lucide="download" class="w-4 h-4 text-[#2997ff]"></i>
                                     <span>Export Task Data (.JSON)</span>
                                 </button>
@@ -549,7 +553,7 @@
 
                 </div>
 
-                <!-- Footer / Delete Button Section -->
+                <!-- Sticky Footer Section -->
                 <div id="inspector-footer" class="modal-footer flex-shrink-0 bg-[#121212] hidden z-30">
                     <button onclick="handleDeleteTaskTrigger()" class="modal-btn modal-btn--destructive">
                         <i data-lucide="trash-2" class="w-4 h-4"></i>
