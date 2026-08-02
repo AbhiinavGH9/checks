@@ -205,11 +205,11 @@
             color: #FCA5A5;
         }
 
-        /* Base UI Drawer Component Tokens & Base Styles */
+        /* Base UI Side Drawer Specification */
         :root {
             --drawer-inset: 0px;
             --drawer-bleed-background: #141414;
-            --drawer-overlay-min-opacity: 0.6;
+            --drawer-overlay-min-opacity: 0;
         }
         .drawer-swipe-handle {
             width: 36px;
@@ -224,8 +224,9 @@
             background-color: #141414;
             color: #FFFFFF;
             border: none !important;
-            box-shadow: none !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
             outline: none !important;
+            transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
         }
 
         /* Pop-down Menu Animation */

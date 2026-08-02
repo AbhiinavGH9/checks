@@ -3960,7 +3960,7 @@
                 inspector.classList.add('translate-x-full');
                 setTimeout(() => {
                     inspector.classList.add('hidden');
-                }, 300);
+                }, 350);
             }
         }
 
