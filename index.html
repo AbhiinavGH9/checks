@@ -394,9 +394,14 @@
                         <span class="text-xs uppercase font-bold tracking-widest text-[#2997ff] flex items-center">
                             <i data-lucide="sliders" class="w-4 h-4 mr-2"></i> Task Details
                         </span>
-                        <button onclick="closeInspector()" class="text-gray-400 hover:text-white btn-scale p-1.5 bg-white/5 hover:bg-white/10 rounded-full">
-                            <i data-lucide="x" class="w-4 h-4"></i>
-                        </button>
+                        <div class="flex items-center space-x-1.5">
+                            <button id="ins-pin-sidebar-btn" onclick="togglePinTaskToSidebar(AppState.selectedTaskId); renderInspector();" class="text-amber-400/80 hover:text-amber-300 btn-scale p-1.5 bg-white/5 hover:bg-white/10 rounded-full transition" title="Add / Remove from Sidebar">
+                                <i data-lucide="pin" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="closeInspector()" class="text-gray-400 hover:text-white btn-scale p-1.5 bg-white/5 hover:bg-white/10 rounded-full transition">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Category 1: Task Details (Collapsible) -->

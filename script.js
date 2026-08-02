@@ -1,3 +1,6 @@
+        let contextSelectedGroupId = null;
+        let contextSelectedTaskId = null;
+
         window.addEventListener('error', function(e) {
             console.error("Global Error Caught:", e.error);
             const container = document.getElementById('toast-container') || document.body;
@@ -4342,6 +4345,15 @@
             if (content) content.classList.remove('hidden');
             if (footer) footer.classList.remove('hidden');
 
+            const insPinBtn = document.getElementById('ins-pin-sidebar-btn');
+            if (insPinBtn) {
+                const isPinned = AppState.pinnedTaskIds && AppState.pinnedTaskIds.includes(task.id);
+                insPinBtn.className = isPinned 
+                    ? "text-amber-400 btn-scale p-1.5 bg-amber-500/20 border border-amber-500/30 rounded-full transition" 
+                    : "text-gray-400 hover:text-amber-400 btn-scale p-1.5 bg-white/5 hover:bg-white/10 rounded-full transition";
+                insPinBtn.title = isPinned ? "Remove from Sidebar" : "Add to Sidebar";
+            }
+
             document.getElementById('ins-task-title').value = task.title;
             document.getElementById('ins-task-desc').value = task.description || '';
             document.getElementById('ins-task-date').value = task.dueDate || '';
@@ -5632,8 +5644,8 @@
             const lifespan = 27 * 24 * 60 * 60 * 1000;
 
             AppState.tasks = AppState.tasks.filter(task => {
-                // 1. Check custom auto-delete policy expiryTime
-                if (task.expiryTime && now > task.expiryTime) {
+                // 1. Check custom auto-delete policy expiryTime (only delete if not on hold)
+                if (task.expiryTime && now > task.expiryTime && !isTaskOnHold(task)) {
                     deletedAny = true;
                     deletedNames.push(task.title);
                     return false; 
