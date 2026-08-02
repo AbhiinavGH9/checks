@@ -3916,8 +3916,15 @@
                 renderInspector();
 
                 const inspector = document.getElementById('inspector-panel');
-                inspector.style.width = '320px';
-                document.getElementById('inspector-resizer').style.display = 'block';
+                const backdrop = document.getElementById('inspector-drawer-backdrop');
+                if (inspector && backdrop) {
+                    backdrop.classList.remove('hidden');
+                    inspector.classList.remove('hidden');
+                    setTimeout(() => {
+                        backdrop.classList.remove('opacity-0');
+                        inspector.classList.remove('translate-y-full');
+                    }, 10);
+                }
             }
         }
 
@@ -3930,29 +3937,29 @@
             hideFloatingElement(document.getElementById('ins-autodelete-options'));
 
             const inspector = document.getElementById('inspector-panel');
-            inspector.style.width = '0px';
-            document.getElementById('inspector-resizer').style.display = 'none';
-
-            document.getElementById('inspector-content').classList.add('hidden');
-            document.getElementById('inspector-footer').classList.add('hidden');
-            document.getElementById('inspector-placeholder').classList.remove('hidden');
+            const backdrop = document.getElementById('inspector-drawer-backdrop');
+            if (inspector && backdrop) {
+                backdrop.classList.add('opacity-0');
+                inspector.classList.add('translate-y-full');
+                setTimeout(() => {
+                    backdrop.classList.add('hidden');
+                    inspector.classList.add('hidden');
+                }, 300);
+            }
         }
 
         function renderInspector() {
             const task = AppState.tasks.find(t => t.id === AppState.selectedTaskId);
             const content = document.getElementById('inspector-content');
             const footer = document.getElementById('inspector-footer');
-            const placeholder = document.getElementById('inspector-placeholder');
 
             if (!task) {
-                content.classList.add('hidden');
-                footer.classList.add('hidden');
-                placeholder.classList.add('hidden');
+                if (content) content.classList.add('hidden');
+                if (footer) footer.classList.add('hidden');
                 return;
             }
-            content.classList.remove('hidden');
-            footer.classList.remove('hidden');
-            placeholder.classList.add('hidden');
+            if (content) content.classList.remove('hidden');
+            if (footer) footer.classList.remove('hidden');
 
             document.getElementById('ins-task-title').value = task.title;
             document.getElementById('ins-task-desc').value = task.description || '';

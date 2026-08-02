@@ -327,18 +327,22 @@
 
             </section>
 
-            <div id="inspector-resizer" class="resize-handle w-1 bg-white/[0.03] hover:bg-[#2997ff] active:bg-[#2997ff] z-10 flex-shrink-0" style="display: none;"></div>
+            <!-- Base UI Inspector Bottom Drawer Backdrop -->
+            <div id="inspector-drawer-backdrop" onclick="closeInspector()" class="fixed inset-0 bg-black/60 z-[150] hidden transition-opacity duration-200 opacity-0"></div>
 
-            <section id="inspector-panel" class="bg-[#0F0F0F] flex flex-col justify-between flex-shrink-0 transition-[width] duration-200 overflow-hidden" style="width: 0px;">
-                
-                <div id="inspector-content" class="flex-1 overflow-y-auto p-4 space-y-4 hidden">
+            <!-- Base UI Inspector Bottom Drawer Content -->
+            <div id="inspector-panel" class="fixed bottom-0 left-0 right-0 z-[151] hidden transform translate-y-full transition-transform duration-300 ease-out bg-[#141414] rounded-t-3xl max-h-[85vh] flex flex-col overflow-hidden max-w-2xl mx-auto shadow-2xl border-t border-white/10" style="width: auto;">
+                <div class="drawer-swipe-handle"></div>
+
+                <!-- Scrollable Content Area -->
+                <div id="inspector-content" class="flex-1 overflow-y-auto px-6 py-4 space-y-4 hidden">
                     
                     <!-- Header of Inspector Content -->
-                    <div class="relative flex items-center justify-center pb-3 border-b border-white/[0.04]">
-                        <span class="text-xs uppercase font-bold tracking-widest text-[#2997ff] flex items-center justify-center">
-                            <i data-lucide="sliders" class="w-3.5 h-3.5 mr-1.5"></i> Task Details
+                    <div class="relative flex items-center justify-between pb-3 border-b border-white/[0.04]">
+                        <span class="text-xs uppercase font-bold tracking-widest text-[#2997ff] flex items-center">
+                            <i data-lucide="sliders" class="w-4 h-4 mr-2"></i> Task Details
                         </span>
-                        <button onclick="closeInspector()" class="absolute right-0 text-gray-400 hover:text-white btn-scale p-1 bg-white/5 hover:bg-white/10 rounded-md">
+                        <button onclick="closeInspector()" class="text-gray-400 hover:text-white btn-scale p-1.5 bg-white/5 hover:bg-white/10 rounded-full">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -352,11 +356,11 @@
                         <div id="ins-sec-content-details" class="space-y-3 mt-2">
                             <div class="space-y-1">
                                 <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Title</label>
-                                <input type="text" id="ins-task-title" onchange="updateInspectorField('title', this.value)" class="w-full bg-white/5 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition font-semibold border border-white/5">
+                                <input type="text" id="ins-task-title" onchange="updateInspectorField('title', this.value)" class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition font-semibold border border-white/5">
                             </div>
                             <div class="space-y-1">
                                 <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Description</label>
-                                <textarea id="ins-task-desc" rows="3" onchange="updateInspectorField('description', this.value)" onkeydown="handleDescriptionKeydown(event)" placeholder="Write descriptions... (Shift+Enter for • bullets)" class="w-full bg-white/5 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition leading-relaxed resize-none border border-white/5"></textarea>
+                                <textarea id="ins-task-desc" rows="3" onchange="updateInspectorField('description', this.value)" onkeydown="handleDescriptionKeydown(event)" placeholder="Write descriptions... (Shift+Enter for • bullets)" class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition leading-relaxed resize-none border border-white/5"></textarea>
                             </div>
                         </div>
                     </div>
@@ -370,9 +374,9 @@
                         <div id="ins-sec-content-notes" class="space-y-3 mt-2">
                             <div id="inspector-notes-list" class="space-y-1.5 max-h-32 overflow-y-auto pr-1"></div>
                             <div class="flex items-center space-x-1.5">
-                                <input type="text" id="new-task-note-input-ins" placeholder="Add a short note..." class="flex-1 bg-white/5 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
-                                <button type="button" onclick="addInspectorNote()" class="btn-scale bg-[#2997ff] hover:bg-[#0066cc] text-black hover:text-white p-2 rounded-xl transition">
-                                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                <input type="text" id="new-task-note-input-ins" placeholder="Add a short note..." class="flex-1 bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
+                                <button type="button" onclick="addInspectorNote()" class="btn-scale bg-[#2997ff] hover:bg-[#0066cc] text-black hover:text-white p-2.5 rounded-xl transition">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
                                 </button>
                             </div>
                         </div>
@@ -387,9 +391,9 @@
                         <div id="ins-sec-content-subtasks" class="space-y-3 mt-2">
                             <div id="inspector-subtasks-list" class="space-y-1.5 max-h-60 overflow-y-auto pr-1"></div>
                             <form onsubmit="handleAddSubtask(event)" class="flex items-center space-x-1.5 mt-2">
-                                <input type="text" id="new-subtask-input" placeholder="Create new subtask..." class="flex-1 bg-white/5 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
-                                <button type="submit" class="btn-scale bg-[#2997ff] hover:bg-[#0066cc] text-black hover:text-white p-2 rounded-lg transition">
-                                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                <input type="text" id="new-subtask-input" placeholder="Create new subtask..." class="flex-1 bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
+                                <button type="submit" class="btn-scale bg-[#2997ff] hover:bg-[#0066cc] text-black hover:text-white p-2.5 rounded-xl transition">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
                                 </button>
                             </form>
                         </div>
@@ -479,27 +483,16 @@
 
                 </div>
 
-                <div id="inspector-footer" class="p-4 bg-[#0D0D0D] border-t border-white/[0.04] hidden">
+                <!-- Footer / Delete Button Section -->
+                <div id="inspector-footer" class="p-6 bg-[#0D0D0D] border-t border-white/[0.04] hidden flex-shrink-0">
                     <div class="flex flex-col space-y-2.5 w-full">
                         <button onclick="handleDeleteTaskTrigger()" class="btn-scale w-full bg-red-500/15 hover:bg-red-500/25 text-red-400 py-3 rounded-full text-xs font-extrabold border border-red-500/30 transition flex items-center justify-center space-x-2">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
                             <span>Delete Task</span>
                         </button>
-                        <button onclick="closeInspector()" class="btn-scale w-full bg-white hover:bg-gray-200 text-black py-3 rounded-full text-xs font-extrabold transition shadow-md">
-                            Close
-                        </button>
                     </div>
                 </div>
-
-                <div id="inspector-placeholder" class="flex-1 flex flex-col items-center justify-center text-center p-8 text-gray-500">
-                    <div class="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-4 text-[#2997ff]">
-                        <i data-lucide="layout-panel-left" class="w-5 h-5"></i>
-                    </div>
-                    <h4 class="text-xs font-semibold text-white mb-1">Details Panel</h4>
-                    <p class="text-[11px] text-gray-500 max-w-xs leading-relaxed">
-                        Select an existing task card from the Workspace list views to edit specifications, checklists, subtasks, or priority classifications.
-                    </p>
-                </div>
+            </div>
 
             </section>
 
