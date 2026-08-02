@@ -6,15 +6,7 @@
             const container = document.getElementById('toast-container') || document.body;
             if (container) {
                 const toast = document.createElement('div');
-                toast.className = "fixed bottom-6 right-6 z-[999] bg-[#141414] border border-red-500/40 text-red-300 px-5 py-3 rounded-full text-xs font-semibold shadow-2xl pointer-events-auto flex items-center space-x-3 max-w-md backdrop-blur-xl cursor-pointer transition hover:bg-[#1a1a1a]";
-                toast.title = "Click to copy error to clipboard";
-                const errorText = `${e.message} (${e.filename}:${e.lineno})`;
-                toast.onclick = function(evt) {
-                    if (evt.target.closest('button')) return;
-                    navigator.clipboard.writeText(errorText).then(() => {
-                        showToast("Copied to Clipboard", "Error traceback copied successfully.");
-                    }).catch(() => {});
-                };
+                toast.className = "fixed bottom-6 right-6 z-[999] bg-[#141414] border border-red-500/40 text-red-300 px-5 py-3 rounded-full text-xs font-semibold shadow-2xl pointer-events-auto flex items-center space-x-3 max-w-md backdrop-blur-xl";
                 toast.innerHTML = `
                     <div class="p-1.5 rounded-full bg-red-500/20 text-red-400 flex-shrink-0">
                         <i data-lucide="alert-circle" class="w-4 h-4"></i>
@@ -166,7 +158,6 @@
             sortBy: 'created',
             sidebarCollapsed: false,
             pinnedTaskIds: [], // Direct sidebar pinned task IDs
-            theme: 'dark', // 'dark' or 'light'
             
             tempProjectColor: '#FF3B30',
             tempProjectIcon: 'smile',
@@ -303,13 +294,7 @@
                     containerEl.style.transform = axis === 'y' ? `translateY(${panelDimension}px)` : `translateX(${panelDimension}px)`;
                     setTimeout(() => {
                         containerEl.style.transform = '';
-                        if (onCloseCallback) {
-                            requestClose({
-                                isDirty: typeof isModalDirtyCheck === 'function' ? isModalDirtyCheck(containerEl) : false,
-                                onConfirmNeeded: () => showInlineDiscardConfirm(containerEl, onCloseCallback),
-                                onClose: onCloseCallback
-                            });
-                        }
+                        if (onCloseCallback) onCloseCallback();
                     }, 200);
                 } else {
                     containerEl.style.transform = axis === 'y' ? 'translateY(0px)' : 'translateX(0px)';
@@ -320,61 +305,6 @@
             window.addEventListener('pointermove', onMove, { passive: false });
             window.addEventListener('pointerup', onEnd);
             window.addEventListener('pointercancel', onEnd);
-        }
-
-        function isModalDirty(initialValues, currentValues) {
-            return JSON.stringify(initialValues) !== JSON.stringify(currentValues);
-        }
-
-        function requestClose({ isDirty, onConfirmNeeded, onClose }) {
-            if (isDirty) onConfirmNeeded();
-            else onClose();
-        }
-
-        function isModalDirtyCheck(containerEl) {
-            if (!containerEl) return false;
-            const inputs = containerEl.querySelectorAll('input:not([type="hidden"]), textarea, select');
-            for (let input of inputs) {
-                if (input.dataset.initialValue !== undefined && input.value !== input.dataset.initialValue) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        function showInlineDiscardConfirm(containerEl, onClose) {
-            const existingModal = document.getElementById('unsaved-changes-confirm-modal');
-            if (existingModal) existingModal.remove();
-
-            const modal = document.createElement('div');
-            modal.id = 'unsaved-changes-confirm-modal';
-            modal.className = "fixed inset-0 bg-black/80 backdrop-blur-md z-[300] flex items-center justify-center p-4 animate-fade-in";
-            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-
-            modal.innerHTML = `
-                <div class="bg-[#141414] border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
-                    <div class="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto">
-                        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
-                    </div>
-                    <div class="space-y-1">
-                        <h3 class="text-base font-bold text-white">Unsaved Changes</h3>
-                        <p class="text-xs text-gray-400">You have unsaved edits. Are you sure you want to discard them?</p>
-                    </div>
-                    <div class="flex items-center space-x-2 pt-2">
-                        <button type="button" id="btn-keep-editing" class="flex-1 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-full transition">Keep editing</button>
-                        <button type="button" id="btn-discard-confirm" class="flex-1 py-2.5 bg-red-500 hover:bg-red-400 text-black text-xs font-bold rounded-full transition">Discard</button>
-                    </div>
-                </div>
-            `;
-
-            document.body.appendChild(modal);
-            if (window.lucide) window.lucide.createIcons();
-
-            document.getElementById('btn-keep-editing').onclick = () => modal.remove();
-            document.getElementById('btn-discard-confirm').onclick = () => {
-                modal.remove();
-                if (onClose) onClose();
-            };
         }
 
         // Attach touch gesture inspectors and sidebars
@@ -981,15 +911,13 @@
                 const isDestructive = item.destructive || item.label?.toLowerCase().includes('delete');
                 if (isDestructive) btn.className = 'w-full text-left py-3 px-4 rounded-xl hover:bg-red-500/10 transition flex items-center justify-between text-sm text-red-400';
                 
-                const defaultIcon = isDestructive ? 'trash-2' : (item.submenu ? 'folder' : 'circle-dot');
-                if (!item.icon) item.icon = defaultIcon;
-
+                let iconHTML = '';
                 if (item.icon) {
                     if (item.icon.startsWith('#') || item.icon.startsWith('rgb')) {
                         iconHTML = `<span class="w-3 h-3 rounded-full mr-3 flex-shrink-0" style="background-color: ${item.icon}"></span>`;
                     } else {
                         const iconColor = isDestructive ? 'text-red-400' : (item.iconColor || 'text-gray-400');
-                        iconHTML = `<i data-lucide="${item.icon}" class="w-4 h-4 mr-3 flex-shrink-0 ${iconColor}"></i>`;
+                        iconHTML = `<i data-lucide="${item.icon}" class="w-4 h-4 mr-3 ${iconColor}"></i>`;
                     }
                 }
 
@@ -1000,11 +928,10 @@
 
                 btn.innerHTML = `
                     <span class="flex items-center">
-                        ${iconHTML}
                         <span>${item.label}</span>
                         ${badgeHTML}
                     </span>
-                    ${item.chevron ? '<i data-lucide="chevron-right" class="w-4 h-4 text-gray-500"></i>' : ''}
+                    ${iconHTML || (item.chevron ? '<i data-lucide="chevron-right" class="w-4 h-4 text-gray-500"></i>' : '')}
                 `;
 
                 btn.onclick = (e) => {
@@ -1129,24 +1056,9 @@
 
                 listContainer.appendChild(btn);
             });
+
             slot.appendChild(listContainer);
             lucide.createIcons();
-        }
-
-        function cleanupOverlayBackdrop(backdropEl, panelEl, slideClass = 'translate-y-full') {
-            if (!backdropEl) return;
-            backdropEl.classList.remove('opacity-100');
-            backdropEl.style.opacity = '0';
-            backdropEl.style.pointerEvents = 'none';
-            if (panelEl && slideClass) {
-                panelEl.classList.add(slideClass);
-            }
-            setTimeout(() => {
-                backdropEl.classList.add('hidden');
-                backdropEl.style.opacity = '';
-                backdropEl.style.pointerEvents = '';
-                if (panelEl) panelEl.classList.add('hidden');
-            }, 200);
         }
 
         function closeMobileDrawer() {
@@ -1155,9 +1067,15 @@
 
             if (!backdrop || !drawer) return;
 
-            cleanupOverlayBackdrop(backdrop, drawer, 'translate-y-full');
-            drawerStack = [];
-            drawerMenuDefinition = null;
+            backdrop.classList.remove('opacity-100');
+            drawer.classList.add('translate-y-full');
+
+            setTimeout(() => {
+                backdrop.classList.add('hidden');
+                drawer.classList.add('hidden');
+                drawerStack = [];
+                drawerMenuDefinition = null;
+            }, 300);
         }
 
         function parseMenuDOMToDefinition(menuEl, title = 'Options') {
@@ -1312,35 +1230,9 @@
                 AppState.profileDP = parsedProfile.dp || 'smile';
             }
             if (savedCounterPolicy) AppState.counterTargetPolicy = savedCounterPolicy;
-            const savedTheme = localStorage.getItem('ANV_THEME');
-            if (savedTheme) {
-                AppState.theme = savedTheme;
-            }
-            applyTheme(AppState.theme);
             
             setupDefaults();
             syncProfileUIElements();
-        }
-
-        function toggleThemeSetting(event) {
-            if (event) event.stopPropagation();
-            AppState.theme = AppState.theme === 'light' ? 'dark' : 'light';
-            localStorage.setItem('ANV_THEME', AppState.theme);
-            applyTheme(AppState.theme);
-        }
-        window.toggleThemeSetting = toggleThemeSetting;
-
-        function applyTheme(theme) {
-            const btn = document.getElementById('theme-toggle-btn');
-            if (theme === 'light') {
-                document.documentElement.classList.add('light-mode');
-                document.body.classList.add('light-mode');
-                if (btn) btn.textContent = 'Light Mode';
-            } else {
-                document.documentElement.classList.remove('light-mode');
-                document.body.classList.remove('light-mode');
-                if (btn) btn.textContent = 'Dark Mode';
-            }
         }
 
         function syncDeviceDataChannels() {
@@ -1880,6 +1772,67 @@
             showToast('Session Closed', 'Session ended successfully.');
         }
 
+        function dismissOverlay(backdropEl, containerEl) {
+            if (!backdropEl) return;
+            backdropEl.classList.remove('opacity-100');
+            backdropEl.classList.add('opacity-0');
+            if (containerEl) {
+                containerEl.classList.add('scale-95');
+            }
+            setTimeout(() => {
+                backdropEl.classList.add('hidden');
+                backdropEl.style.pointerEvents = 'none';
+            }, 150);
+        }
+
+        function isTaskModalDirty() {
+            const title = document.getElementById('new-task-title') ? document.getElementById('new-task-title').value.trim() : '';
+            const desc = document.getElementById('new-task-desc') ? document.getElementById('new-task-desc').value.trim() : '';
+            const hasNotes = AppState.tempCreateNotes && AppState.tempCreateNotes.length > 0;
+            const hasSubtasks = AppState.tempCreateSubtasks && AppState.tempCreateSubtasks.length > 0;
+            return title.length > 0 || desc.length > 0 || hasNotes || hasSubtasks;
+        }
+
+        function closeAddTaskModal(force = false) {
+            if (!force && isTaskModalDirty()) {
+                const confBackdrop = document.getElementById('confirmation-modal-backdrop');
+                const confContainer = document.getElementById('confirmation-modal-container');
+                if (confBackdrop && confContainer) {
+                    confBackdrop.classList.remove('hidden');
+                    confBackdrop.style.pointerEvents = 'auto';
+                    setTimeout(() => {
+                        confBackdrop.classList.remove('opacity-0');
+                        confContainer.classList.remove('scale-95');
+                    }, 10);
+                }
+                return;
+            }
+
+            const backdrop = document.getElementById('task-modal-backdrop');
+            const container = document.getElementById('task-modal-container');
+            dismissOverlay(backdrop, container);
+
+            // Reset fields
+            if (document.getElementById('new-task-title')) document.getElementById('new-task-title').value = '';
+            if (document.getElementById('new-task-desc')) document.getElementById('new-task-desc').value = '';
+            AppState.tempCreateNotes = [];
+            AppState.tempCreateSubtasks = [];
+        }
+        window.closeAddTaskModal = closeAddTaskModal;
+
+        function confirmDiscardModalChanges() {
+            closeConfirmationModalOnly();
+            closeAddTaskModal(true);
+        }
+        window.confirmDiscardModalChanges = confirmDiscardModalChanges;
+
+        function closeConfirmationModalOnly() {
+            const confBackdrop = document.getElementById('confirmation-modal-backdrop');
+            const confContainer = document.getElementById('confirmation-modal-container');
+            dismissOverlay(confBackdrop, confContainer);
+        }
+        window.closeConfirmationModalOnly = closeConfirmationModalOnly;
+
         function openProfileCustomizerModal() {
             const backdrop = document.getElementById('profile-customizer-backdrop');
             const container = document.getElementById('profile-customizer-container');
@@ -1889,6 +1842,7 @@
             updateProfileCustomizerDPPreview();
 
             backdrop.classList.remove('hidden');
+            backdrop.style.pointerEvents = 'auto';
             setTimeout(() => {
                 backdrop.classList.remove('opacity-0');
                 container.classList.remove('scale-95');
@@ -1899,9 +1853,7 @@
         function closeProfileCustomizerModal() {
             const backdrop = document.getElementById('profile-customizer-backdrop');
             const container = document.getElementById('profile-customizer-container');
-            backdrop.classList.add('opacity-0');
-            container.classList.add('scale-95');
-            setTimeout(() => { backdrop.classList.add('hidden'); }, 150);
+            dismissOverlay(backdrop, container);
         }
 
         function rotateProfileGlyphIcon(direction) {
@@ -2097,52 +2049,15 @@
                             currentCount += t.subtasks.filter(s => !s.done).length;
                         }
                     });
-                    activeTabBadge.textContent = `${currentCount} active`;
+                    activeTabBadge.textContent = `${currentCount} subtasks`;
                 } else {
                     currentCount = getFilteredTasks().length;
-                    activeTabBadge.textContent = `${currentCount} active`;
+                    activeTabBadge.textContent = `${currentCount} items`;
                 }
             }
 
-            updateDateAndGreetingHeader();
-
             renderProjectsList();
             renderSidebarPinnedTasks();
-        }
-
-        function getOrdinalSuffix(day) {
-            if (day > 3 && day < 21) return 'th';
-            switch (day % 10) {
-                case 1:  return "st";
-                case 2:  return "nd";
-                case 3:  return "rd";
-                default: return "th";
-            }
-        }
-
-        function updateDateAndGreetingHeader() {
-            const dateHeading = document.getElementById('date-line-heading');
-            const greetingSub = document.getElementById('greeting-line-sub');
-            if (!dateHeading || !greetingSub) return;
-
-            const now = new Date();
-            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-            
-            const dayName = days[now.getDay()];
-            const dayNum = now.getDate();
-            const monthName = months[now.getMonth()];
-            
-            dateHeading.textContent = `${dayName} ${dayNum}${getOrdinalSuffix(dayNum)}, ${monthName}`;
-
-            const hour = now.getHours();
-            let greeting = 'Good evening';
-            if (hour >= 5 && hour < 12) greeting = 'Good morning';
-            else if (hour >= 12 && hour < 17) greeting = 'Good afternoon';
-            else if (hour >= 17 && hour < 22) greeting = 'Good evening';
-            else greeting = 'Good night';
-
-            greetingSub.textContent = `${greeting}, ${AppState.profileName || 'Anv'}`;
         }
 
         function renderSidebarPinnedTasks() {
@@ -2272,30 +2187,71 @@
 
         const PRIORITY_LEVELS = [
             "red", "orange", "yellow", "green", "lightblue", "blue",
-            "violet", "magenta", "purple", "beige", "gray", "lightpink",
-            "#FF3B30", "#FF9500", "#FFCC00", "#34C759", "#5AC8FA", "#007AFF",
-            "#5856D6", "#FF2D55", "#AF52DE", "#A2845E", "#8E8E93", "#E4A3A1"
+            "violet", "magenta", "purple", "beige", "gray", "lightpink"
         ];
+
+        const PRIORITY_COLOR_MAP = {
+            "red": "#FF3B30",
+            "orange": "#FF9500",
+            "yellow": "#FFCC00",
+            "green": "#34C759",
+            "lightblue": "#5AC8FA",
+            "blue": "#007AFF",
+            "violet": "#5856D6",
+            "magenta": "#FF2D55",
+            "purple": "#AF52DE",
+            "beige": "#A2845E",
+            "gray": "#8E8E93",
+            "lightpink": "#E4A3A1"
+        };
 
         function comparePriority(taskA, taskB) {
             if (taskA.manualOrderIndex != null && taskB.manualOrderIndex != null) {
                 return taskA.manualOrderIndex - taskB.manualOrderIndex;
             }
-            const colorA = (taskA.color || taskA.priorityColor || '').toLowerCase();
-            const colorB = (taskB.color || taskB.priorityColor || '').toLowerCase();
-            
-            const rankA = PRIORITY_LEVELS.findIndex(c => c.toLowerCase() === colorA);
-            const rankB = PRIORITY_LEVELS.findIndex(c => c.toLowerCase() === colorB);
-            
+            const rankA = PRIORITY_LEVELS.indexOf(taskA.priorityColor || taskA.color);
+            const rankB = PRIORITY_LEVELS.indexOf(taskB.priorityColor || taskB.color);
             return (rankA === -1 ? 99 : rankA) - (rankB === -1 ? 99 : rankB);
         }
 
         function setTaskPriority(task, newColor) {
-            task.color = newColor;
-            task.priorityColor = newColor;
-            task.manualOrderIndex = null;
-            return task;
+            return { ...task, priorityColor: newColor, color: newColor, manualOrderIndex: null };
         }
+
+        function toggleAppTheme(e) {
+            if (e) e.stopPropagation();
+            const body = document.body;
+            body.classList.toggle('light-mode');
+            const isLight = body.classList.contains('light-mode');
+            localStorage.setItem('APP_THEME_MODE', isLight ? 'light' : 'dark');
+
+            const dots = [document.getElementById('theme-toggle-dot'), document.getElementById('theme-toggle-dot-mobile')];
+            const btns = [document.getElementById('theme-toggle-btn'), document.getElementById('theme-toggle-btn-mobile')];
+            
+            dots.forEach(dot => {
+                if (dot) {
+                    if (isLight) {
+                        dot.classList.remove('translate-x-0', 'bg-gray-400');
+                        dot.classList.add('translate-x-4', 'bg-white');
+                    } else {
+                        dot.classList.remove('translate-x-4', 'bg-white');
+                        dot.classList.add('translate-x-0', 'bg-gray-400');
+                    }
+                }
+            });
+            btns.forEach(btn => {
+                if (btn) {
+                    if (isLight) {
+                        btn.classList.remove('bg-white/10');
+                        btn.classList.add('bg-[#2997ff]');
+                    } else {
+                        btn.classList.remove('bg-[#2997ff]');
+                        btn.classList.add('bg-white/10');
+                    }
+                }
+            });
+        }
+        window.toggleAppTheme = toggleAppTheme;
 
         function sortTasks(taskList) {
             if (AppState.sortBy === 'created') {
@@ -2311,7 +2267,7 @@
             } else if (AppState.sortBy === 'alphabetical') {
                 return taskList.sort((a, b) => a.title.localeCompare(b.title));
             }
-            return taskList;
+            return taskList.sort(comparePriority);
         }
 
         function updateStreakCardMetrics() {
@@ -2440,19 +2396,17 @@
             const sorted = sortTasks(filtered);
 
             const feedTitle = document.getElementById('feed-current-title');
-            if (feedTitle) {
-                if (AppState.currentTab === 'inbox') {
-                    feedTitle.textContent = 'Inbox Feed';
-                } else if (AppState.currentTab === 'today') {
-                    feedTitle.textContent = "Today's Agenda";
-                } else if (AppState.currentTab === 'done') {
-                    feedTitle.textContent = 'Completed Archive';
-                } else if (AppState.currentTab === 'search') {
-                    feedTitle.textContent = `Search matches for: "${AppState.searchQuery}"`;
-                } else {
-                    const foundProj = AppState.projects.find(p => p.id === AppState.currentTab);
-                    feedTitle.textContent = foundProj ? foundProj.title : 'Collection Folder';
-                }
+            if (AppState.currentTab === 'inbox') {
+                feedTitle.textContent = 'Inbox Feed';
+            } else if (AppState.currentTab === 'today') {
+                feedTitle.textContent = "Today's Agenda";
+            } else if (AppState.currentTab === 'done') {
+                feedTitle.textContent = 'Completed Archive';
+            } else if (AppState.currentTab === 'search') {
+                feedTitle.textContent = `Search matches for: "${AppState.searchQuery}"`;
+            } else {
+                const foundProj = AppState.projects.find(p => p.id === AppState.currentTab);
+                feedTitle.textContent = foundProj ? foundProj.title : 'Collection Folder';
             }
 
             container.innerHTML = '';
@@ -2496,6 +2450,13 @@
             groupSection.className = "space-y-3 p-4 bg-white/[0.01] border border-white/[0.03] rounded-2xl transition duration-150 relative";
 
             const isUngrouped = (groupId === 'ungrouped');
+            
+            if (!isUngrouped) {
+                groupSection.setAttribute('draggable', 'true');
+                groupSection.setAttribute('ondragstart', `dragGroup(event, '${groupId}')`);
+                groupSection.setAttribute('ondragover', 'allowGroupDrop(event)');
+                groupSection.setAttribute('ondrop', `dropGroup(event, '${groupId}')`);
+            }
 
             let navigationButtons = '';
             if (!isUngrouped && AppState.groups.length > 1) {
@@ -2589,16 +2550,14 @@
                     let subtasksHTML = '';
                     if (task.subtasks && task.subtasks.length > 0) {
                         subtasksHTML = `
-                            <div class="mt-2 pl-3 space-y-1 relative border-l border-white/10 ml-2">
-                                ${task.subtasks.map((s, idx) => {
-                                    const isLast = idx === task.subtasks.length - 1;
+                            <div class="subtask-thread-container">
+                                ${task.subtasks.map(s => {
                                     const subtaskAccent = task.done ? '#7a7a7a' : accentColor;
                                     const subBorderColor = `border-color: ${subtaskAccent};`;
                                     const subBgColor = s.done ? `background-color: ${subtaskAccent};` : `background-color: transparent;`;
                                     return `
-                                        <div class="flex items-center space-x-2.5 px-1 py-1 rounded hover:bg-white/[0.03] transition relative">
-                                            <span class="absolute -left-3 top-1/2 -translate-y-1/2 w-2 h-2 border-l border-b border-white/20 ${isLast ? 'rounded-bl' : ''}"></span>
-                                            <button onclick="toggleCardSubtaskDone('${task.id}', '${s.id}', event)" class="w-3.5 h-3.5 rounded-full border flex items-center justify-center flex-shrink-0 transition-all duration-150 relative z-10" style="${subBorderColor} ${subBgColor}">
+                                        <div class="subtask-thread-item flex items-center space-x-2.5 px-1 py-1 rounded hover:bg-white/[0.03] transition">
+                                            <button onclick="toggleCardSubtaskDone('${task.id}', '${s.id}', event)" class="w-3.5 h-3.5 rounded-full border flex items-center justify-center flex-shrink-0 transition-all duration-150" style="${subBorderColor} ${subBgColor}">
                                                 ${s.done ? `<i data-lucide="check" class="w-2.5 h-2.5 text-[#0A0A0A] font-extrabold tick-animation"></i>` : ''}
                                             </button>
                                             <span class="text-[11px] truncate ${s.done ? 'line-through text-gray-600' : 'text-gray-300'}">${escapeHTML(s.title)}</span>
@@ -2610,27 +2569,19 @@
                     }
 
                     const card = document.createElement('div');
-                    card.className = `group-card relative py-2 px-3 rounded-full transition duration-150 hover:bg-white/[0.04] active:bg-white/[0.08] ${isSelected ? 'bg-white/[0.06] text-white' : ''}`;
+                    card.className = `group-card relative py-2 px-3 transition duration-150 ${isSelected ? 'ring-1 ring-[#2997ff]/60 bg-white/[0.03]' : ''}`;
                     card.setAttribute('data-task-id', task.id); 
                     card.setAttribute('oncontextmenu', `showContextMenu(event, '${task.id}')`);
                     
-                    let longPressTimer = null;
-                    let touchStartPos = { x: 0, y: 0 };
-                    card.ontouchstart = (e) => {
-                        const t = e.touches[0];
-                        touchStartPos = { x: t.clientX, y: t.clientY };
-                        longPressTimer = setTimeout(() => {
+                    // Touch hold long press context menu binding
+                    let touchTimer = null;
+                    card.addEventListener('touchstart', (e) => {
+                        touchTimer = setTimeout(() => {
                             showContextMenu(e, task.id);
-                        }, 450);
-                    };
-                    card.ontouchmove = (e) => {
-                        const t = e.touches[0];
-                        if (Math.abs(t.clientX - touchStartPos.x) > 10 || Math.abs(t.clientY - touchStartPos.y) > 10) {
-                            clearTimeout(longPressTimer);
-                        }
-                    };
-                    card.ontouchend = () => clearTimeout(longPressTimer);
-                    card.ontouchcancel = () => clearTimeout(longPressTimer);
+                        }, 500);
+                    }, { passive: true });
+                    card.addEventListener('touchend', () => clearTimeout(touchTimer));
+                    card.addEventListener('touchmove', () => clearTimeout(touchTimer));
 
                     card.onclick = (e) => selectTask(task.id, e);
 
@@ -3076,7 +3027,7 @@
                                         <div onclick="previewBackupSnapshot(${idx})" class="flex items-center justify-between bg-white/[0.03] hover:bg-white/[0.06] p-3.5 rounded-xl text-xs transition border border-white/5 gap-3 cursor-pointer group">
                                             <div class="flex items-center space-x-3 min-w-0 flex-1">
                                                 <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0 text-emerald-400 group-hover:scale-105 transition">
-                                                    <i data-lucide="archive-box" class="w-4 h-4"></i>
+                                                    <i data-lucide="archive" class="w-4 h-4"></i>
                                                 </div>
                                                 <div class="min-w-0 flex-1">
                                                     <div class="text-white font-bold truncate text-xs group-hover:text-[#2997ff] transition flex items-center space-x-1.5">
@@ -3177,36 +3128,37 @@
             }
             
             const menu = document.getElementById('context-menu');
+            menu.className = "hidden fixed ios-context-menu z-[100] text-xs text-gray-200 animate-fade-in";
 
             if (AppState.selectedTaskIds.length > 1) {
                 menu.innerHTML = `
                     <div class="px-4 py-1.5 text-[9px] font-bold tracking-widest uppercase text-[#2997ff] border-b border-white/[0.04] mb-1">
                         Selected: ${AppState.selectedTaskIds.length} tasks
                     </div>
-                    <button onclick="contextMultiToggleComplete(true)" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                        <i data-lucide="check-square" class="w-3.5 h-3.5"></i>
+                    <button onclick="contextMultiToggleComplete(true)" class="ios-context-menu-item">
                         <span>Mark all completed</span>
+                        <i data-lucide="check-square" class="w-4 h-4 text-[#2997ff]"></i>
                     </button>
-                    <button onclick="contextMultiToggleComplete(false)" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                        <i data-lucide="square" class="w-3.5 h-3.5"></i>
+                    <button onclick="contextMultiToggleComplete(false)" class="ios-context-menu-item">
                         <span>Mark all incomplete</span>
+                        <i data-lucide="square" class="w-4 h-4 text-gray-400"></i>
                     </button>
-                    <div class="border-t border-white/[0.03] my-1"></div>
-                    <button onclick="triggerMultiTaskHold()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                        <i data-lucide="lock" class="w-3.5 h-3.5 text-[#2997ff]"></i>
+                    <div class="ui-separator my-1" data-orientation="horizontal"></div>
+                    <button onclick="triggerMultiTaskHold()" class="ios-context-menu-item">
                         <span>Hold Auto-Delete</span>
+                        <i data-lucide="lock" class="w-4 h-4 text-[#2997ff]"></i>
                     </button>
-                    <button onclick="clearMultiTaskHold()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                        <i data-lucide="unlock" class="w-3.5 h-3.5"></i>
+                    <button onclick="clearMultiTaskHold()" class="ios-context-menu-item">
                         <span>Unhold Auto-Delete</span>
+                        <i data-lucide="unlock" class="w-4 h-4 text-gray-400"></i>
                     </button>
-                    <div class="border-t border-white/[0.03] my-1"></div>
+                    <div class="ui-separator my-1" data-orientation="horizontal"></div>
                     <div class="px-4 py-1.5 text-[9px] font-bold tracking-widest uppercase text-gray-500">Arrange all in group</div>
                     <div id="context-groups-list" class="max-h-32 overflow-y-auto"></div>
-                    <div class="border-t border-white/[0.03] my-1"></div>
-                    <button onclick="contextMultiDeleteTasks()" class="w-full text-left px-4 py-2 hover:bg-red-500/10 hover:text-red-400 transition flex items-center space-x-2">
-                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    <div class="ui-separator my-1" data-orientation="horizontal"></div>
+                    <button onclick="contextMultiDeleteTasks()" class="ios-context-menu-item" data-destructive="true">
                         <span>Delete Selected (${AppState.selectedTaskIds.length})</span>
+                        <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
                     </button>
                 `;
                 
@@ -3215,15 +3167,15 @@
                 
                 const ungroupBtn = document.createElement('button');
                 ungroupBtn.onclick = () => contextMultiMoveToGroup(null);
-                ungroupBtn.className = "w-full text-left px-4 py-1.5 hover:bg-white/5 hover:text-white transition truncate flex items-center space-x-1.5 text-xs text-gray-300";
-                ungroupBtn.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span><span>No Group / Ungrouped</span>`;
+                ungroupBtn.className = "ios-context-menu-item text-xs text-gray-300";
+                ungroupBtn.innerHTML = `<span>No Group / Ungrouped</span><span class="w-2 h-2 rounded-full bg-gray-500"></span>`;
                 groupsList.appendChild(ungroupBtn);
 
                 AppState.groups.forEach(group => {
                     const groupBtn = document.createElement('button');
                     groupBtn.onclick = () => contextMultiMoveToGroup(group.id);
-                    groupBtn.className = "w-full text-left px-4 py-1.5 hover:bg-white/5 hover:text-white transition truncate flex items-center space-x-1.5 text-xs text-gray-300";
-                    groupBtn.innerHTML = `<span class="w-1.5 h-1.5 rounded-full" style="background-color: ${group.color || '#2997ff'}"></span><span>${escapeHTML(group.title)}</span>`;
+                    groupBtn.className = "ios-context-menu-item text-xs text-gray-300";
+                    groupBtn.innerHTML = `<span>${escapeHTML(group.title)}</span><span class="w-2 h-2 rounded-full" style="background-color: ${group.color || '#2997ff'}"></span>`;
                     groupsList.appendChild(groupBtn);
                 });
             } else {
@@ -3243,29 +3195,29 @@
                 }
 
                 menu.innerHTML = `
-                    <button onmouseenter="hideGroupSubmenu()" onclick="contextToggleComplete()" class="ui-menu-item">
+                    <button onmouseenter="hideGroupSubmenu()" onclick="contextToggleComplete()" class="ios-context-menu-item">
                         <span>Toggle Complete</span>
                         <i data-lucide="check" class="w-4 h-4 text-gray-400"></i>
                     </button>
-                    <button onmouseenter="hideGroupSubmenu()" onclick="togglePinTaskToSidebar('${taskId}')" class="ui-menu-item">
+                    <button onmouseenter="hideGroupSubmenu()" onclick="togglePinTaskToSidebar('${taskId}')" class="ios-context-menu-item">
                         <span>${isPinned ? 'Remove from sidebar' : 'Add to sidebar'}</span>
-                        <i data-lucide="sidebar" class="w-4 h-4 text-amber-400"></i>
+                        <i data-lucide="pin" class="w-4 h-4 text-amber-400"></i>
                     </button>
-                    <button onmouseenter="hideGroupSubmenu()" onclick="handleUnifiedHoldAction()" class="ui-menu-item">
+                    <button onmouseenter="hideGroupSubmenu()" onclick="handleUnifiedHoldAction()" class="ios-context-menu-item">
                         <span>${holdLabel}</span>
                         <i data-lucide="${holdIcon}" class="w-4 h-4 ${holdColorClass}"></i>
                     </button>
-                    <button onmouseenter="hideGroupSubmenu()" onclick="contextOpenDetails()" class="ui-menu-item">
+                    <button onmouseenter="hideGroupSubmenu()" onclick="contextOpenDetails()" class="ios-context-menu-item">
                         <span>Edit Specifications</span>
                         <i data-lucide="sliders" class="w-4 h-4 text-gray-400"></i>
                     </button>
                     <div class="ui-separator my-1" data-orientation="horizontal"></div>
-                    <button onmouseenter="showGroupSubmenu(event)" onclick="showGroupSubmenu(event)" class="ui-menu-item group">
+                    <button onmouseenter="showGroupSubmenu(event)" onclick="showGroupSubmenu(event)" class="ios-context-menu-item group">
                         <span>Move to group</span>
                         <i data-lucide="folder-output" class="w-4 h-4 text-gray-400 group-hover:text-white"></i>
                     </button>
                     <div class="ui-separator my-1" data-orientation="horizontal"></div>
-                    <button onmouseenter="hideGroupSubmenu()" onclick="contextDeleteTask()" class="ui-menu-item" data-destructive="true">
+                    <button onmouseenter="hideGroupSubmenu()" onclick="contextDeleteTask()" class="ios-context-menu-item" data-destructive="true">
                         <span>Delete Task</span>
                         <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
                     </button>
@@ -4968,16 +4920,6 @@
             }
         }
 
-        function updateInspectorPriority(color) {
-            const task = AppState.tasks.find(t => t.id === AppState.selectedTaskId);
-            if (task) {
-                setTaskPriority(task, color);
-                syncDeviceDataChannels();
-                renderTaskFeed();
-                renderInspector();
-            }
-        }
-
         function updateInspectorIcon(iconName) {
             const task = AppState.tasks.find(t => t.id === AppState.selectedTaskId);
             if (task) {
@@ -5650,7 +5592,7 @@
                         <div class="flex items-center justify-between md:justify-start space-x-3 w-full md:w-auto">
                             <div class="flex items-center space-x-3 min-w-0">
                                 <div class="p-2 bg-[#2997ff]/10 text-[#2997ff] rounded-xl flex-shrink-0">
-                                    <i data-lucide="archive-box" class="w-4 h-4"></i>
+                                    <i data-lucide="archive" class="w-4 h-4"></i>
                                 </div>
                                 <div class="min-w-0">
                                     <div class="flex items-center space-x-2 flex-wrap">
@@ -5767,7 +5709,7 @@
                     <div class="flex items-center justify-between border-b border-white/5 pb-3">
                         <div>
                             <h3 class="text-xs font-extrabold text-white flex items-center space-x-2 uppercase tracking-wider">
-                                <i data-lucide="archive-box" class="w-4 h-4 text-[#2997ff]"></i>
+                                <i data-lucide="archive" class="w-4 h-4 text-[#2997ff]"></i>
                                 <span>${escapeHTML(target.label || 'Snapshot Preview')}</span>
                             </h3>
                             <div class="text-[10px] text-gray-400 font-mono mt-0.5">${new Date(target.timestamp).toLocaleString()} • ${snapTasks.length} Tasks • ${snapGroups.length} Groups</div>
@@ -6009,11 +5951,68 @@
             // Drag-to-select disabled per user request
         }
 
+        function updateHeaderDateGreeting() {
+            const dateEl = document.getElementById('header-date-month');
+            const greetingEl = document.getElementById('header-dynamic-greeting');
+            const userEl = document.getElementById('header-user-name');
+            if (userEl) userEl.textContent = AppState.profileName || 'User';
+
+            const now = new Date();
+            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            
+            const dayName = days[now.getDay()];
+            const dayNum = now.getDate();
+            const monthName = months[now.getMonth()];
+            
+            let suffix = 'th';
+            if (dayNum === 1 || dayNum === 21 || dayNum === 31) suffix = 'st';
+            else if (dayNum === 2 || dayNum === 22) suffix = 'nd';
+            else if (dayNum === 3 || dayNum === 23) suffix = 'rd';
+
+            if (dateEl) {
+                dateEl.textContent = `${dayName} ${dayNum}${suffix}, ${monthName}`;
+            }
+
+            const hour = now.getHours();
+            let greetingText = 'Good day';
+            if (hour < 12) greetingText = 'Good morning';
+            else if (hour < 17) greetingText = 'Good afternoon';
+            else greetingText = 'Good evening';
+
+            if (greetingEl) {
+                greetingEl.innerHTML = `${greetingText}, <span id="header-user-name">${escapeHTML(AppState.profileName || 'User')}</span>`;
+            }
+        }
+
         window.onload = function() {
+            // Disable slide-to-reload on mobile to allow smooth drawer dragging
+            document.body.style.overscrollBehaviorY = 'contain';
+
             loadFromLocalStorage();
             initResizeHandlers();
             initDragToSelect(); 
+            updateHeaderDateGreeting();
             
+            const savedTheme = localStorage.getItem('APP_THEME_MODE');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+                const dots = [document.getElementById('theme-toggle-dot'), document.getElementById('theme-toggle-dot-mobile')];
+                const btns = [document.getElementById('theme-toggle-btn'), document.getElementById('theme-toggle-btn-mobile')];
+                dots.forEach(dot => {
+                    if (dot) {
+                        dot.classList.remove('translate-x-0', 'bg-gray-400');
+                        dot.classList.add('translate-x-4', 'bg-white');
+                    }
+                });
+                btns.forEach(btn => {
+                    if (btn) {
+                        btn.classList.remove('bg-white/10');
+                        btn.classList.add('bg-[#2997ff]');
+                    }
+                });
+            }
+
             if (window.innerWidth < 768) {
                 AppState.sidebarCollapsed = true;
                 const sidebar = document.getElementById('sidebar-panel');
