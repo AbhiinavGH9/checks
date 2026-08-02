@@ -3931,13 +3931,10 @@
                 renderInspector();
 
                 const inspector = document.getElementById('inspector-panel');
-                const backdrop = document.getElementById('inspector-drawer-backdrop');
-                if (inspector && backdrop) {
-                    backdrop.classList.remove('hidden');
+                if (inspector) {
                     inspector.classList.remove('hidden');
                     setTimeout(() => {
-                        backdrop.classList.remove('opacity-0');
-                        inspector.classList.remove('translate-y-full');
+                        inspector.classList.remove('translate-x-full');
                     }, 10);
                 }
             }
@@ -3952,12 +3949,9 @@
             hideFloatingElement(document.getElementById('ins-autodelete-options'));
 
             const inspector = document.getElementById('inspector-panel');
-            const backdrop = document.getElementById('inspector-drawer-backdrop');
-            if (inspector && backdrop) {
-                backdrop.classList.add('opacity-0');
-                inspector.classList.add('translate-y-full');
+            if (inspector) {
+                inspector.classList.add('translate-x-full');
                 setTimeout(() => {
-                    backdrop.classList.add('hidden');
                     inspector.classList.add('hidden');
                 }, 300);
             }

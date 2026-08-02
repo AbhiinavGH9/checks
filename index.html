@@ -76,13 +76,7 @@
                             <span id="badge-today" class="ui-badge font-mono" data-variant="secondary">0</span>
                         </button>
 
-                        <button onclick="switchTab('done')" id="tab-done" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition text-xs font-semibold text-left btn-scale hover:bg-white/5 relative group">
-                            <span class="flex items-center space-x-3">
-                                <span class="p-1.5 rounded-lg bg-white/5 text-white group-hover:bg-white/10 group-hover:scale-105 transition duration-150"><i data-lucide="check-square" class="w-4 h-4"></i></span>
-                                <span class="text-gray-300 group-hover:text-white transition">Done Archive</span>
-                            </span>
-                            <span id="badge-done" class="ui-badge font-mono" data-variant="secondary">0</span>
-                        </button>
+
 
                         <button onclick="switchTab('manage')" oncontextmenu="handleManageStudioContextMenu(event)" id="tab-manage" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition text-xs font-semibold text-left btn-scale hover:bg-white/5 relative group">
                             <span class="flex items-center space-x-3">
@@ -334,12 +328,9 @@
 
             </section>
 
-            <!-- Base UI Inspector Bottom Drawer Backdrop -->
-            <div id="inspector-drawer-backdrop" onclick="closeInspector()" class="fixed inset-0 bg-black/60 z-[150] hidden transition-opacity duration-200 opacity-0"></div>
-
-            <!-- Base UI Inspector Bottom Drawer Content -->
-            <div id="inspector-panel" class="fixed bottom-0 left-0 right-0 z-[151] hidden transform translate-y-full transition-transform duration-300 ease-out bg-[#141414] rounded-t-3xl max-h-[85vh] flex flex-col overflow-hidden max-w-2xl mx-auto shadow-2xl border-t border-white/10" style="width: auto;">
-                <div class="drawer-swipe-handle"></div>
+            <!-- Base UI Inspector Right Slide Drawer Content -->
+            <div id="inspector-panel" class="fixed top-0 right-0 bottom-0 z-[150] w-80 max-w-sm hidden transform translate-x-full transition-transform duration-300 ease-out bg-[#141414] shadow-2xl border-l border-white/10 flex flex-col overflow-hidden">
+                <div class="drawer-swipe-handle my-3"></div>
 
                 <!-- Scrollable Content Area -->
                 <div id="inspector-content" class="flex-1 overflow-y-auto px-6 py-4 space-y-4 hidden">
