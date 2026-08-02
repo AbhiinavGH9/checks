@@ -788,12 +788,13 @@
                 display: none !important;
             }
 
-            /* Bottom-anchored mobile modals with equal padding */
+            /* Bottom-anchored mobile modals with equal side padding & unified pill shape */
             #task-modal-backdrop,
             #project-modal-backdrop,
             #group-modal-backdrop,
             #delete-modal-backdrop,
             #hold-modal-backdrop,
+            #archive-modal-backdrop,
             #profile-customizer-backdrop {
                 align-items: flex-end !important;
                 padding: 1rem !important;
@@ -804,35 +805,58 @@
             #group-modal-container,
             #delete-modal-container,
             #hold-modal-container,
+            #archive-modal-container,
             #profile-customizer-container {
-                width: 100% !important;
-                max-width: 100% !important;
-                margin: 0 !important;
+                width: calc(100vw - 2rem) !important;
+                max-width: calc(100vw - 2rem) !important;
+                margin: 0 auto !important;
                 border-radius: 1.75rem !important;
-                max-height: 66vh !important;
+                max-height: 82vh !important;
                 overflow-y: auto !important;
+                background-color: #121212 !important;
+                border: 1px solid rgba(255, 255, 255, 0.08) !important;
                 box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9) !important;
                 -ms-overflow-style: none !important;
                 scrollbar-width: none !important;
                 transition: max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease !important;
             }
 
+            /* Sticky Header for Task Creation & Group Modals on Mobile */
+            #task-modal-container .modal-header,
+            #group-modal-container .modal-header {
+                position: sticky !important;
+                top: 0 !important;
+                z-index: 40 !important;
+                background-color: #121212 !important;
+            }
+
+            /* Sticky Footer for Group Creation, Task Creation, & Modals on Mobile */
+            #group-modal-container .modal-footer,
+            #task-modal-actions-container,
+            .modal-sticky-actions,
+            .modal-shell .modal-footer {
+                position: sticky !important;
+                bottom: 0 !important;
+                z-index: 40 !important;
+                background-color: #121212 !important;
+                padding-bottom: 0.75rem !important;
+                padding-top: 0.75rem !important;
+            }
+
+            /* Ensure all action buttons in modals are pill shaped */
+            .modal-btn,
+            .modal-field__action,
+            .modal-icon-btn {
+                border-radius: 9999px !important;
+            }
+
             #new-task-customization-panel {
                 transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
             }
 
-            #task-modal-container::-webkit-scrollbar {
+            #task-modal-container::-webkit-scrollbar,
+            #archive-modal-container::-webkit-scrollbar {
                 display: none !important;
-            }
-
-            #task-modal-actions-container,
-            .modal-sticky-actions {
-                position: sticky !important;
-                bottom: 0 !important;
-                z-index: 30 !important;
-                background-color: #121212 !important;
-                padding-bottom: 0.5rem !important;
-                padding-top: 0.5rem !important;
             }
 
             #task-modal-container>div:first-child {
@@ -848,14 +872,6 @@
 
             #new-task-customization-panel>div {
                 width: 100% !important;
-            }
-
-            #project-modal-container,
-            #group-modal-container,
-            #delete-modal-container {
-                max-width: 92% !important;
-                margin-left: auto !important;
-                margin-right: auto !important;
             }
         }
 
