@@ -885,8 +885,10 @@
                 display: none !important;
             }
 
-            #task-modal-container>div:first-child {
+            #task-modal-container > div:first-child,
+            .task-modal-main-col {
                 width: 100% !important;
+                min-width: unset !important;
                 flex-shrink: 1 !important;
             }
 
@@ -907,6 +909,41 @@
             textarea,
             select {
                 font-size: 0.75rem !important;
+            }
+
+            /* Desktop Task Modal Layout Fixes */
+            #task-modal-backdrop {
+                align-items: center !important;
+                padding: 1.5rem !important;
+            }
+
+            #task-modal-container {
+                overflow: hidden !important;
+                flex-direction: row !important;
+                max-height: 90vh !important;
+                align-items: stretch !important;
+            }
+
+            .task-modal-main-col {
+                width: 440px !important;
+                min-width: 440px !important;
+                flex-shrink: 0 !important;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
+
+            #new-task-customization-panel {
+                overflow: hidden !important;
+                flex-shrink: 0 !important;
+                align-self: stretch !important;
+                border-left: 1px solid rgba(255,255,255,0.08) !important;
+                border-top: none !important;
+            }
+
+            #new-task-customization-panel > div {
+                height: 100% !important;
+                overflow-y: auto !important;
             }
         }
 

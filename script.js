@@ -3674,35 +3674,12 @@
             closeInspector();
         }
 
-        function toggleTaskCustomizationPanel() {
-            const panel = document.getElementById('new-task-customization-panel');
-            const container = document.getElementById('task-modal-container');
-            const btnIcon = document.getElementById('toggle-customization-icon');
-            const btnText = document.getElementById('toggle-customization-text');
 
-            if (panel.style.display === 'none') {
-                panel.style.display = 'flex';
-                setTimeout(() => {
-                    panel.style.width = '320px';
-                    container.style.maxWidth = '760px';
-                }, 10);
-                btnIcon.setAttribute('data-lucide', 'chevron-left');
-                btnText.textContent = "Collapse Styles";
-            } else {
-                panel.style.width = '0px';
-                container.style.maxWidth = '440px';
-                setTimeout(() => {
-                    panel.style.display = 'none';
-                }, 300);
-                btnIcon.setAttribute('data-lucide', 'chevron-right');
-                btnText.textContent = "Customize Design";
-            }
-            lucide.createIcons();
-        }
 
         function openAddTaskModal() {
             const backdrop = document.getElementById('task-modal-backdrop');
             const container = document.getElementById('task-modal-container');
+            const panel = document.getElementById('new-task-customization-panel');
             
             hideFloatingElement(document.getElementById('new-task-project-options'));
             hideFloatingElement(document.getElementById('new-task-group-options'));
@@ -3795,17 +3772,17 @@
                 }
                 
                 if (AppState.draftTask.isCustomizationOpen) {
-                    document.getElementById('new-task-customization-panel').style.display = 'flex';
-                    document.getElementById('new-task-customization-panel').style.width = '320px';
+                    panel.style.display = 'flex';
+                    panel.style.width = '320px';
                     container.style.maxWidth = '760px';
-                    document.getElementById('toggle-customization-icon').setAttribute('data-lucide', 'chevron-left');
-                    document.getElementById('toggle-customization-text').textContent = "Collapse Styles";
+                    const lbl = document.getElementById('btn-modal-step-label');
+                    if (lbl) lbl.textContent = 'Collapse Styles';
                 } else {
-                    document.getElementById('new-task-customization-panel').style.display = 'none';
-                    document.getElementById('new-task-customization-panel').style.width = '0px';
+                    panel.style.display = 'none';
+                    panel.style.width = '0px';
                     container.style.maxWidth = '440px';
-                    document.getElementById('toggle-customization-icon').setAttribute('data-lucide', 'chevron-right');
-                    document.getElementById('toggle-customization-text').textContent = "Customize Design";
+                    const lbl = document.getElementById('btn-modal-step-label');
+                    if (lbl) lbl.textContent = 'Customize';
                 }
                 
                 AppState.draftTask = null; 
@@ -3859,15 +3836,28 @@
 
             if (!panel || !container) return;
 
-            if (panel.style.display === 'none' || panel.style.width === '0px' || !panel.style.width) {
+            const isOpen = panel.style.display !== 'none' && panel.style.width !== '0px' && panel.style.width !== '';
+
+            if (!isOpen) {
+                // Open: show the panel and animate width
                 panel.style.display = 'flex';
-                panel.style.width = '320px';
+                panel.style.transition = 'width 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
+                container.style.transition = 'max-width 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
                 container.style.maxWidth = '760px';
+                // Allow a frame for display:flex to take effect, then animate width
+                requestAnimationFrame(() => {
+                    panel.style.width = '320px';
+                });
                 if (label) label.textContent = 'Collapse Styles';
             } else {
-                panel.style.display = 'none';
+                // Close: animate width back to 0 then hide
+                panel.style.transition = 'width 0.22s cubic-bezier(0.32, 0.72, 0, 1)';
+                container.style.transition = 'max-width 0.22s cubic-bezier(0.32, 0.72, 0, 1)';
                 panel.style.width = '0px';
                 container.style.maxWidth = '440px';
+                setTimeout(() => {
+                    panel.style.display = 'none';
+                }, 230);
                 if (label) label.textContent = 'Customize';
             }
         }
