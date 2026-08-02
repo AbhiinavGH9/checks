@@ -388,29 +388,30 @@
             <!-- Base UI Inspector Responsive Sheet Container -->
             <div id="inspector-panel" role="dialog" aria-modal="true" aria-label="Task Details Inspector" class="fixed z-[150] hidden drawer-content-base border border-white/10 flex flex-col overflow-hidden shadow-2xl">
                 <!-- Mobile Handle (Top) -->
-                <div class="drawer-swipe-handle my-3 md:hidden"></div>
+                <div class="drawer-swipe-handle my-2 md:hidden"></div>
                 <!-- Desktop Handle Strip (Left Edge) -->
                 <div class="inspector-handle-zone-x hidden md:flex absolute left-0 top-0 bottom-0 w-4 items-center justify-center cursor-grab active:cursor-grabbing z-20 hover:bg-white/5 transition">
                     <div class="w-1 h-10 rounded-full bg-white/30"></div>
                 </div>
 
-                <!-- Scrollable Content Area -->
-                <div id="inspector-content" class="flex-1 overflow-y-auto px-6 py-4 space-y-4 hidden">
-                    
-                    <!-- Header of Inspector Content -->
-                    <div class="relative flex items-center justify-between pb-3 border-b border-white/[0.04]">
-                        <span class="text-xs uppercase font-bold tracking-widest text-[#2997ff] flex items-center">
-                            <i data-lucide="sliders" class="w-4 h-4 mr-2"></i> Task Details
-                        </span>
-                        <div class="flex items-center space-x-1.5">
-                            <button id="ins-pin-sidebar-btn" onclick="togglePinTaskToSidebar(AppState.selectedTaskId); renderInspector();" class="text-amber-400/80 hover:text-amber-300 btn-scale p-1.5 bg-white/5 hover:bg-white/10 rounded-full transition" title="Add / Remove from Sidebar">
-                                <i data-lucide="pin" class="w-4 h-4"></i>
-                            </button>
-                            <button onclick="closeInspector()" class="text-gray-400 hover:text-white btn-scale p-1.5 bg-white/5 hover:bg-white/10 rounded-full transition">
-                                <i data-lucide="x" class="w-4 h-4"></i>
-                            </button>
-                        </div>
+                <!-- Sticky Inspector Header -->
+                <div id="inspector-header" class="hidden flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-white/[0.08] bg-[#121212]">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="sliders" class="w-4 h-4 text-[#2997ff]"></i>
+                        <span class="text-sm font-bold text-white tracking-tight">Task Details</span>
                     </div>
+                    <div class="flex items-center space-x-1.5">
+                        <button id="ins-pin-sidebar-btn" onclick="togglePinTaskToSidebar(AppState.selectedTaskId); renderInspector();" class="text-amber-400/80 hover:text-amber-300 btn-scale p-1.5 bg-white/5 hover:bg-white/10 rounded-full transition" title="Add / Remove from Sidebar">
+                            <i data-lucide="pin" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="closeInspector()" class="text-gray-400 hover:text-white btn-scale p-1.5 bg-white/5 hover:bg-white/10 rounded-full transition">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Scrollable Content Area -->
+                <div id="inspector-content" class="flex-1 overflow-y-auto px-5 py-4 space-y-4 hidden">
 
                     <!-- Category 1: Task Details (Collapsible) -->
                     <div class="border-b border-white/[0.04] pb-3">
@@ -549,7 +550,7 @@
                 </div>
 
                 <!-- Footer / Delete Button Section -->
-                <div id="inspector-footer" class="p-6 bg-[#0D0D0D] border-t border-white/[0.04] hidden flex-shrink-0">
+                <div id="inspector-footer" class="px-5 py-4 bg-[#121212] border-t border-white/[0.08] hidden flex-shrink-0">
                     <div class="flex flex-col space-y-2.5 w-full">
                         <button onclick="handleDeleteTaskTrigger()" class="btn-scale w-full bg-red-500/15 hover:bg-red-500/25 text-red-400 py-3 rounded-full text-xs font-extrabold border border-red-500/30 transition flex items-center justify-center space-x-2">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>

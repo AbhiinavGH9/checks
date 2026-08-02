@@ -4376,14 +4376,17 @@
             const task = AppState.tasks.find(t => t.id === AppState.selectedTaskId);
             const content = document.getElementById('inspector-content');
             const footer = document.getElementById('inspector-footer');
+            const header = document.getElementById('inspector-header');
 
             if (!task) {
                 if (content) content.classList.add('hidden');
                 if (footer) footer.classList.add('hidden');
+                if (header) header.classList.add('hidden');
                 return;
             }
             if (content) content.classList.remove('hidden');
             if (footer) footer.classList.remove('hidden');
+            if (header) header.classList.remove('hidden');
 
             const insPinBtn = document.getElementById('ins-pin-sidebar-btn');
             if (insPinBtn) {

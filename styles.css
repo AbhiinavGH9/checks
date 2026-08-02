@@ -678,12 +678,30 @@
             height: 100vh !important;
             z-index: 150 !important;
             border-radius: 1.5rem 0 0 1.5rem !important;
-            border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
             box-shadow: -10px 0 40px rgba(0, 0, 0, 0.6) !important;
             backdrop-filter: blur(20px) !important;
-            background-color: #0d0d0d !important;
+            background-color: #121212 !important;
             transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s ease !important;
             touch-action: none;
+        }
+
+        /* Sticky Inspector Header */
+        #inspector-header {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 30 !important;
+            background-color: #121212 !important;
+            flex-shrink: 0 !important;
+        }
+
+        /* Sticky Inspector Footer */
+        #inspector-footer {
+            position: sticky !important;
+            bottom: 0 !important;
+            z-index: 30 !important;
+            background-color: #121212 !important;
+            flex-shrink: 0 !important;
         }
 
         .group-card {
@@ -772,15 +790,23 @@
                 border: 1px solid rgba(255, 255, 255, 0.08) !important;
                 border-bottom: none !important;
                 backdrop-filter: blur(24px) !important;
-                background-color: #0D0D0D !important;
+                background-color: #121212 !important;
                 box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.8) !important;
                 transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s ease !important;
+            }
+
+            #inspector-header {
+                position: sticky !important;
+                top: 0 !important;
+                z-index: 30 !important;
+                background-color: #121212 !important;
             }
 
             #inspector-footer {
                 position: sticky !important;
                 bottom: 0 !important;
-                z-index: 20 !important;
+                z-index: 30 !important;
+                background-color: #121212 !important;
                 border-radius: 0 0 1.75rem 1.75rem !important;
             }
 
