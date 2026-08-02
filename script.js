@@ -158,12 +158,14 @@
             sortBy: 'created',
             sidebarCollapsed: false,
             pinnedTaskIds: [], // Direct sidebar pinned task IDs
+            theme: 'dark', // 'dark' or 'light'
             
             tempProjectColor: '#FF3B30',
             tempProjectIcon: 'smile',
             tempCreatePriority: '#FF3B30',
             tempCreateIcon: 'smile',
             tempCreateNotes: [],
+            tempCreateSubtasks: [],
             tempGroupColor: '#FF3B30',
             tempGroupIcon: 'list',
             returningToTaskModal: false,
@@ -293,7 +295,13 @@
                     containerEl.style.transform = axis === 'y' ? `translateY(${panelDimension}px)` : `translateX(${panelDimension}px)`;
                     setTimeout(() => {
                         containerEl.style.transform = '';
-                        if (onCloseCallback) onCloseCallback();
+                        if (onCloseCallback) {
+                            requestClose({
+                                isDirty: typeof isModalDirtyCheck === 'function' ? isModalDirtyCheck(containerEl) : false,
+                                onConfirmNeeded: () => showInlineDiscardConfirm(containerEl, onCloseCallback),
+                                onClose: onCloseCallback
+                            });
+                        }
                     }, 200);
                 } else {
                     containerEl.style.transform = axis === 'y' ? 'translateY(0px)' : 'translateX(0px)';
@@ -304,6 +312,59 @@
             window.addEventListener('pointermove', onMove, { passive: false });
             window.addEventListener('pointerup', onEnd);
             window.addEventListener('pointercancel', onEnd);
+        }
+
+        function isModalDirty(initialValues, currentValues) {
+            return JSON.stringify(initialValues) !== JSON.stringify(currentValues);
+        }
+
+        function requestClose({ isDirty, onConfirmNeeded, onClose }) {
+            if (isDirty) onConfirmNeeded();
+            else onClose();
+        }
+
+        function isModalDirtyCheck(containerEl) {
+            if (!containerEl) return false;
+            const inputs = containerEl.querySelectorAll('input:not([type="hidden"]), textarea, select');
+            for (let input of inputs) {
+                if (input.dataset.initialValue !== undefined && input.value !== input.dataset.initialValue) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function showInlineDiscardConfirm(containerEl, onClose) {
+            let confirmBanner = containerEl.querySelector('.inline-discard-confirm');
+            if (confirmBanner) return;
+
+            confirmBanner = document.createElement('div');
+            confirmBanner.className = "inline-discard-confirm p-3 bg-red-500/10 border border-red-500/30 rounded-xl my-2 flex items-center justify-between text-xs text-red-300 animate-fadeIn z-50 relative";
+            confirmBanner.innerHTML = `
+                <span class="font-semibold text-white">Discard unsaved changes?</span>
+                <div class="flex items-center space-x-2">
+                    <button type="button" class="px-2.5 py-1 bg-white/10 text-white rounded-lg hover:bg-white/20 transition text-[11px] font-bold btn-keep">Keep editing</button>
+                    <button type="button" class="px-2.5 py-1 bg-red-500 text-black font-bold rounded-lg hover:bg-red-400 transition text-[11px] btn-discard">Discard</button>
+                </div>
+            `;
+
+            confirmBanner.querySelector('.btn-keep').onclick = (e) => {
+                e.stopPropagation();
+                confirmBanner.remove();
+            };
+
+            confirmBanner.querySelector('.btn-discard').onclick = (e) => {
+                e.stopPropagation();
+                confirmBanner.remove();
+                onClose();
+            };
+
+            const header = containerEl.querySelector('.sheet-header, header, [data-drag-handle]') || containerEl.firstElementChild;
+            if (header && header.parentNode) {
+                header.parentNode.insertBefore(confirmBanner, header.nextSibling);
+            } else {
+                containerEl.prepend(confirmBanner);
+            }
         }
 
         // Attach touch gesture inspectors and sidebars
@@ -907,13 +968,18 @@
 
                 const btn = document.createElement('button');
                 btn.className = 'w-full text-left py-3 px-4 rounded-xl hover:bg-white/5 transition flex items-center justify-between text-sm text-gray-300 hover:text-white';
+                const isDestructive = item.destructive || item.label?.toLowerCase().includes('delete');
+                if (isDestructive) btn.className = 'w-full text-left py-3 px-4 rounded-xl hover:bg-red-500/10 transition flex items-center justify-between text-sm text-red-400';
                 
-                let iconHTML = '';
+                const defaultIcon = isDestructive ? 'trash-2' : (item.submenu ? 'folder' : 'circle-dot');
+                if (!item.icon) item.icon = defaultIcon;
+
                 if (item.icon) {
                     if (item.icon.startsWith('#') || item.icon.startsWith('rgb')) {
                         iconHTML = `<span class="w-3 h-3 rounded-full mr-3 flex-shrink-0" style="background-color: ${item.icon}"></span>`;
                     } else {
-                        iconHTML = `<i data-lucide="${item.icon}" class="w-4 h-4 mr-3 text-gray-400"></i>`;
+                        const iconColor = isDestructive ? 'text-red-400' : (item.iconColor || 'text-gray-400');
+                        iconHTML = `<i data-lucide="${item.icon}" class="w-4 h-4 mr-3 flex-shrink-0 ${iconColor}"></i>`;
                     }
                 }
 
@@ -924,10 +990,11 @@
 
                 btn.innerHTML = `
                     <span class="flex items-center">
+                        ${iconHTML}
                         <span>${item.label}</span>
                         ${badgeHTML}
                     </span>
-                    ${iconHTML || (item.chevron ? '<i data-lucide="chevron-right" class="w-4 h-4 text-gray-500"></i>' : '')}
+                    ${item.chevron ? '<i data-lucide="chevron-right" class="w-4 h-4 text-gray-500"></i>' : ''}
                 `;
 
                 btn.onclick = (e) => {
@@ -1052,9 +1119,24 @@
 
                 listContainer.appendChild(btn);
             });
-
             slot.appendChild(listContainer);
             lucide.createIcons();
+        }
+
+        function cleanupOverlayBackdrop(backdropEl, panelEl, slideClass = 'translate-y-full') {
+            if (!backdropEl) return;
+            backdropEl.classList.remove('opacity-100');
+            backdropEl.style.opacity = '0';
+            backdropEl.style.pointerEvents = 'none';
+            if (panelEl && slideClass) {
+                panelEl.classList.add(slideClass);
+            }
+            setTimeout(() => {
+                backdropEl.classList.add('hidden');
+                backdropEl.style.opacity = '';
+                backdropEl.style.pointerEvents = '';
+                if (panelEl) panelEl.classList.add('hidden');
+            }, 200);
         }
 
         function closeMobileDrawer() {
@@ -1063,15 +1145,9 @@
 
             if (!backdrop || !drawer) return;
 
-            backdrop.classList.remove('opacity-100');
-            drawer.classList.add('translate-y-full');
-
-            setTimeout(() => {
-                backdrop.classList.add('hidden');
-                drawer.classList.add('hidden');
-                drawerStack = [];
-                drawerMenuDefinition = null;
-            }, 300);
+            cleanupOverlayBackdrop(backdrop, drawer, 'translate-y-full');
+            drawerStack = [];
+            drawerMenuDefinition = null;
         }
 
         function parseMenuDOMToDefinition(menuEl, title = 'Options') {
@@ -1226,9 +1302,35 @@
                 AppState.profileDP = parsedProfile.dp || 'smile';
             }
             if (savedCounterPolicy) AppState.counterTargetPolicy = savedCounterPolicy;
+            const savedTheme = localStorage.getItem('ANV_THEME');
+            if (savedTheme) {
+                AppState.theme = savedTheme;
+            }
+            applyTheme(AppState.theme);
             
             setupDefaults();
             syncProfileUIElements();
+        }
+
+        function toggleThemeSetting(event) {
+            if (event) event.stopPropagation();
+            AppState.theme = AppState.theme === 'light' ? 'dark' : 'light';
+            localStorage.setItem('ANV_THEME', AppState.theme);
+            applyTheme(AppState.theme);
+        }
+        window.toggleThemeSetting = toggleThemeSetting;
+
+        function applyTheme(theme) {
+            const btn = document.getElementById('theme-toggle-btn');
+            if (theme === 'light') {
+                document.documentElement.classList.add('light-mode');
+                document.body.classList.add('light-mode');
+                if (btn) btn.textContent = 'Light Mode';
+            } else {
+                document.documentElement.classList.remove('light-mode');
+                document.body.classList.remove('light-mode');
+                if (btn) btn.textContent = 'Dark Mode';
+            }
         }
 
         function syncDeviceDataChannels() {
@@ -1985,15 +2087,52 @@
                             currentCount += t.subtasks.filter(s => !s.done).length;
                         }
                     });
-                    activeTabBadge.textContent = `${currentCount} subtasks`;
+                    activeTabBadge.textContent = `${currentCount} active`;
                 } else {
                     currentCount = getFilteredTasks().length;
-                    activeTabBadge.textContent = `${currentCount} items`;
+                    activeTabBadge.textContent = `${currentCount} active`;
                 }
             }
 
+            updateDateAndGreetingHeader();
+
             renderProjectsList();
             renderSidebarPinnedTasks();
+        }
+
+        function getOrdinalSuffix(day) {
+            if (day > 3 && day < 21) return 'th';
+            switch (day % 10) {
+                case 1:  return "st";
+                case 2:  return "nd";
+                case 3:  return "rd";
+                default: return "th";
+            }
+        }
+
+        function updateDateAndGreetingHeader() {
+            const dateHeading = document.getElementById('date-line-heading');
+            const greetingSub = document.getElementById('greeting-line-sub');
+            if (!dateHeading || !greetingSub) return;
+
+            const now = new Date();
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            const dayName = days[now.getDay()];
+            const dayNum = now.getDate();
+            const monthName = months[now.getMonth()];
+            
+            dateHeading.textContent = `${dayName} ${dayNum}${getOrdinalSuffix(dayNum)}, ${monthName}`;
+
+            const hour = now.getHours();
+            let greeting = 'Good evening';
+            if (hour >= 5 && hour < 12) greeting = 'Good morning';
+            else if (hour >= 12 && hour < 17) greeting = 'Good afternoon';
+            else if (hour >= 17 && hour < 22) greeting = 'Good evening';
+            else greeting = 'Good night';
+
+            greetingSub.textContent = `${greeting}, ${AppState.profileName || 'Anv'}`;
         }
 
         function renderSidebarPinnedTasks() {
@@ -2121,6 +2260,33 @@
             }
         }
 
+        const PRIORITY_LEVELS = [
+            "red", "orange", "yellow", "green", "lightblue", "blue",
+            "violet", "magenta", "purple", "beige", "gray", "lightpink",
+            "#FF3B30", "#FF9500", "#FFCC00", "#34C759", "#5AC8FA", "#007AFF",
+            "#5856D6", "#FF2D55", "#AF52DE", "#A2845E", "#8E8E93", "#E4A3A1"
+        ];
+
+        function comparePriority(taskA, taskB) {
+            if (taskA.manualOrderIndex != null && taskB.manualOrderIndex != null) {
+                return taskA.manualOrderIndex - taskB.manualOrderIndex;
+            }
+            const colorA = (taskA.color || taskA.priorityColor || '').toLowerCase();
+            const colorB = (taskB.color || taskB.priorityColor || '').toLowerCase();
+            
+            const rankA = PRIORITY_LEVELS.findIndex(c => c.toLowerCase() === colorA);
+            const rankB = PRIORITY_LEVELS.findIndex(c => c.toLowerCase() === colorB);
+            
+            return (rankA === -1 ? 99 : rankA) - (rankB === -1 ? 99 : rankB);
+        }
+
+        function setTaskPriority(task, newColor) {
+            task.color = newColor;
+            task.priorityColor = newColor;
+            task.manualOrderIndex = null;
+            return task;
+        }
+
         function sortTasks(taskList) {
             if (AppState.sortBy === 'created') {
                 return taskList.sort((a, b) => new Date(b.createdDate || 0) - new Date(a.createdDate || 0));
@@ -2131,9 +2297,7 @@
                     return new Date(a.dueDate) - new Date(b.dueDate);
                 });
             } else if (AppState.sortBy === 'priority') {
-                const valMap = {};
-                SYSTEM_COLORS.forEach((color, i) => { valMap[color] = SYSTEM_COLORS.length - i; });
-                return taskList.sort((a, b) => (valMap[b.color] || 0) - (valMap[a.color] || 0));
+                return taskList.sort(comparePriority);
             } else if (AppState.sortBy === 'alphabetical') {
                 return taskList.sort((a, b) => a.title.localeCompare(b.title));
             }
@@ -2320,13 +2484,6 @@
             groupSection.className = "space-y-3 p-4 bg-white/[0.01] border border-white/[0.03] rounded-2xl transition duration-150 relative";
 
             const isUngrouped = (groupId === 'ungrouped');
-            
-            if (!isUngrouped) {
-                groupSection.setAttribute('draggable', 'true');
-                groupSection.setAttribute('ondragstart', `dragGroup(event, '${groupId}')`);
-                groupSection.setAttribute('ondragover', 'allowGroupDrop(event)');
-                groupSection.setAttribute('ondrop', `dropGroup(event, '${groupId}')`);
-            }
 
             let navigationButtons = '';
             if (!isUngrouped && AppState.groups.length > 1) {
@@ -2420,14 +2577,16 @@
                     let subtasksHTML = '';
                     if (task.subtasks && task.subtasks.length > 0) {
                         subtasksHTML = `
-                            <div class="mt-2.5 pt-2 subtask-thread-line space-y-1.5">
-                                ${task.subtasks.map(s => {
+                            <div class="mt-2 pl-3 space-y-1 relative border-l border-white/10 ml-2">
+                                ${task.subtasks.map((s, idx) => {
+                                    const isLast = idx === task.subtasks.length - 1;
                                     const subtaskAccent = task.done ? '#7a7a7a' : accentColor;
                                     const subBorderColor = `border-color: ${subtaskAccent};`;
                                     const subBgColor = s.done ? `background-color: ${subtaskAccent};` : `background-color: transparent;`;
                                     return `
-                                        <div class="flex items-center space-x-2.5 px-1 py-1 rounded hover:bg-white/[0.03] transition">
-                                            <button onclick="toggleCardSubtaskDone('${task.id}', '${s.id}', event)" class="w-3.5 h-3.5 rounded-full border flex items-center justify-center flex-shrink-0 transition-all duration-150" style="${subBorderColor} ${subBgColor}">
+                                        <div class="flex items-center space-x-2.5 px-1 py-1 rounded hover:bg-white/[0.03] transition relative">
+                                            <span class="absolute -left-3 top-1/2 -translate-y-1/2 w-2 h-2 border-l border-b border-white/20 ${isLast ? 'rounded-bl' : ''}"></span>
+                                            <button onclick="toggleCardSubtaskDone('${task.id}', '${s.id}', event)" class="w-3.5 h-3.5 rounded-full border flex items-center justify-center flex-shrink-0 transition-all duration-150 relative z-10" style="${subBorderColor} ${subBgColor}">
                                                 ${s.done ? `<i data-lucide="check" class="w-2.5 h-2.5 text-[#0A0A0A] font-extrabold tick-animation"></i>` : ''}
                                             </button>
                                             <span class="text-[11px] truncate ${s.done ? 'line-through text-gray-600' : 'text-gray-300'}">${escapeHTML(s.title)}</span>
@@ -2439,9 +2598,28 @@
                     }
 
                     const card = document.createElement('div');
-                    card.className = `group-card relative py-2.5 px-3 rounded-xl transition duration-150 hover:bg-white/[0.02] ${isSelected ? 'ring-1 ring-[#2997ff]/60 bg-white/[0.03]' : ''}`;
+                    card.className = `group-card relative py-2 px-3 rounded-full transition duration-150 hover:bg-white/[0.04] active:bg-white/[0.08] ${isSelected ? 'bg-white/[0.06] text-white' : ''}`;
                     card.setAttribute('data-task-id', task.id); 
                     card.setAttribute('oncontextmenu', `showContextMenu(event, '${task.id}')`);
+                    
+                    let longPressTimer = null;
+                    let touchStartPos = { x: 0, y: 0 };
+                    card.ontouchstart = (e) => {
+                        const t = e.touches[0];
+                        touchStartPos = { x: t.clientX, y: t.clientY };
+                        longPressTimer = setTimeout(() => {
+                            showContextMenu(e, task.id);
+                        }, 450);
+                    };
+                    card.ontouchmove = (e) => {
+                        const t = e.touches[0];
+                        if (Math.abs(t.clientX - touchStartPos.x) > 10 || Math.abs(t.clientY - touchStartPos.y) > 10) {
+                            clearTimeout(longPressTimer);
+                        }
+                    };
+                    card.ontouchend = () => clearTimeout(longPressTimer);
+                    card.ontouchcancel = () => clearTimeout(longPressTimer);
+
                     card.onclick = (e) => selectTask(task.id, e);
 
                     card.innerHTML = `
@@ -3791,6 +3969,10 @@
                 document.getElementById('new-task-desc').value = '';
                 AppState.tempCreateNotes = [];
                 renderNewTaskNotesDraft();
+                AppState.tempCreateSubtasks = [];
+                renderNewTaskSubtasksDraft();
+                const subtaskInput = document.getElementById('new-task-subtask-input');
+                if (subtaskInput) subtaskInput.value = '';
                 document.getElementById('new-task-project').value = '';
                 document.getElementById('new-task-project-label').textContent = 'None / Inbox';
                 
@@ -4004,7 +4186,7 @@
             if (shouldClearDraft) {
                 const titleVal = document.getElementById('new-task-title') ? document.getElementById('new-task-title').value.trim() : '';
                 const descVal = document.getElementById('new-task-desc') ? document.getElementById('new-task-desc').value.trim() : '';
-                if (titleVal || descVal || (AppState.tempCreateNotes && AppState.tempCreateNotes.length > 0)) {
+                if (titleVal || descVal || (AppState.tempCreateNotes && AppState.tempCreateNotes.length > 0) || (AppState.tempCreateSubtasks && AppState.tempCreateSubtasks.length > 0)) {
                     if (!confirm("You have unsaved task details. Are you sure you want to close and discard changes?")) {
                         return;
                     }
@@ -4027,6 +4209,10 @@
                 const noteInput = document.getElementById('new-task-note-input');
                 if (noteInput) noteInput.value = '';
                 renderNewTaskNotesDraft();
+                AppState.tempCreateSubtasks = [];
+                renderNewTaskSubtasksDraft();
+                const subtaskInput = document.getElementById('new-task-subtask-input');
+                if (subtaskInput) subtaskInput.value = '';
             }
         }
 
@@ -4093,7 +4279,7 @@
                 icon: AppState.tempCreateIcon,
                 autoDelete: autoDeleteVal,
                 expiryTime: expiryTime,
-                subtasks: [],
+                subtasks: AppState.tempCreateSubtasks && AppState.tempCreateSubtasks.length > 0 ? [...AppState.tempCreateSubtasks] : [],
                 createdDate: new Date().toISOString()
             };
 
@@ -4164,6 +4350,57 @@
                     <span class="text-xs text-yellow-400 truncate flex-1 mr-2">${escapeHTML(n.text)}</span>
                     <button type="button" onclick="deleteNewTaskNoteDraft('${n.id}')" class="text-gray-500 hover:text-red-400 transition p-1 flex-shrink-0">
                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                `;
+                list.appendChild(item);
+            });
+            lucide.createIcons();
+        }
+
+        function addNewTaskSubtaskDraft() {
+            const input = document.getElementById('new-task-subtask-input');
+            if (!input) return;
+            const text = input.value.trim();
+            if (text) {
+                if (!AppState.tempCreateSubtasks) AppState.tempCreateSubtasks = [];
+                AppState.tempCreateSubtasks.push({
+                    id: 'sub-' + Date.now() + Math.random().toString(36).substr(2, 5),
+                    title: sanitizeSentenceCase(text),
+                    done: false
+                });
+                input.value = '';
+                renderNewTaskSubtasksDraft();
+            }
+        }
+
+        function deleteNewTaskSubtaskDraft(subtaskId) {
+            if (AppState.tempCreateSubtasks) {
+                AppState.tempCreateSubtasks = AppState.tempCreateSubtasks.filter(s => s.id !== subtaskId);
+            }
+            renderNewTaskSubtasksDraft();
+        }
+
+        function renderNewTaskSubtasksDraft() {
+            const list = document.getElementById('new-task-subtasks-list');
+            if (!list) return;
+            list.innerHTML = '';
+            const subtasks = AppState.tempCreateSubtasks || [];
+            const countEl = document.getElementById('new-task-subtask-count');
+            if (countEl) countEl.textContent = subtasks.length;
+            subtasks.forEach((s, idx) => {
+                const isLast = idx === subtasks.length - 1;
+                const item = document.createElement('div');
+                item.className = 'relative flex items-center gap-2 pl-4';
+                item.innerHTML = `
+                    <span class="absolute left-0 top-0 bottom-0 flex flex-col items-center" aria-hidden="true">
+                        <span class="w-px ${isLast ? 'h-1/2' : 'h-full'} bg-white/20"></span>
+                        ${isLast ? '' : ''}
+                    </span>
+                    <span class="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-px bg-white/20"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-white/30 flex-shrink-0"></span>
+                    <span class="text-xs text-gray-300 flex-1 truncate">${escapeHTML(s.title)}</span>
+                    <button type="button" onclick="deleteNewTaskSubtaskDraft('${s.id}')" class="text-gray-600 hover:text-red-400 transition p-1 flex-shrink-0">
+                        <i data-lucide="x" class="w-3 h-3"></i>
                     </button>
                 `;
                 list.appendChild(item);
@@ -4533,14 +4770,21 @@
             const subtaskColor = task.color || '#2997ff';
             const borderStyle = `border-color: ${subtaskColor};`;
 
-            subtasks.forEach(s => {
+            subtasks.forEach((s, idx) => {
+                const isLast = idx === subtasks.length - 1;
                 const row = document.createElement('div');
                 row.id = `ins-subtask-row-${s.id}`;
-                row.className = `flex items-center justify-between bg-white/5 p-2 rounded-lg transition ${s.done ? 'opacity-70' : ''}`;
+                row.className = `relative flex items-center justify-between transition ${s.done ? 'opacity-60' : ''}`;
+                const subtaskColor = task.color || '#2997ff';
+                const borderStyle = `border-color: ${subtaskColor};`;
                 const bgStyle = s.done ? `background-color: ${subtaskColor};` : `background-color: transparent;`;
 
                 row.innerHTML = `
-                    <div class="flex items-center space-x-3 flex-1 min-w-0 pr-2">
+                    <!-- Thread lines -->
+                    <span class="absolute left-0 top-0 flex flex-col items-center" style="width: 1px; height: ${isLast ? '50%' : '100%'}; background: rgba(255,255,255,0.12);" aria-hidden="true"></span>
+                    <span class="absolute left-0 top-1/2 -translate-y-px" style="width: 14px; height: 1px; background: rgba(255,255,255,0.12);" aria-hidden="true"></span>
+
+                    <div class="flex items-center space-x-2.5 flex-1 min-w-0 pr-2 pl-5">
                         <button onclick="toggleSubtaskDone('${s.id}')" class="w-[18px] h-[18px] rounded-full border flex items-center justify-center flex-shrink-0 transition-all duration-200" style="${borderStyle} ${bgStyle}" title="Toggle Subtask">
                             ${s.done ? `<i data-lucide="check" class="w-3 h-3 text-[#0a0a0a] font-extrabold tick-animation"></i>` : ''}
                         </button>
@@ -4708,6 +4952,16 @@
             if (newTitle) {
                 updateSubtaskTitle(subtaskId, newTitle);
             } else {
+                renderInspector();
+            }
+        }
+
+        function updateInspectorPriority(color) {
+            const task = AppState.tasks.find(t => t.id === AppState.selectedTaskId);
+            if (task) {
+                setTaskPriority(task, color);
+                syncDeviceDataChannels();
+                renderTaskFeed();
                 renderInspector();
             }
         }
@@ -4994,6 +5248,8 @@
         window.renderArchiveModalList = renderArchiveModalList;
 
         function closeProjectModal() {
+            const titleVal = document.getElementById('new-project-title') ? document.getElementById('new-project-title').value.trim() : '';
+            if (titleVal && !confirm('Discard changes to this collection?')) return;
             const backdrop = document.getElementById('project-modal-backdrop');
             const container = document.getElementById('project-modal-container');
             backdrop.classList.add('opacity-0');
@@ -5143,9 +5399,10 @@
         }
 
         function closeAddGroupModal() {
+            const titleVal = document.getElementById('new-group-title') ? document.getElementById('new-group-title').value.trim() : '';
+            if (titleVal && !AppState.returningToTaskModal && !confirm('Discard changes to this group?')) return;
             const backdrop = document.getElementById('group-modal-backdrop');
             const container = document.getElementById('group-modal-container');
-            const submitBtn = document.getElementById('group-submit-btn');
             backdrop.classList.add('opacity-0');
             container.classList.add('scale-95');
             setTimeout(() => {
