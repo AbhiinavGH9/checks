@@ -23,12 +23,16 @@
   },
   "homepage": "https://github.com/AbhiinavGH9/checks#readme",
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^29.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.3",
     "postcss": "^8.5.19",
     "postcss-cli": "^11.0.1",
     "postcss-preset-env": "^11.3.2",
+    "rollup": "^4.62.4",
     "tailwindcss": "^3.4.19"
   },
   "dependencies": {
+    "@hugeicons/core-free-icons": "^4.2.3",
     "@hugeicons/mcp-server": "^0.2.2"
   }
 }

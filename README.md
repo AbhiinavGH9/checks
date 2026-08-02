@@ -27,7 +27,7 @@
 
 - Vanilla HTML / CSS / JS — no framework, no build step required to run
 - Tailwind CSS — **precompiled to static `output.css`** (not the CDN JIT script) for compatibility with older Android WebViews
-- [Lucide](https://lucide.dev) icons
+- [Hugeicons](https://hugeicons.com) icons (stroked rounded style)
 
 ## 📂 File Structure
 
