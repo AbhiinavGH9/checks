@@ -6,7 +6,15 @@
             const container = document.getElementById('toast-container') || document.body;
             if (container) {
                 const toast = document.createElement('div');
-                toast.className = "fixed bottom-6 right-6 z-[999] bg-[#141414] border border-red-500/40 text-red-300 px-5 py-3 rounded-full text-xs font-semibold shadow-2xl pointer-events-auto flex items-center space-x-3 max-w-md backdrop-blur-xl";
+                toast.className = "fixed bottom-6 right-6 z-[999] bg-[#141414] border border-red-500/40 text-red-300 px-5 py-3 rounded-full text-xs font-semibold shadow-2xl pointer-events-auto flex items-center space-x-3 max-w-md backdrop-blur-xl cursor-pointer transition hover:bg-[#1a1a1a]";
+                toast.title = "Click to copy error to clipboard";
+                const errorText = `${e.message} (${e.filename}:${e.lineno})`;
+                toast.onclick = function(evt) {
+                    if (evt.target.closest('button')) return;
+                    navigator.clipboard.writeText(errorText).then(() => {
+                        showToast("Copied to Clipboard", "Error traceback copied successfully.");
+                    }).catch(() => {});
+                };
                 toast.innerHTML = `
                     <div class="p-1.5 rounded-full bg-red-500/20 text-red-400 flex-shrink-0">
                         <i data-lucide="alert-circle" class="w-4 h-4"></i>
@@ -335,36 +343,38 @@
         }
 
         function showInlineDiscardConfirm(containerEl, onClose) {
-            let confirmBanner = containerEl.querySelector('.inline-discard-confirm');
-            if (confirmBanner) return;
+            const existingModal = document.getElementById('unsaved-changes-confirm-modal');
+            if (existingModal) existingModal.remove();
 
-            confirmBanner = document.createElement('div');
-            confirmBanner.className = "inline-discard-confirm p-3 bg-red-500/10 border border-red-500/30 rounded-xl my-2 flex items-center justify-between text-xs text-red-300 animate-fadeIn z-50 relative";
-            confirmBanner.innerHTML = `
-                <span class="font-semibold text-white">Discard unsaved changes?</span>
-                <div class="flex items-center space-x-2">
-                    <button type="button" class="px-2.5 py-1 bg-white/10 text-white rounded-lg hover:bg-white/20 transition text-[11px] font-bold btn-keep">Keep editing</button>
-                    <button type="button" class="px-2.5 py-1 bg-red-500 text-black font-bold rounded-lg hover:bg-red-400 transition text-[11px] btn-discard">Discard</button>
+            const modal = document.createElement('div');
+            modal.id = 'unsaved-changes-confirm-modal';
+            modal.className = "fixed inset-0 bg-black/80 backdrop-blur-md z-[300] flex items-center justify-center p-4 animate-fade-in";
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+            modal.innerHTML = `
+                <div class="bg-[#141414] border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
+                    <div class="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto">
+                        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                    </div>
+                    <div class="space-y-1">
+                        <h3 class="text-base font-bold text-white">Unsaved Changes</h3>
+                        <p class="text-xs text-gray-400">You have unsaved edits. Are you sure you want to discard them?</p>
+                    </div>
+                    <div class="flex items-center space-x-2 pt-2">
+                        <button type="button" id="btn-keep-editing" class="flex-1 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-full transition">Keep editing</button>
+                        <button type="button" id="btn-discard-confirm" class="flex-1 py-2.5 bg-red-500 hover:bg-red-400 text-black text-xs font-bold rounded-full transition">Discard</button>
+                    </div>
                 </div>
             `;
 
-            confirmBanner.querySelector('.btn-keep').onclick = (e) => {
-                e.stopPropagation();
-                confirmBanner.remove();
-            };
+            document.body.appendChild(modal);
+            if (window.lucide) window.lucide.createIcons();
 
-            confirmBanner.querySelector('.btn-discard').onclick = (e) => {
-                e.stopPropagation();
-                confirmBanner.remove();
-                onClose();
+            document.getElementById('btn-keep-editing').onclick = () => modal.remove();
+            document.getElementById('btn-discard-confirm').onclick = () => {
+                modal.remove();
+                if (onClose) onClose();
             };
-
-            const header = containerEl.querySelector('.sheet-header, header, [data-drag-handle]') || containerEl.firstElementChild;
-            if (header && header.parentNode) {
-                header.parentNode.insertBefore(confirmBanner, header.nextSibling);
-            } else {
-                containerEl.prepend(confirmBanner);
-            }
         }
 
         // Attach touch gesture inspectors and sidebars
@@ -2430,17 +2440,19 @@
             const sorted = sortTasks(filtered);
 
             const feedTitle = document.getElementById('feed-current-title');
-            if (AppState.currentTab === 'inbox') {
-                feedTitle.textContent = 'Inbox Feed';
-            } else if (AppState.currentTab === 'today') {
-                feedTitle.textContent = "Today's Agenda";
-            } else if (AppState.currentTab === 'done') {
-                feedTitle.textContent = 'Completed Archive';
-            } else if (AppState.currentTab === 'search') {
-                feedTitle.textContent = `Search matches for: "${AppState.searchQuery}"`;
-            } else {
-                const foundProj = AppState.projects.find(p => p.id === AppState.currentTab);
-                feedTitle.textContent = foundProj ? foundProj.title : 'Collection Folder';
+            if (feedTitle) {
+                if (AppState.currentTab === 'inbox') {
+                    feedTitle.textContent = 'Inbox Feed';
+                } else if (AppState.currentTab === 'today') {
+                    feedTitle.textContent = "Today's Agenda";
+                } else if (AppState.currentTab === 'done') {
+                    feedTitle.textContent = 'Completed Archive';
+                } else if (AppState.currentTab === 'search') {
+                    feedTitle.textContent = `Search matches for: "${AppState.searchQuery}"`;
+                } else {
+                    const foundProj = AppState.projects.find(p => p.id === AppState.currentTab);
+                    feedTitle.textContent = foundProj ? foundProj.title : 'Collection Folder';
+                }
             }
 
             container.innerHTML = '';
@@ -3064,7 +3076,7 @@
                                         <div onclick="previewBackupSnapshot(${idx})" class="flex items-center justify-between bg-white/[0.03] hover:bg-white/[0.06] p-3.5 rounded-xl text-xs transition border border-white/5 gap-3 cursor-pointer group">
                                             <div class="flex items-center space-x-3 min-w-0 flex-1">
                                                 <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0 text-emerald-400 group-hover:scale-105 transition">
-                                                    <i data-lucide="archive" class="w-4 h-4"></i>
+                                                    <i data-lucide="archive-box" class="w-4 h-4"></i>
                                                 </div>
                                                 <div class="min-w-0 flex-1">
                                                     <div class="text-white font-bold truncate text-xs group-hover:text-[#2997ff] transition flex items-center space-x-1.5">
@@ -5638,7 +5650,7 @@
                         <div class="flex items-center justify-between md:justify-start space-x-3 w-full md:w-auto">
                             <div class="flex items-center space-x-3 min-w-0">
                                 <div class="p-2 bg-[#2997ff]/10 text-[#2997ff] rounded-xl flex-shrink-0">
-                                    <i data-lucide="archive" class="w-4 h-4"></i>
+                                    <i data-lucide="archive-box" class="w-4 h-4"></i>
                                 </div>
                                 <div class="min-w-0">
                                     <div class="flex items-center space-x-2 flex-wrap">
@@ -5755,7 +5767,7 @@
                     <div class="flex items-center justify-between border-b border-white/5 pb-3">
                         <div>
                             <h3 class="text-xs font-extrabold text-white flex items-center space-x-2 uppercase tracking-wider">
-                                <i data-lucide="archive" class="w-4 h-4 text-[#2997ff]"></i>
+                                <i data-lucide="archive-box" class="w-4 h-4 text-[#2997ff]"></i>
                                 <span>${escapeHTML(target.label || 'Snapshot Preview')}</span>
                             </h3>
                             <div class="text-[10px] text-gray-400 font-mono mt-0.5">${new Date(target.timestamp).toLocaleString()} • ${snapTasks.length} Tasks • ${snapGroups.length} Groups</div>
