@@ -3922,10 +3922,8 @@
                     renderInspector();
                     const inspector = document.getElementById('inspector-panel');
                     if (inspector) {
-                        inspector.classList.remove('hidden');
-                        setTimeout(() => {
-                            inspector.classList.remove('translate-x-full');
-                        }, 10);
+                        inspector.classList.remove('hidden', 'drawer-slide-out', 'translate-x-full');
+                        inspector.classList.add('drawer-slide-in');
                     }
                 } else {
                     closeInspector();
@@ -3939,10 +3937,8 @@
 
                 const inspector = document.getElementById('inspector-panel');
                 if (inspector) {
-                    inspector.classList.remove('hidden');
-                    setTimeout(() => {
-                        inspector.classList.remove('translate-x-full');
-                    }, 10);
+                    inspector.classList.remove('hidden', 'drawer-slide-out', 'translate-x-full');
+                    inspector.classList.add('drawer-slide-in');
                 }
             }
         }
@@ -3956,11 +3952,13 @@
             hideFloatingElement(document.getElementById('ins-autodelete-options'));
 
             const inspector = document.getElementById('inspector-panel');
-            if (inspector) {
-                inspector.classList.add('translate-x-full');
+            if (inspector && !inspector.classList.contains('hidden')) {
+                inspector.classList.remove('drawer-slide-in');
+                inspector.classList.add('drawer-slide-out');
                 setTimeout(() => {
-                    inspector.classList.add('hidden');
-                }, 350);
+                    inspector.classList.add('hidden', 'translate-x-full');
+                    inspector.classList.remove('drawer-slide-out');
+                }, 300);
             }
         }
 
