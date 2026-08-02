@@ -386,33 +386,32 @@
             <div id="inspector-backdrop" onclick="closeInspector()" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[149] hidden opacity-0 transition-opacity duration-200" aria-hidden="true"></div>
 
             <!-- Base UI Inspector Responsive Sheet Container -->
-            <div id="inspector-panel" role="dialog" aria-modal="true" aria-label="Task Details Inspector" class="fixed z-[150] hidden modal-shell border border-white/10 flex flex-col overflow-hidden shadow-2xl">
+            <div id="inspector-panel" role="dialog" aria-modal="true" aria-label="Task Details Inspector" class="fixed z-[150] hidden drawer-content-base border border-white/10 flex flex-col overflow-hidden shadow-2xl">
                 <!-- Mobile Handle (Top) -->
-                <div class="drawer-swipe-handle my-2 md:hidden flex-shrink-0"></div>
+                <div class="drawer-swipe-handle my-3 md:hidden"></div>
                 <!-- Desktop Handle Strip (Left Edge) -->
                 <div class="inspector-handle-zone-x hidden md:flex absolute left-0 top-0 bottom-0 w-4 items-center justify-center cursor-grab active:cursor-grabbing z-20 hover:bg-white/5 transition">
                     <div class="w-1 h-10 rounded-full bg-white/30"></div>
                 </div>
 
-                <!-- Sticky Header of Inspector -->
-                <div class="modal-header flex-shrink-0 bg-[#121212] z-30">
-                    <div class="modal-header__lead">
-                        <i data-lucide="sliders" class="w-4 h-4 text-[#2997ff]"></i>
-                        <h2>Task Details</h2>
-                    </div>
-                    <div class="modal-header__trail">
-                        <button id="ins-pin-sidebar-btn" onclick="togglePinTaskToSidebar(AppState.selectedTaskId); renderInspector();" class="modal-icon-btn text-amber-400" title="Add / Remove from Sidebar">
-                            <i data-lucide="sidebar" class="w-4 h-4"></i>
-                        </button>
-                        <button type="button" onclick="closeInspector()" class="modal-icon-btn" aria-label="Close">
-                            <i data-lucide="x" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-                </div>
-
                 <!-- Scrollable Content Area -->
                 <div id="inspector-content" class="flex-1 overflow-y-auto px-6 py-4 space-y-4 hidden">
                     
+                    <!-- Header of Inspector Content -->
+                    <div class="relative flex items-center justify-between pb-3 border-b border-white/[0.04]">
+                        <span class="text-xs uppercase font-bold tracking-widest text-[#2997ff] flex items-center">
+                            <i data-lucide="sliders" class="w-4 h-4 mr-2"></i> Task Details
+                        </span>
+                        <div class="flex items-center space-x-1.5">
+                            <button id="ins-pin-sidebar-btn" onclick="togglePinTaskToSidebar(AppState.selectedTaskId); renderInspector();" class="text-amber-400/80 hover:text-amber-300 btn-scale p-1.5 bg-white/5 hover:bg-white/10 rounded-full transition" title="Add / Remove from Sidebar">
+                                <i data-lucide="pin" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="closeInspector()" class="text-gray-400 hover:text-white btn-scale p-1.5 bg-white/5 hover:bg-white/10 rounded-full transition">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Category 1: Task Details (Collapsible) -->
                     <div class="border-b border-white/[0.04] pb-3">
                         <button type="button" onclick="toggleInspectorSection('details')" class="w-full flex items-center justify-between py-1.5 text-[10px] font-bold text-white uppercase tracking-wider hover:text-[#2997ff] transition">
@@ -550,14 +549,16 @@
                 </div>
 
                 <!-- Footer / Delete Button Section -->
-                <div id="inspector-footer" class="modal-footer flex-shrink-0 bg-[#121212] hidden z-30">
-                    <button onclick="handleDeleteTaskTrigger()" class="modal-btn modal-btn--destructive">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        <span>Delete Task</span>
-                    </button>
-                    <button onclick="closeInspector()" class="modal-btn modal-btn--secondary">
-                        <span>Close</span>
-                    </button>
+                <div id="inspector-footer" class="p-6 bg-[#0D0D0D] border-t border-white/[0.04] hidden flex-shrink-0">
+                    <div class="flex flex-col space-y-2.5 w-full">
+                        <button onclick="handleDeleteTaskTrigger()" class="btn-scale w-full bg-red-500/15 hover:bg-red-500/25 text-red-400 py-3 rounded-full text-xs font-extrabold border border-red-500/30 transition flex items-center justify-center space-x-2">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            <span>Delete Task</span>
+                        </button>
+                        <button onclick="closeInspector()" class="btn-scale w-full bg-white/5 hover:bg-white/10 text-gray-300 py-3 rounded-full text-xs font-bold border border-white/5 transition flex items-center justify-center space-x-2">
+                            <span>Close</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -801,12 +802,12 @@
                         <div id="new-task-icon-grid-mobile" class="grid grid-cols-6 gap-2.5 max-h-56 overflow-y-auto p-3 bg-white/[0.03] rounded-2xl border border-white/5 justify-items-center"></div>
                     </div>
 
-                    <div class="modal-footer space-y-2.5" id="task-modal-actions-container">
-                        <button type="button" id="btn-modal-customization-step" onclick="handleTaskModalNextStep()" class="modal-btn modal-btn--secondary w-full py-3 bg-[#1A1A1A] hover:bg-[#222222] border border-white/10 text-white font-semibold rounded-2xl flex items-center justify-center space-x-2 transition">
+                    <div class="modal-footer" id="task-modal-actions-container">
+                        <button type="button" id="btn-modal-customization-step" onclick="handleTaskModalNextStep()" class="modal-btn modal-btn--secondary">
                             <i data-lucide="palette" class="w-4 h-4 text-[#2997ff]"></i>
                             <span id="btn-modal-step-label">Customize</span>
                         </button>
-                        <button type="submit" id="btn-modal-submit-task" class="modal-btn modal-btn--primary w-full py-3.5 bg-[#2997ff] hover:bg-[#1a82e6] text-black font-bold rounded-2xl transition shadow-lg shadow-[#2997ff]/20">
+                        <button type="submit" id="btn-modal-submit-task" class="modal-btn modal-btn--primary">
                             Create Task
                         </button>
                     </div>

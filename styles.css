@@ -806,8 +806,7 @@
             #delete-modal-container,
             #hold-modal-container,
             #archive-modal-container,
-            #profile-customizer-container,
-            #inspector-panel {
+            #profile-customizer-container {
                 width: calc(100vw - 2rem) !important;
                 max-width: calc(100vw - 2rem) !important;
                 margin: 0 auto !important;
@@ -822,20 +821,17 @@
                 transition: max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease !important;
             }
 
-            /* Sticky Header for Task Creation, Group, & Inspector Modals on Mobile */
+            /* Sticky Header for Task Creation & Group Modals on Mobile */
             #task-modal-container .modal-header,
-            #group-modal-container .modal-header,
-            #inspector-panel .modal-header {
+            #group-modal-container .modal-header {
                 position: sticky !important;
                 top: 0 !important;
                 z-index: 40 !important;
                 background-color: #121212 !important;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
             }
 
-            /* Sticky Footer for Group Creation, Inspector, Task Creation & Modals on Mobile */
+            /* Sticky Footer for Group Creation, Task Creation, & Modals on Mobile */
             #group-modal-container .modal-footer,
-            #inspector-footer,
             #task-modal-actions-container,
             .modal-sticky-actions,
             .modal-shell .modal-footer {
@@ -843,8 +839,7 @@
                 bottom: 0 !important;
                 z-index: 40 !important;
                 background-color: #121212 !important;
-                border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-                padding-bottom: 1rem !important;
+                padding-bottom: 0.75rem !important;
                 padding-top: 0.75rem !important;
             }
 
