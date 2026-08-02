@@ -1944,12 +1944,16 @@
 
         function handleProfileUpdates(event) {
             event.preventDefault();
-            AppState.profileName = document.getElementById('profile-customizer-name-field').value.trim();
+            const nameField = document.getElementById('profile-customizer-name-field');
+            if (nameField) {
+                AppState.profileName = nameField.value.trim() || 'Abhinav';
+            }
             
+            saveToLocalStorage();
             syncDeviceDataChannels();
-            syncProfileUIElements();
+            updateHeaderDateGreeting();
             closeProfileCustomizerModal();
-            showToast('Profile Configuration Saved', 'Ecosystem identity classifications updated.');
+            showToast('Profile Configuration Saved', 'Your display name has been updated.');
         }
 
         function toggleMetricCardCollapse(event) {
@@ -2115,10 +2119,10 @@
                             currentCount += t.subtasks.filter(s => !s.done).length;
                         }
                     });
-                    activeTabBadge.textContent = `${currentCount} subtasks`;
+                    activeTabBadge.textContent = `${currentCount} active`;
                 } else {
                     currentCount = getFilteredTasks().length;
-                    activeTabBadge.textContent = `${currentCount} items`;
+                    activeTabBadge.textContent = `${currentCount} active`;
                 }
             }
 
@@ -2449,30 +2453,36 @@
             const mobileActionHeader = document.getElementById('mobile-action-section-header');
             const mobileSearchContainer = document.getElementById('mobile-search-bar-container');
 
+            const mainGreetingHeaderBlock = document.getElementById('main-greeting-header-block');
+
             if (AppState.currentTab === 'manage') {
                 if (mobileActionHeader) mobileActionHeader.classList.add('hidden');
                 if (mobileSearchContainer) mobileSearchContainer.classList.add('hidden');
+                if (mainGreetingHeaderBlock) mainGreetingHeaderBlock.classList.add('hidden');
                 renderManageDashboard();
                 return;
             } else {
                 if (mobileActionHeader) mobileActionHeader.classList.remove('hidden');
+                if (mainGreetingHeaderBlock) mainGreetingHeaderBlock.classList.remove('hidden');
             }
 
             const filtered = getFilteredTasks();
             const sorted = sortTasks(filtered);
 
             const feedTitle = document.getElementById('feed-current-title');
-            if (AppState.currentTab === 'inbox') {
-                feedTitle.textContent = 'Inbox Feed';
-            } else if (AppState.currentTab === 'today') {
-                feedTitle.textContent = "Today's Agenda";
-            } else if (AppState.currentTab === 'done') {
-                feedTitle.textContent = 'Completed Archive';
-            } else if (AppState.currentTab === 'search') {
-                feedTitle.textContent = `Search matches for: "${AppState.searchQuery}"`;
-            } else {
-                const foundProj = AppState.projects.find(p => p.id === AppState.currentTab);
-                feedTitle.textContent = foundProj ? foundProj.title : 'Collection Folder';
+            if (feedTitle) {
+                if (AppState.currentTab === 'inbox') {
+                    feedTitle.textContent = 'Inbox Feed';
+                } else if (AppState.currentTab === 'today') {
+                    feedTitle.textContent = "Today's Agenda";
+                } else if (AppState.currentTab === 'done') {
+                    feedTitle.textContent = 'Completed Archive';
+                } else if (AppState.currentTab === 'search') {
+                    feedTitle.textContent = `Search matches for: "${AppState.searchQuery}"`;
+                } else {
+                    const foundProj = AppState.projects.find(p => p.id === AppState.currentTab);
+                    feedTitle.textContent = foundProj ? foundProj.title : 'Collection Folder';
+                }
             }
 
             container.innerHTML = '';
@@ -2981,162 +2991,6 @@
         function closeCalendarPopup() {
             const popup = document.getElementById('custom-calendar-popup');
             if (popup) hideFloatingElement(popup);
-        }
-
-        function renderManageDashboard() {
-            const container = document.getElementById('tasks-list');
-            const emptyScreen = document.getElementById('empty-state-screen');
-            emptyScreen.classList.add('hidden');
-            
-            document.getElementById('feed-current-title').textContent = 'Manage Studio';
-            
-            container.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8">
-                    <div class="bg-[#121212] p-5 rounded-2xl border border-white/[0.04] flex flex-col justify-between">
-                        <div>
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="flex items-center space-x-2">
-                                    <span class="p-1.5 rounded-lg bg-white/5 text-white"><i data-lucide="check-square" class="w-4 h-4"></i></span>
-                                    <h4 class="text-xs font-bold text-white uppercase tracking-wider">Database Tasks</h4>
-                                </div>
-                                <span class="bg-white/5 text-gray-400 text-xs font-mono px-3 py-1 rounded-full">${AppState.tasks.length} Total</span>
-                            </div>
-                            <p class="text-[11px] text-gray-500 mb-6 leading-relaxed">Directly review, inspect specifications, or wipe your task directories securely.</p>
-                            
-                            <div class="space-y-2 max-h-80 overflow-y-auto pr-1 mb-6">
-                                ${AppState.tasks.length === 0 ? `
-                                    <div class="text-center py-8 text-xs text-gray-600 border border-dashed border-white/5 rounded-xl">No active tasks in database</div>
-                                ` : AppState.tasks.map(t => `
-                                    <div class="flex items-center justify-between bg-white/5 p-2.5 rounded-xl text-xs hover:bg-white/10 transition">
-                                        <div class="flex items-center space-x-2.5 min-w-0 flex-1">
-                                            <span class="w-3 h-3 rounded border" style="border-color: ${t.color || '#FF3B30'}; background-color: ${t.done ? t.color || '#FF3B30' : 'transparent'};"></span>
-                                            <span class="text-white truncate ${t.done ? 'line-through text-gray-500' : ''}">${escapeHTML(t.title)}</span>
-                                        </div>
-                                        <div class="flex items-center space-x-1 flex-shrink-0">
-                                            <button onclick="selectTaskFromManage('${t.id}')" class="p-1.5 hover:bg-white/10 rounded text-[#2997ff]" title="Edit Task Details">
-                                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                                            </button>
-                                            <button onclick="handleDeleteTaskDirect('${t.id}')" class="text-gray-500 hover:text-red-400 p-1.5 rounded hover:bg-white/5 transition" title="Delete Task">
-                                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                        <button onclick="handleDeleteAllTasksTrigger()" class="btn-scale w-full mt-2 py-2.5 bg-red-500/10 text-red-400 rounded-xl text-xs font-bold hover:bg-red-500/20 transition flex items-center justify-center space-x-1.5">
-                            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
-                            <span>Delete All Tasks</span>
-                        </button>
-                    </div>
-
-                    <div class="bg-[#121212] p-5 rounded-2xl border border-white/[0.04] flex flex-col justify-between">
-                        <div>
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="flex items-center space-x-2">
-                                    <span class="p-1.5 rounded-lg bg-white/5 text-white"><i data-lucide="layout-panel-left" class="w-4 h-4"></i></span>
-                                    <h4 class="text-xs font-bold text-white uppercase tracking-wider">Group Columns</h4>
-                                </div>
-                                <span class="bg-white/5 text-gray-400 text-xs font-mono px-3 py-1 rounded-full">${AppState.groups.length} Active</span>
-                            </div>
-                            <p class="text-[11px] text-gray-500 mb-6 leading-relaxed">Modify layout settings, delete active columns, or wipe groups entirely from settings.</p>
-
-                            <div class="space-y-2 max-h-80 overflow-y-auto pr-1 mb-6">
-                                ${AppState.groups.length === 0 ? `
-                                    <div class="text-center py-8 text-xs text-gray-600 border border-dashed border-white/5 rounded-xl">No group columns in database</div>
-                                ` : AppState.groups.map(g => `
-                                    <div class="flex items-center justify-between bg-white/5 p-2.5 rounded-xl text-xs hover:bg-white/10 transition">
-                                        <div class="flex items-center space-x-2 min-w-0 flex-1">
-                                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: ${g.color || '#2997ff'}; box-shadow: 0 0 6px ${g.color || '#2997ff'}aa;"></span>
-                                            <i data-lucide="${g.icon || 'list'}" class="w-3.5 h-3.5 flex-shrink-0 ml-1.5" style="color: ${g.color || '#2997ff'}"></i>
-                                            <span class="text-white font-medium truncate ml-1">${escapeHTML(g.title)}</span>
-                                        </div>
-                                        <div class="flex items-center space-x-1 flex-shrink-0">
-                                            <button onclick="openEditGroupModalFromManage('${g.id}')" class="p-1.5 hover:bg-white/10 rounded text-[#2997ff]" title="Edit Group Column">
-                                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                                            </button>
-                                            <button onclick="handleDeleteGroup('${g.id}')" class="p-1.5 hover:bg-white/10 rounded text-red-400" title="Delete Group Column">
-                                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                        <button onclick="handleDeleteAllGroupsTrigger()" class="btn-scale w-full mt-2 py-2.5 bg-red-500/10 text-red-400 rounded-xl text-xs font-bold hover:bg-red-500/20 transition flex items-center justify-center space-x-1.5">
-                            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
-                            <span>Delete All Groups</span>
-                        </button>
-                    </div>
-
-                    <div class="bg-[#121212] p-6 rounded-2xl border border-white/[0.06] flex flex-col justify-between md:col-span-2 space-y-5 shadow-lg">
-                        <div>
-                            <div class="flex items-center justify-between mb-3">
-                                <div class="flex items-center space-x-2.5">
-                                    <span class="p-2 rounded-xl bg-[#2997ff]/10 text-[#2997ff] border border-[#2997ff]/20"><i data-lucide="database" class="w-4 h-4"></i></span>
-                                    <div>
-                                        <h4 class="text-xs font-extrabold text-white uppercase tracking-wider">Automated Studio Backups</h4>
-                                        <p class="text-[11px] text-gray-400 mt-0.5 leading-relaxed">Full system snapshots captured automatically every 5 days with rolling rotation.</p>
-                                    </div>
-                                </div>
-                                <span class="bg-[#2997ff]/10 text-[#2997ff] text-[10px] font-mono font-bold px-3 py-1 rounded-full border border-[#2997ff]/20 flex-shrink-0">Auto-Rolling</span>
-                            </div>
-
-                            <div class="space-y-2 max-h-60 overflow-y-auto pr-1 my-4" id="auto-backups-list">
-                                ${(() => {
-                                    let backups = [];
-                                    try { backups = JSON.parse(localStorage.getItem('ANV_5DAY_SNAPSHOTS') || '[]'); } catch(e) {}
-                                    if (backups.length === 0) {
-                                        return `<div class="text-center py-6 text-xs text-gray-600 border border-dashed border-white/5 rounded-xl">No 5-day auto snapshots captured yet.</div>`;
-                                    }
-                                    return backups.map((b, idx) => `
-                                        <div onclick="previewBackupSnapshot(${idx})" class="flex items-center justify-between bg-white/[0.03] hover:bg-white/[0.06] p-3.5 rounded-xl text-xs transition border border-white/5 gap-3 cursor-pointer group">
-                                            <div class="flex items-center space-x-3 min-w-0 flex-1">
-                                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0 text-emerald-400 group-hover:scale-105 transition">
-                                                    <i data-lucide="archive" class="w-4 h-4"></i>
-                                                </div>
-                                                <div class="min-w-0 flex-1">
-                                                    <div class="text-white font-bold truncate text-xs group-hover:text-[#2997ff] transition flex items-center space-x-1.5">
-                                                        <span>${escapeHTML(b.label || '5-Day Full Backup Snapshot')}</span>
-                                                        <i data-lucide="eye" class="w-3.5 h-3.5 text-gray-500"></i>
-                                                    </div>
-                                                    <div class="text-[10px] text-gray-400 font-mono mt-0.5 flex items-center space-x-2">
-                                                        <span>${new Date(b.timestamp).toLocaleString()}</span>
-                                                        <span>•</span>
-                                                        <span class="text-[#2997ff] font-semibold">${b.taskCount || 0} Tasks</span>
-                                                        <span>•</span>
-                                                        <span class="text-purple-400 font-semibold">${b.groupCount || 0} Groups</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="flex items-center space-x-2 flex-shrink-0">
-                                                <button onclick="event.stopPropagation(); restoreAutoSnapshot(${idx});" class="btn-scale bg-[#2997ff]/15 hover:bg-[#2997ff] text-[#2997ff] hover:text-black font-bold px-3 py-1.5 rounded-xl text-xs transition flex items-center space-x-1 border border-[#2997ff]/30">
-                                                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-                                                    <span>Restore</span>
-                                                </button>
-                                                <button onclick="event.stopPropagation(); deleteAutoSnapshot(${idx});" class="btn-scale p-1.5 bg-red-500/10 hover:bg-red-500/25 text-red-400 rounded-xl transition" title="Delete Snapshot">
-                                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    `).join('');
-                                })()}
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-white/5">
-                            <button onclick="triggerManualSnapshot()" class="btn-scale py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold border border-white/10 transition flex items-center justify-center space-x-2">
-                                <i data-lucide="camera" class="w-4 h-4 text-[#2997ff]"></i>
-                                <span>Capture Snapshot Now</span>
-                            </button>
-                            <button onclick="triggerImport()" class="btn-scale py-3 bg-[#2997ff] hover:bg-[#0066cc] text-black hover:text-white rounded-xl text-xs font-extrabold transition flex items-center justify-center space-x-2 shadow-md">
-                                <i data-lucide="upload-cloud" class="w-4 h-4"></i>
-                                <span>Import Previous Backup File</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            lucide.createIcons();
         }
 
         function selectTaskFromManage(taskId) {
