@@ -1,7 +1,7 @@
         :root, .dark {
             /* Typeset Rhythm & Typography Tokens */
-            --typeset-font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-            --typeset-font-heading: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            --typeset-font-body: 'Plus Jakarta Sans', SF Pro Display, SF Pro Text, system-ui, -apple-system, sans-serif;
+            --typeset-font-heading: 'Plus Jakarta Sans', SF Pro Display, SF Pro Text, system-ui, -apple-system, sans-serif;
             --typeset-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
             --typeset-size: 14px;
             --typeset-leading: 1.6;

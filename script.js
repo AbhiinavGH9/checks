@@ -1219,6 +1219,35 @@
                         task.notes = [];
                     }
                 });
+            } else {
+                // Seed default tasks if empty
+                AppState.tasks = [
+                    {
+                        id: 'task-sample-1',
+                        title: 'Make portfolio anv edits',
+                        description: 'Review color palette and layout hierarchy',
+                        color: 'red',
+                        priorityColor: 'red',
+                        done: false,
+                        dueDate: '2026-08-10',
+                        createdDate: new Date().toISOString(),
+                        subtasks: []
+                    },
+                    {
+                        id: 'task-sample-2',
+                        title: 'Learn editing (adixsoon)',
+                        description: 'Core video composition techniques',
+                        color: 'orange',
+                        priorityColor: 'orange',
+                        done: false,
+                        dueDate: '2026-09-10',
+                        createdDate: new Date().toISOString(),
+                        subtasks: [
+                            { id: 'sub-1', title: 'View all reels', done: false },
+                            { id: 'sub-2', title: 'Try all reel effects 1 by 1', done: false }
+                        ]
+                    }
+                ];
             }
             if (projects) AppState.projects = JSON.parse(projects);
             if (groups) AppState.groups = JSON.parse(groups);
