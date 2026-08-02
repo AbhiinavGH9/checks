@@ -2045,6 +2045,9 @@
                 `;
                 container.appendChild(btn);
             });
+            if (window.lucide) window.lucide.createIcons();
+        }
+
         function switchTab(tabId) {
             AppState.currentTab = tabId;
             renderTaskFeed();
