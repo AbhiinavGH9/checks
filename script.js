@@ -3922,8 +3922,10 @@
                     renderInspector();
                     const inspector = document.getElementById('inspector-panel');
                     if (inspector) {
-                        inspector.classList.remove('hidden', 'drawer-slide-out', 'translate-x-full');
-                        inspector.classList.add('drawer-slide-in');
+                        inspector.classList.remove('hidden');
+                        requestAnimationFrame(() => {
+                            inspector.classList.remove('translate-x-full');
+                        }, 10);
                     }
                 } else {
                     closeInspector();
@@ -3937,8 +3939,10 @@
 
                 const inspector = document.getElementById('inspector-panel');
                 if (inspector) {
-                    inspector.classList.remove('hidden', 'drawer-slide-out', 'translate-x-full');
-                    inspector.classList.add('drawer-slide-in');
+                    inspector.classList.remove('hidden');
+                    requestAnimationFrame(() => {
+                        inspector.classList.remove('translate-x-full');
+                    });
                 }
             }
         }
@@ -3953,12 +3957,10 @@
 
             const inspector = document.getElementById('inspector-panel');
             if (inspector && !inspector.classList.contains('hidden')) {
-                inspector.classList.remove('drawer-slide-in');
-                inspector.classList.add('drawer-slide-out');
+                inspector.classList.add('translate-x-full');
                 setTimeout(() => {
-                    inspector.classList.add('hidden', 'translate-x-full');
-                    inspector.classList.remove('drawer-slide-out');
-                }, 300);
+                    inspector.classList.add('hidden');
+                }, 200);
             }
         }
 

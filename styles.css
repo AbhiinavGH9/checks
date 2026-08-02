@@ -226,7 +226,7 @@
             border: none !important;
             box-shadow: -10px 0 40px rgba(0, 0, 0, 0.6) !important;
             outline: none !important;
-            transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease;
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
         }
 
         /* Inspector Slide In & Slide Out Animations */
