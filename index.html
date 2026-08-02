@@ -382,9 +382,17 @@
 
             </section>
 
-            <!-- Base UI Inspector Right Side Drawer Content -->
-            <div id="inspector-panel" class="fixed top-0 right-0 bottom-0 z-[150] w-96 max-w-[calc(100vw-2rem)] hidden translate-x-full drawer-content-base rounded-l-3xl border-l border-white/10 flex flex-col overflow-hidden">
-                <div class="drawer-swipe-handle my-3"></div>
+            <!-- Responsive Inspector (Desktop Right Sheet / Mobile Bottom Sheet) Backdrop -->
+            <div id="inspector-backdrop" onclick="closeInspector()" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[149] hidden opacity-0 transition-opacity duration-200" aria-hidden="true"></div>
+
+            <!-- Base UI Inspector Responsive Sheet Container -->
+            <div id="inspector-panel" role="dialog" aria-modal="true" aria-label="Task Details Inspector" class="fixed z-[150] hidden drawer-content-base border border-white/10 flex flex-col overflow-hidden shadow-2xl">
+                <!-- Mobile Handle (Top) -->
+                <div class="drawer-swipe-handle my-3 md:hidden"></div>
+                <!-- Desktop Handle Strip (Left Edge) -->
+                <div class="inspector-handle-zone-x hidden md:flex absolute left-0 top-0 bottom-0 w-4 items-center justify-center cursor-grab active:cursor-grabbing z-20 hover:bg-white/5 transition">
+                    <div class="w-1 h-10 rounded-full bg-white/30"></div>
+                </div>
 
                 <!-- Scrollable Content Area -->
                 <div id="inspector-content" class="flex-1 overflow-y-auto px-6 py-4 space-y-4 hidden">

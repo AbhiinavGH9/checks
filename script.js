@@ -219,46 +219,57 @@
         window.openMobileSearchMode = openMobileSearchMode;
         window.closeMobileSearchMode = closeMobileSearchMode;
 
-        // Unified Draggable Sheet Controller Logic
-        function makeModalDraggable(containerEl, onCloseCallback) {
+        // Unified Draggable Sheet Controller Logic (Supports Y-axis bottom sheet & X-axis right side sheet)
+        function makeModalDraggable(containerEl, onCloseCallback, options = {}) {
             if (!containerEl || containerEl.dataset.dragInitialized) return;
             containerEl.dataset.dragInitialized = 'true';
 
-            let startY = 0;
-            let currentY = 0;
+            let startPos = 0;
+            let currentPos = 0;
             let isDragging = false;
-            let sheetHeight = 0;
+            let panelDimension = 0;
             let samples = [];
 
-            const handleZone = containerEl.querySelector('.sheet-handle-zone, .drawer-swipe-handle, .sheet-header, [data-drag-handle]') || containerEl;
+            const getAxis = () => {
+                if (options.axis === 'x') return 'x';
+                if (options.axis === 'y') return 'y';
+                return window.innerWidth < 768 ? 'y' : 'x';
+            };
 
-            const getPointY = (e) => (e.touches ? e.touches[0].clientY : e.clientY);
+            const handleZone = containerEl.querySelector('.sheet-handle-zone, .drawer-swipe-handle, .sheet-header, .inspector-handle-zone-x, [data-drag-handle]') || containerEl;
+
+            const getPoint = (e, axis) => {
+                const p = e.touches ? e.touches[0] : e;
+                return axis === 'y' ? p.clientY : p.clientX;
+            };
 
             const onStart = (e) => {
                 const scrollable = e.target.closest('.overflow-y-auto');
                 if (scrollable && scrollable.scrollTop > 0) return;
                 
+                const axis = getAxis();
                 isDragging = true;
-                startY = getPointY(e);
-                currentY = startY;
-                sheetHeight = containerEl.offsetHeight || 400;
-                samples = [{ y: startY, t: performance.now() }];
+                startPos = getPoint(e, axis);
+                currentPos = startPos;
+                panelDimension = axis === 'y' ? (containerEl.offsetHeight || 400) : (containerEl.offsetWidth || 400);
+                samples = [{ p: startPos, t: performance.now() }];
                 containerEl.style.transition = 'none';
             };
 
             const onMove = (e) => {
                 if (!isDragging) return;
-                const y = getPointY(e);
-                currentY = y;
-                let delta = y - startY;
-                if (delta < 0) delta = delta / 4;
+                const axis = getAxis();
+                const p = getPoint(e, axis);
+                currentPos = p;
+                let delta = p - startPos;
+                if (delta < 0) delta = delta / 4; // Dampened resistance moving away from closed edge
 
                 const pos = delta > 0 ? delta : 0;
-                containerEl.style.transform = `translateY(${pos}px)`;
+                containerEl.style.transform = axis === 'y' ? `translateY(${pos}px)` : `translateX(${pos}px)`;
 
                 const now = performance.now();
-                samples.push({ y, t: now });
-                samples = samples.filter(p => now - p.t < 100);
+                samples.push({ p, t: now });
+                samples = samples.filter(s => now - s.t < 100);
 
                 if (e.cancelable) e.preventDefault();
             };
@@ -266,25 +277,26 @@
             const onEnd = () => {
                 if (!isDragging) return;
                 isDragging = false;
+                const axis = getAxis();
                 containerEl.style.transition = 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)';
 
-                const distance = Math.max(0, currentY - startY);
+                const distance = Math.max(0, currentPos - startPos);
                 let velocity = 0;
                 if (samples.length >= 2) {
                     const first = samples[0];
                     const last = samples[samples.length - 1];
                     const dt = last.t - first.t || 1;
-                    velocity = (last.y - first.y) / dt;
+                    velocity = (last.p - first.p) / dt;
                 }
 
-                if (distance > sheetHeight * 0.35 || (velocity > 0.6 && distance > 10)) {
-                    containerEl.style.transform = `translateY(${sheetHeight}px)`;
+                if (distance > panelDimension * 0.35 || (velocity > 0.6 && distance > 10)) {
+                    containerEl.style.transform = axis === 'y' ? `translateY(${panelDimension}px)` : `translateX(${panelDimension}px)`;
                     setTimeout(() => {
                         containerEl.style.transform = '';
                         if (onCloseCallback) onCloseCallback();
                     }, 200);
                 } else {
-                    containerEl.style.transform = 'translateY(0px)';
+                    containerEl.style.transform = axis === 'y' ? 'translateY(0px)' : 'translateX(0px)';
                 }
             };
 
@@ -4288,31 +4300,46 @@
                 if (AppState.selectedTaskIds.length === 1) {
                     AppState.selectedTaskId = AppState.selectedTaskIds[0];
                     renderInspector();
-                    const inspector = document.getElementById('inspector-panel');
-                    if (inspector) {
-                        inspector.classList.remove('hidden');
-                        requestAnimationFrame(() => {
-                            inspector.classList.remove('translate-x-full');
-                        }, 10);
-                    }
+                    openInspectorPanel();
                 } else {
                     closeInspector();
                 }
                 renderTaskFeed();
             } else {
+                const wasAlreadyOpen = !!AppState.selectedTaskId;
                 AppState.selectedTaskId = taskId;
                 AppState.selectedTaskIds = [taskId];
                 renderTaskFeed();
                 renderInspector();
 
-                const inspector = document.getElementById('inspector-panel');
-                if (inspector) {
-                    inspector.classList.remove('hidden');
-                    requestAnimationFrame(() => {
-                        inspector.classList.remove('translate-x-full');
-                    });
+                if (!wasAlreadyOpen) {
+                    openInspectorPanel();
                 }
             }
+        }
+
+        function openInspectorPanel() {
+            const inspector = document.getElementById('inspector-panel');
+            const backdrop = document.getElementById('inspector-backdrop');
+            if (!inspector) return;
+
+            const isMobile = window.innerWidth < 768;
+            const dim = isMobile ? (inspector.offsetHeight || 400) : (inspector.offsetWidth || 420);
+            
+            inspector.style.transition = 'none';
+            inspector.style.transform = isMobile ? `translateY(${dim}px)` : `translateX(${dim}px)`;
+            inspector.classList.remove('hidden');
+
+            if (backdrop) {
+                backdrop.classList.remove('hidden');
+                void backdrop.offsetHeight;
+                backdrop.classList.add('opacity-100');
+            }
+
+            requestAnimationFrame(() => {
+                inspector.style.transition = 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)';
+                inspector.style.transform = isMobile ? 'translateY(0px)' : 'translateX(0px)';
+            });
         }
 
         function closeInspector() {
@@ -4324,11 +4351,24 @@
             hideFloatingElement(document.getElementById('ins-autodelete-options'));
 
             const inspector = document.getElementById('inspector-panel');
+            const backdrop = document.getElementById('inspector-backdrop');
+
+            if (backdrop) {
+                backdrop.classList.remove('opacity-100');
+                setTimeout(() => backdrop.classList.add('hidden'), 200);
+            }
+
             if (inspector && !inspector.classList.contains('hidden')) {
-                inspector.classList.add('translate-x-full');
+                const isMobile = window.innerWidth < 768;
+                const dim = isMobile ? (inspector.offsetHeight || 400) : (inspector.offsetWidth || 420);
+                
+                inspector.style.transition = 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)';
+                inspector.style.transform = isMobile ? `translateY(${dim}px)` : `translateX(${dim}px)`;
+
                 setTimeout(() => {
                     inspector.classList.add('hidden');
-                }, 200);
+                    inspector.style.transform = '';
+                }, 280);
             }
         }
 
@@ -5729,7 +5769,7 @@
             makeModalDraggable(document.getElementById('archive-modal-container'), closeArchiveModal);
             makeModalDraggable(document.getElementById('profile-customizer-container'), closeProfileCustomizerModal);
             makeModalDraggable(document.getElementById('mobile-drawer'), closeMobileDrawer);
-            makeModalDraggable(document.getElementById('inspector-panel'), closeInspector);
+            makeModalDraggable(document.getElementById('inspector-panel'), closeInspector, { axis: 'auto' });
 
             initSupabaseAuth();
 
