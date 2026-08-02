@@ -213,40 +213,46 @@
                             <span>Delete All Completed</span>
                         </button>
 
-                        <button onclick="openAddTaskModal()" class="btn-scale flex items-center space-x-1 px-3 py-1.5 text-xs font-bold bg-[#2997ff] text-black hover:bg-[#0066cc] hover:text-white rounded-lg transition" title="Create a new task">
-                            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                            <span>New Task</span>
-                        </button>
-
-                        <button onclick="openAddGroupModal()" class="btn-scale flex items-center space-x-1 px-3 py-1.5 text-xs font-semibold bg-white/5 hover:bg-white/10 text-white rounded-lg transition" title="Add custom Group column">
-                            <i data-lucide="plus" class="w-3.5 h-3.5 text-[#2997ff]"></i>
-                            <span>Add Group</span>
-                        </button>
-
-                        <span class="text-xs text-gray-500 ml-1">Sort:</span>
-                        
-                        <div class="relative inline-block text-left animate-fade-in" id="sort-dropdown-wrapper">
-                            <button onclick="toggleCustomDropdown('sort-dropdown-options', event)" class="flex items-center space-x-2 bg-white/5 rounded-lg px-3 py-1.5 text-xs text-white hover:bg-white/10 transition">
-                                <span id="selected-sort-label">Date created</span>
-                                <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-400"></i>
+                        <!-- Official Shadcn UI Button Group Container -->
+                        <div class="ui-button-group border border-white/10 bg-white/[0.03] rounded-xl p-0.5 flex items-center shadow-lg" role="group" aria-label="Task Management Button Group">
+                            <button onclick="openAddTaskModal()" class="btn-scale flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold bg-[#2997ff] text-black hover:bg-[#0066cc] hover:text-white rounded-lg transition" title="Create a new task">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                <span>New Task</span>
                             </button>
-                            <div id="sort-dropdown-options" class="hidden w-48 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-50 py-2 text-xs text-gray-200 backdrop-blur-xl">
-                                <button type="button" onclick="selectSortOption('created', 'Date created')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium">
-                                    <span>Date created</span>
-                                    <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-created"><i data-lucide="check-square" class="w-3.5 h-3.5"></i></span>
+
+                            <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator" aria-orientation="vertical"></div>
+
+                            <button onclick="openAddGroupModal()" class="btn-scale flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/10 hover:text-white rounded-lg transition" title="Add custom Group column">
+                                <i data-lucide="plus" class="w-3.5 h-3.5 text-[#2997ff]"></i>
+                                <span>Add Group</span>
+                            </button>
+
+                            <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator" aria-orientation="vertical"></div>
+
+                            <div class="relative inline-block text-left" id="sort-dropdown-wrapper">
+                                <button onclick="toggleCustomDropdown('sort-dropdown-options', event)" class="flex items-center space-x-2 rounded-lg px-3 py-1.5 text-xs text-gray-200 hover:bg-white/10 transition font-medium">
+                                    <span class="text-gray-400 font-normal">Sort:</span>
+                                    <span id="selected-sort-label">Date created</span>
+                                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-400"></i>
                                 </button>
-                                <button type="button" onclick="selectSortOption('due', 'Due date')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium">
-                                    <span>Due date</span>
-                                    <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-due"><i data-lucide="check-square" class="w-3.5 h-3.5"></i></span>
-                                </button>
-                                <button type="button" onclick="selectSortOption('priority', 'Priority level')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium">
-                                    <span>Priority level</span>
-                                    <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-priority"><i data-lucide="check-square" class="w-3.5 h-3.5"></i></span>
-                                </button>
-                                <button type="button" onclick="selectSortOption('alphabetical', 'Alphabetical')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium">
-                                    <span>Alphabetical</span>
-                                    <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-alphabetical"><i data-lucide="check-square" class="w-3.5 h-3.5"></i></span>
-                                </button>
+                                <div id="sort-dropdown-options" class="hidden w-48 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-50 py-2 text-xs text-gray-200 backdrop-blur-xl">
+                                    <button type="button" onclick="selectSortOption('created', 'Date created')" class="ui-menu-item w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium">
+                                        <span>Date created</span>
+                                        <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-created"><i data-lucide="check" class="w-3.5 h-3.5"></i></span>
+                                    </button>
+                                    <button type="button" onclick="selectSortOption('due', 'Due date')" class="ui-menu-item w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium">
+                                        <span>Due date</span>
+                                        <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-due"><i data-lucide="check" class="w-3.5 h-3.5"></i></span>
+                                    </button>
+                                    <button type="button" onclick="selectSortOption('priority', 'Priority level')" class="ui-menu-item w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium">
+                                        <span>Priority level</span>
+                                        <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-priority"><i data-lucide="check" class="w-3.5 h-3.5"></i></span>
+                                    </button>
+                                    <button type="button" onclick="selectSortOption('alphabetical', 'Alphabetical')" class="ui-menu-item w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium">
+                                        <span>Alphabetical</span>
+                                        <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-alphabetical"><i data-lucide="check" class="w-3.5 h-3.5"></i></span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
