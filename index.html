@@ -42,9 +42,6 @@
                 <span id="active-tab-badge" oncontextmenu="handleCounterContextMenu(event)" class="ui-badge cursor-pointer select-none" data-variant="secondary">0 items</span>
             </div>
             <div class="flex items-center space-x-2 relative">
-                <button onclick="toggleCustomDropdown('nav-menu-dropdown-options', event)" class="btn-scale p-2 bg-white/5 text-white hover:bg-white/10 rounded-lg transition" title="More Options">
-                    <i data-lucide="more-horizontal" class="w-4 h-4"></i>
-                </button>
                 <div id="nav-menu-dropdown-options" class="hidden w-52 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-50 py-2 text-xs text-gray-200 backdrop-blur-xl">
                     <button type="button" onclick="openProfileCustomizerModal()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2.5 font-medium">
                         <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
@@ -78,10 +75,6 @@
                         <button onclick="toggleSidebarCollapse()" class="btn-scale p-2 bg-white/5 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition flex-shrink-0" title="Collapse Sidebar">
                             <i data-lucide="sidebar" class="w-4 h-4"></i>
                         </button>
-                        <div class="relative flex-1 hidden md:block">
-                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4"></i>
-                            <input type="text" id="global-search" oninput="handleSearch(this.value)" placeholder="Search tasks..." class="w-full bg-white/5 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition border border-white/20">
-                        </div>
                     </div>
 
                     <div class="space-y-1">
@@ -213,24 +206,36 @@
                             <span>Delete All Completed</span>
                         </button>
 
-                        <!-- Official Shadcn UI Button Group Container -->
-                        <div class="ui-button-group border border-white/10 bg-white/[0.03] rounded-xl p-0.5 flex items-center shadow-lg" role="group" aria-label="Task Management Button Group">
-                            <button onclick="openAddTaskModal()" class="btn-scale flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold bg-[#2997ff] text-black hover:bg-[#0066cc] hover:text-white rounded-lg transition" title="Create a new task">
+                        <!-- Group 1: Creation Actions (New Task + Add Group) -->
+                        <div class="ui-button-group border border-white/10 bg-white/[0.03] rounded-full p-1 flex items-center shadow-lg" role="group" aria-label="Task & Group Creation Button Group">
+                            <button onclick="openAddTaskModal()" class="btn-scale flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold bg-[#2997ff] text-black hover:bg-[#0066cc] hover:text-white rounded-full transition" title="Create a new task">
                                 <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
                                 <span>New Task</span>
                             </button>
 
                             <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator" aria-orientation="vertical"></div>
 
-                            <button onclick="openAddGroupModal()" class="btn-scale flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/10 hover:text-white rounded-lg transition" title="Add custom Group column">
+                            <button onclick="openAddGroupModal()" class="btn-scale flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/10 hover:text-white rounded-full transition" title="Add custom Group column">
                                 <i data-lucide="plus-square" class="w-3.5 h-3.5 text-[#2997ff]"></i>
                                 <span>Add Group</span>
                             </button>
+                        </div>
+
+                        <!-- Group 2: Search, Sort & Options Button Group -->
+                        <div class="ui-button-group border border-white/10 bg-white/[0.03] rounded-full p-1 flex items-center shadow-lg relative" role="group" aria-label="Search & Filter Button Group">
+                            <!-- Expandable Animated Search Input -->
+                            <div class="relative flex items-center transition-all duration-300 ease-out" id="header-search-container" style="width: 32px;">
+                                <button type="button" onclick="toggleHeaderSearch(event)" class="p-1.5 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center flex-shrink-0" title="Search tasks">
+                                    <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <input type="text" id="global-search" oninput="handleSearch(this.value)" placeholder="Search tasks..." class="w-full bg-transparent text-xs text-white placeholder-gray-500 focus:outline-none pl-1 pr-2 opacity-0 pointer-events-none transition-opacity duration-200">
+                            </div>
 
                             <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator" aria-orientation="vertical"></div>
 
+                            <!-- Sort Dropdown -->
                             <div class="relative inline-block text-left" id="sort-dropdown-wrapper">
-                                <button onclick="toggleCustomDropdown('sort-dropdown-options', event)" class="flex items-center space-x-2 rounded-lg px-3 py-1.5 text-xs text-gray-200 hover:bg-white/10 transition font-medium">
+                                <button onclick="toggleCustomDropdown('sort-dropdown-options', event)" class="flex items-center space-x-1.5 rounded-full px-3 py-1.5 text-xs text-gray-200 hover:bg-white/10 transition font-medium">
                                     <span class="text-gray-400 font-normal">Sort:</span>
                                     <span id="selected-sort-label">Date created</span>
                                     <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-400"></i>
@@ -253,6 +258,15 @@
                                         <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-alphabetical"><i data-lucide="check" class="w-3.5 h-3.5"></i></span>
                                     </button>
                                 </div>
+                            </div>
+
+                            <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator" aria-orientation="vertical"></div>
+
+                            <!-- Options Dropdown (Three Dots) -->
+                            <div class="relative inline-block text-left">
+                                <button onclick="toggleCustomDropdown('nav-menu-dropdown-options', event)" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition flex items-center justify-center" title="More Options">
+                                    <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -550,35 +564,32 @@
     </div>
 
     <div id="feed-context-menu" class="hidden fixed bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-[100] py-2 w-52 text-xs text-gray-200 animate-fade-in backdrop-blur-xl">
-        <button onclick="bulkCompleteAllFiltered()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-            <i data-lucide="check-square" class="w-3.5 h-3.5"></i>
+        <button onclick="bulkCompleteAllFiltered()" class="ui-menu-item">
             <span>Complete all</span>
+            <i data-lucide="check-square" class="w-3.5 h-3.5"></i>
         </button>
-        <button onclick="bulkSelectAllFiltered()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex-shrink-0 flex items-center space-x-2">
-            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+        <button onclick="bulkSelectAllFiltered()" class="ui-menu-item">
             <span>Select all</span>
+            <i data-lucide="check" class="w-3.5 h-3.5"></i>
         </button>
-        <div class="border-t border-white/[0.03] my-1"></div>
+        <div class="ui-separator my-1" data-orientation="horizontal"></div>
         <div class="relative group/sub">
-            <button class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between">
-                <span class="flex items-center space-x-2">
-                    <i data-lucide="plus" class="w-3.5 h-3.5 text-[#2997ff]"></i>
-                    <span>Create</span>
-                </span>
-                <i data-lucide="chevron-right" class="w-3 h-3 text-gray-500"></i>
+            <button class="ui-menu-item group">
+                <span>Create</span>
+                <i data-lucide="plus" class="w-3.5 h-3.5 text-[#2997ff]"></i>
             </button>
             <div class="hidden group-hover/sub:block absolute left-full top-0 mt-[-6px] ml-[2px] w-48 bg-[#141414] border border-white/[0.05] rounded-xl shadow-2xl py-1.5 z-[110]">
-                <button onclick="openAddTaskModal(); hideFeedContextMenu();" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                    <i data-lucide="plus-circle" class="w-3.5 h-3.5 text-gray-400"></i>
+                <button onclick="openAddTaskModal(); hideFeedContextMenu();" class="ui-menu-item">
                     <span>Create Task</span>
+                    <i data-lucide="plus-circle" class="w-3.5 h-3.5 text-gray-400"></i>
                 </button>
-                <button onclick="openAddGroupModal(); hideFeedContextMenu();" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                    <i data-lucide="plus-square" class="w-3.5 h-3.5 text-gray-400"></i>
+                <button onclick="openAddGroupModal(); hideFeedContextMenu();" class="ui-menu-item">
                     <span>Create Group</span>
+                    <i data-lucide="plus-square" class="w-3.5 h-3.5 text-gray-400"></i>
                 </button>
-                <button onclick="openNewProjectModal(); hideFeedContextMenu();" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                    <i data-lucide="folder-plus" class="w-3.5 h-3.5 text-gray-400"></i>
+                <button onclick="openNewProjectModal(); hideFeedContextMenu();" class="ui-menu-item">
                     <span>Create Collection</span>
+                    <i data-lucide="folder-plus" class="w-3.5 h-3.5 text-gray-400"></i>
                 </button>
             </div>
         </div>

@@ -162,7 +162,7 @@
             margin-left: 4px;
         }
 
-        /* Context Menu & Dropdown Menu Styling */
+        /* Context Menu & Dropdown Menu Styling (Text on left, icon on right) */
         .ui-menu-content {
             background-color: #141414;
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -173,6 +173,7 @@
         .ui-menu-item {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             width: 100%;
             padding: 7px 12px;
             font-size: 12px;
@@ -185,6 +186,18 @@
         .ui-menu-item:hover {
             background-color: rgba(255, 255, 255, 0.06);
             color: #FFFFFF;
+        }
+        .ui-menu-item [data-hugeicon], .ui-menu-item svg {
+            order: 2;
+            margin-left: 8px;
+            margin-right: 0 !important;
+            flex-shrink: 0;
+        }
+        .ui-menu-item > span:first-child, .ui-menu-item > div:first-child {
+            order: 1;
+            flex: 1;
+            min-width: 0;
+            text-align: left;
         }
         .ui-menu-item[data-destructive="true"]:hover {
             background-color: rgba(239, 68, 68, 0.12);
@@ -539,4 +552,24 @@
             select {
                 font-size: 0.75rem !important;
             }
+        }
+
+        /* Shadcn / Typeset Styling System */
+        .typeset {
+            font-family: var(--typeset-font-body);
+            font-size: var(--typeset-size);
+            line-height: var(--typeset-leading);
+            color: var(--foreground);
+        }
+        .typeset h1, .typeset h2, .typeset h3, .typeset h4, .typeset h5, .typeset h6 {
+            font-family: var(--typeset-font-heading);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-block-start: var(--typeset-flow);
+        }
+        .typeset p, .typeset ul, .typeset ol, .typeset blockquote, .typeset table {
+            margin-block-start: calc(var(--typeset-flow) * 0.75);
+        }
+        .typeset code, .typeset kbd, .typeset pre {
+            font-family: var(--typeset-font-mono);
         }

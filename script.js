@@ -3,9 +3,22 @@
             const container = document.getElementById('toast-container') || document.body;
             if (container) {
                 const toast = document.createElement('div');
-                toast.className = "fixed bottom-6 right-6 z-[999] bg-red-500/90 border border-red-400 text-white px-5 py-4 rounded-xl text-xs font-semibold shadow-2xl pointer-events-auto flex flex-col space-y-1.5 max-w-sm";
-                toast.innerHTML = `<div><strong>Application Error:</strong> ${e.message}</div><div class="text-[10px] text-white/80">${e.filename}:${e.lineno}</div>`;
+                toast.className = "fixed bottom-6 right-6 z-[999] bg-[#141414] border border-red-500/40 text-red-300 px-5 py-3 rounded-full text-xs font-semibold shadow-2xl pointer-events-auto flex items-center space-x-3 max-w-md backdrop-blur-xl";
+                toast.innerHTML = `
+                    <div class="p-1.5 rounded-full bg-red-500/20 text-red-400 flex-shrink-0">
+                        <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-bold text-white">Application Error</div>
+                        <div class="text-[10px] text-gray-400 truncate">${escapeHTML(e.message)} (${e.filename}:${e.lineno})</div>
+                    </div>
+                    <button onclick="this.closest('div').remove()" class="p-1 text-gray-400 hover:text-white rounded-full transition flex-shrink-0">
+                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                    </button>
+                `;
                 container.appendChild(toast);
+                if (window.lucide) window.lucide.createIcons();
+                if (window.hugeicons) window.hugeicons.createIcons();
                 setTimeout(() => toast.remove(), 15000);
             }
         });
@@ -656,11 +669,10 @@
 
                 btn.innerHTML = `
                     <span class="flex items-center">
-                        ${iconHTML}
                         <span>${item.label}</span>
                         ${badgeHTML}
                     </span>
-                    ${item.chevron ? '<i data-lucide="chevron-right" class="w-4 h-4 text-gray-500"></i>' : ''}
+                    ${iconHTML || (item.chevron ? '<i data-lucide="chevron-right" class="w-4 h-4 text-gray-500"></i>' : '')}
                 `;
 
                 btn.onclick = (e) => {
@@ -1942,14 +1954,12 @@
             let navigationButtons = '';
             if (!isUngrouped && AppState.groups.length > 1) {
                 navigationButtons = `
-                    <div class="flex items-center space-x-1 mr-1">
-                        <button onclick="moveGroupColumn('${groupId}', -1, event)" class="text-gray-500 hover:text-white p-1 hover:bg-white/5 rounded transition-all" title="Move Left" ${index === 0 ? 'disabled opacity-30 cursor-not-allowed' : ''}>
-                            <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
-                        </button>
-                        <button onclick="moveGroupColumn('${groupId}', 1, event)" class="text-gray-500 hover:text-white p-1 hover:bg-white/5 rounded transition-all" title="Move Right" ${index === AppState.groups.length - 1 ? 'disabled opacity-30 cursor-not-allowed' : ''}>
-                            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-                        </button>
-                    </div>
+                    <button onclick="moveGroupColumn('${groupId}', -1, event)" class="p-1 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition" title="Move Left" ${index === 0 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>
+                        <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <button onclick="moveGroupColumn('${groupId}', 1, event)" class="p-1 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition" title="Move Right" ${index === AppState.groups.length - 1 ? 'disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>
+                        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                    </button>
                 `;
             }
 
@@ -1975,15 +1985,19 @@
                          <span class="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded-full font-mono flex-shrink-0">${tasks.length}</span>
                      </div>
                      <div class="flex items-center space-x-1">
-                         ${navigationButtons}
-                         ${!isUngrouped ? `
-                             <button onclick="openEditGroupModalTriggerFromId('${groupId}', event)" class="text-gray-500 hover:text-white p-1 rounded hover:bg-white/5 transition" title="Edit Group Column">
-                                 <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                             </button>
-                             <button onclick="handleDeleteGroup('${groupId}')" class="text-gray-500 hover:text-red-400 p-1 rounded hover:bg-white/5 transition" title="Delete Group Column">
-                                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                             </button>
-                         ` : ''}
+                         <div class="ui-button-group border border-white/10 bg-white/[0.03] rounded-full p-0.5 flex items-center shadow-sm">
+                             ${navigationButtons}
+                             ${!isUngrouped && AppState.groups.length > 1 ? `<div class="ui-button-group-separator w-[1px] h-3 bg-white/10 mx-0.5"></div>` : ''}
+                             ${!isUngrouped ? `
+                                 <button onclick="openEditGroupModalTriggerFromId('${groupId}', event)" class="p-1 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition" title="Edit Group Column">
+                                     <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                                 </button>
+                                 <div class="ui-button-group-separator w-[1px] h-3 bg-white/10 mx-0.5"></div>
+                                 <button onclick="handleDeleteGroup('${groupId}')" class="p-1 text-gray-400 hover:text-red-400 hover:bg-white/10 rounded-full transition" title="Delete Group Column">
+                                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                 </button>
+                             ` : ''}
+                         </div>
                      </div>
                 </div>
                 <div class="space-y-2 min-h-[50px] transition-all duration-150" id="group-body-${groupId}"></div>
@@ -1999,6 +2013,12 @@
                 `;
             } else {
                 tasks.forEach((task, cardIndex) => {
+                    if (cardIndex > 0) {
+                        const sep = document.createElement('div');
+                        sep.className = 'ui-separator my-2.5';
+                        sep.setAttribute('data-orientation', 'horizontal');
+                        cardsContainer.appendChild(sep);
+                    }
                     const project = AppState.projects.find(p => p.id === task.projectId);
                     const subDone = task.subtasks ? task.subtasks.filter(s => s.done).length : 0;
                     const subTotal = task.subtasks ? task.subtasks.length : 0;
@@ -2655,30 +2675,27 @@
                 }
 
                 menu.innerHTML = `
-                    <button onmouseenter="hideGroupSubmenu()" onclick="contextToggleComplete()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-3 font-medium">
-                        <i data-lucide="check" class="w-4 h-4 text-gray-400"></i>
+                    <button onmouseenter="hideGroupSubmenu()" onclick="contextToggleComplete()" class="ui-menu-item">
                         <span>Toggle Complete</span>
+                        <i data-lucide="check" class="w-4 h-4 text-gray-400"></i>
                     </button>
-                    <button onmouseenter="hideGroupSubmenu()" onclick="handleUnifiedHoldAction()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-3 font-medium">
-                        <i data-lucide="${holdIcon}" class="w-4 h-4 ${holdColorClass}"></i>
+                    <button onmouseenter="hideGroupSubmenu()" onclick="handleUnifiedHoldAction()" class="ui-menu-item">
                         <span>${holdLabel}</span>
+                        <i data-lucide="${holdIcon}" class="w-4 h-4 ${holdColorClass}"></i>
                     </button>
-                    <button onmouseenter="hideGroupSubmenu()" onclick="contextOpenDetails()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-3 font-medium">
-                        <i data-lucide="sliders" class="w-4 h-4 text-gray-400"></i>
+                    <button onmouseenter="hideGroupSubmenu()" onclick="contextOpenDetails()" class="ui-menu-item">
                         <span>Edit Specifications</span>
+                        <i data-lucide="sliders" class="w-4 h-4 text-gray-400"></i>
                     </button>
-                    <div class="border-t border-white/5 my-1"></div>
-                    <button onmouseenter="showGroupSubmenu(event)" onclick="showGroupSubmenu(event)" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium group">
-                        <div class="flex items-center space-x-3">
-                            <i data-lucide="folder-output" class="w-4 h-4 text-gray-400 group-hover:text-white"></i>
-                            <span>Move to group</span>
-                        </div>
-                        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-500"></i>
+                    <div class="ui-separator my-1" data-orientation="horizontal"></div>
+                    <button onmouseenter="showGroupSubmenu(event)" onclick="showGroupSubmenu(event)" class="ui-menu-item group">
+                        <span>Move to group</span>
+                        <i data-lucide="folder-output" class="w-4 h-4 text-gray-400 group-hover:text-white"></i>
                     </button>
-                    <div class="border-t border-white/5 my-1"></div>
-                    <button onmouseenter="hideGroupSubmenu()" onclick="contextDeleteTask()" class="w-full text-left px-4 py-2 text-red-400 hover:bg-red-500/10 transition flex items-center space-x-3 font-medium">
-                        <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
+                    <div class="ui-separator my-1" data-orientation="horizontal"></div>
+                    <button onmouseenter="hideGroupSubmenu()" onclick="contextDeleteTask()" class="ui-menu-item" data-destructive="true">
                         <span>Delete Task</span>
+                        <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
                     </button>
                 `;
             }
@@ -2790,19 +2807,19 @@
             const isHeld = group.holdDeletion || false;
             
             menu.innerHTML = `
-                <button onclick="openEditGroupModalTrigger()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                    <i data-lucide="edit" class="w-3.5 h-3.5"></i>
+                <button onclick="openEditGroupModalTrigger()" class="ui-menu-item">
                     <span>Edit Group settings</span>
+                    <i data-lucide="edit" class="w-3.5 h-3.5"></i>
                 </button>
-                <div class="border-t border-white/[0.03] my-1"></div>
-                <button onclick="triggerGroupHold(${isHeld})" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
-                    <i data-lucide="${isHeld ? 'unlock' : 'lock'}" class="w-3.5 h-3.5 text-[#2997ff]"></i>
+                <div class="ui-separator my-1" data-orientation="horizontal"></div>
+                <button onclick="triggerGroupHold(${isHeld})" class="ui-menu-item">
                     <span>${isHeld ? 'Unhold Auto-Delete' : 'Hold Auto-Delete'}</span>
+                    <i data-lucide="${isHeld ? 'unlock' : 'lock'}" class="w-3.5 h-3.5 text-[#2997ff]"></i>
                 </button>
-                <div class="border-t border-white/[0.03] my-1"></div>
-                <button onclick="contextDeleteGroupTrigger()" class="w-full text-left px-4 py-2 hover:bg-red-500/10 hover:text-red-400 transition flex items-center space-x-2">
-                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                <div class="ui-separator my-1" data-orientation="horizontal"></div>
+                <button onclick="contextDeleteGroupTrigger()" class="ui-menu-item" data-destructive="true">
                     <span>Delete Group Column</span>
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                 </button>
             `;
             
@@ -5357,6 +5374,26 @@
             lucide.createIcons(); 
             setInterval(checkAndAutoDeleteTasks, 10000);
         }
+
+        function toggleHeaderSearch(event) {
+            if (event) event.stopPropagation();
+            const searchContainer = document.getElementById('header-search-container');
+            const searchInput = document.getElementById('global-search');
+            if (!searchContainer || !searchInput) return;
+
+            const isExpanded = searchContainer.style.width === '190px';
+            if (isExpanded) {
+                searchContainer.style.width = '32px';
+                searchInput.classList.add('opacity-0', 'pointer-events-none');
+                searchInput.value = '';
+                handleSearch('');
+            } else {
+                searchContainer.style.width = '190px';
+                searchInput.classList.remove('opacity-0', 'pointer-events-none');
+                searchInput.focus();
+            }
+        }
+        window.toggleHeaderSearch = toggleHeaderSearch;
 
         window.addEventListener('storage', (e) => {
             if (e.key === 'CLIPBOARD_TASKS_DATA_V3' || e.key === 'CLIPBOARD_PROJECTS_DATA_V3' || e.key === 'CLIPBOARD_GROUPS_DATA_V3' || e.key === 'CLIPBOARD_PROFILE_DATA_V3' || e.key === 'CLIPBOARD_DEVICE_SYNC_FLAG') {
