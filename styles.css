@@ -205,47 +205,130 @@
             color: #FCA5A5;
         }
 
-        /* Base UI Side Drawer Specification */
+        /* Base UI Side Drawer & Draggable Bottom Sheet Specification */
         :root {
             --drawer-inset: 0px;
             --drawer-bleed-background: #141414;
             --drawer-overlay-min-opacity: 0;
         }
-        .drawer-swipe-handle {
-            width: 36px;
-            height: 4px;
+        .sheet-root {
+            position: fixed;
+            inset: 0;
+            z-index: 150;
+        }
+        .sheet-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            transition: opacity 0.15s linear;
+            touch-action: none;
+        }
+        .sheet-panel {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            max-width: 480px;
+            margin: 0 auto;
+            background: #121212;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-bottom: none;
+            border-radius: 24px 24px 0 0;
+            box-shadow: 0 -12px 40px rgba(0,0,0,0.65);
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            will-change: transform;
+            touch-action: none;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            overflow: hidden;
+        }
+        .sheet-handle-zone {
+            display: flex;
+            justify-content: center;
+            padding: 12px 0 6px;
+            cursor: grab;
+            touch-action: none;
+            flex-shrink: 0;
+        }
+        .sheet-handle-zone:active {
+            cursor: grabbing;
+        }
+        .sheet-handle {
+            width: 40px;
+            height: 5px;
             border-radius: 9999px;
-            background-color: rgba(255, 255, 255, 0.2);
-            margin: 8px auto 12px auto;
+            background: rgba(255, 255, 255, 0.25);
+        }
+        .sheet-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 20px 14px;
+            cursor: grab;
+            touch-action: none;
+            border-b: 1px solid rgba(255, 255, 255, 0.05);
+            flex-shrink: 0;
+        }
+        .sheet-header:active {
+            cursor: grabbing;
+        }
+        .sheet-content {
+            padding: 16px 20px 28px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            flex: 1;
+        }
+
+        .drawer-swipe-handle {
+            width: 40px;
+            height: 5px;
+            border-radius: 9999px;
+            background-color: rgba(255, 255, 255, 0.25);
+            margin: 10px auto 12px auto;
             flex-shrink: 0;
             cursor: grab;
+            touch-action: none;
+        }
+        .drawer-swipe-handle:active {
+            cursor: grabbing;
         }
         .drawer-content-base {
-            background-color: #141414;
+            background-color: #121212;
             color: #FFFFFF;
             border: none !important;
             box-shadow: -10px 0 40px rgba(0, 0, 0, 0.6) !important;
             outline: none !important;
-            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1) !important;
         }
 
-        /* Inspector Slide In & Slide Out Animations */
-        .drawer-slide-in {
-            animation: drawer-slide-in-right 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+        /* Container Task Thread Styles (no card background) */
+        .task-container-thread {
+            position: relative;
+            padding: 8px 4px;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        .subtask-thread-line {
+            position: relative;
+            padding-left: 20px;
+        }
+        .subtask-thread-line::before {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: -6px;
+            bottom: 12px;
+            width: 2px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 1px;
         }
 
-        .drawer-slide-out {
-            animation: drawer-slide-out-right 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-        }
-
-        @keyframes drawer-slide-in-right {
-            0% {
-                transform: translateX(100%);
-                opacity: 0.5;
-            }
-            100% {
-                transform: translateX(0%);
-                opacity: 1;
+        @media (prefers-reduced-motion: reduce) {
+            .sheet-panel, #inspector-panel, .modal-draggable-target {
+                transition: opacity 0.15s linear !important;
+                transform: none !important;
             }
         }
 

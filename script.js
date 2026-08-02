@@ -154,6 +154,7 @@
             searchQuery: '',
             sortBy: 'created',
             sidebarCollapsed: false,
+            pinnedTaskIds: [], // Direct sidebar pinned task IDs
             
             tempProjectColor: '#FF3B30',
             tempProjectIcon: 'smile',
@@ -187,9 +188,248 @@
             counterTargetPolicy: 'tasks' // Can be 'tasks' or 'subtasks'
         };
 
-        let contextSelectedTaskId = null;
-        let contextSelectedGroupId = null;
-        let deleteActionCallback = null;
+        // Mobile header search helpers
+        function openMobileSearchMode() {
+            const activeSearch = document.getElementById('mobile-search-active-container');
+            const groupsWrapper = document.getElementById('mobile-header-groups-wrapper');
+            const input = document.getElementById('mobile-search-input-active');
+            if (activeSearch && groupsWrapper && input) {
+                groupsWrapper.classList.add('hidden');
+                activeSearch.classList.remove('hidden');
+                activeSearch.classList.add('flex');
+                input.focus();
+            }
+        }
+
+        function closeMobileSearchMode() {
+            const activeSearch = document.getElementById('mobile-search-active-container');
+            const groupsWrapper = document.getElementById('mobile-header-groups-wrapper');
+            const input = document.getElementById('mobile-search-input-active');
+            if (activeSearch && groupsWrapper && input) {
+                input.value = '';
+                handleSearch('');
+                activeSearch.classList.add('hidden');
+                activeSearch.classList.remove('flex');
+                groupsWrapper.classList.remove('hidden');
+            }
+        }
+        window.openMobileSearchMode = openMobileSearchMode;
+        window.closeMobileSearchMode = closeMobileSearchMode;
+
+        // Unified Draggable Sheet Controller Logic
+        function makeModalDraggable(containerEl, onCloseCallback) {
+            if (!containerEl || containerEl.dataset.dragInitialized) return;
+            containerEl.dataset.dragInitialized = 'true';
+
+            let startY = 0;
+            let currentY = 0;
+            let isDragging = false;
+            let sheetHeight = 0;
+            let samples = [];
+
+            const handleZone = containerEl.querySelector('.sheet-handle-zone, .drawer-swipe-handle, .sheet-header, [data-drag-handle]') || containerEl;
+
+            const getPointY = (e) => (e.touches ? e.touches[0].clientY : e.clientY);
+
+            const onStart = (e) => {
+                const scrollable = e.target.closest('.overflow-y-auto');
+                if (scrollable && scrollable.scrollTop > 0) return;
+                
+                isDragging = true;
+                startY = getPointY(e);
+                currentY = startY;
+                sheetHeight = containerEl.offsetHeight || 400;
+                samples = [{ y: startY, t: performance.now() }];
+                containerEl.style.transition = 'none';
+            };
+
+            const onMove = (e) => {
+                if (!isDragging) return;
+                const y = getPointY(e);
+                currentY = y;
+                let delta = y - startY;
+                if (delta < 0) delta = delta / 4;
+
+                const pos = delta > 0 ? delta : 0;
+                containerEl.style.transform = `translateY(${pos}px)`;
+
+                const now = performance.now();
+                samples.push({ y, t: now });
+                samples = samples.filter(p => now - p.t < 100);
+
+                if (e.cancelable) e.preventDefault();
+            };
+
+            const onEnd = () => {
+                if (!isDragging) return;
+                isDragging = false;
+                containerEl.style.transition = 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)';
+
+                const distance = Math.max(0, currentY - startY);
+                let velocity = 0;
+                if (samples.length >= 2) {
+                    const first = samples[0];
+                    const last = samples[samples.length - 1];
+                    const dt = last.t - first.t || 1;
+                    velocity = (last.y - first.y) / dt;
+                }
+
+                if (distance > sheetHeight * 0.35 || (velocity > 0.6 && distance > 10)) {
+                    containerEl.style.transform = `translateY(${sheetHeight}px)`;
+                    setTimeout(() => {
+                        containerEl.style.transform = '';
+                        if (onCloseCallback) onCloseCallback();
+                    }, 200);
+                } else {
+                    containerEl.style.transform = 'translateY(0px)';
+                }
+            };
+
+            handleZone.addEventListener('pointerdown', onStart);
+            window.addEventListener('pointermove', onMove, { passive: false });
+            window.addEventListener('pointerup', onEnd);
+            window.addEventListener('pointercancel', onEnd);
+        }
+
+        // Attach touch gesture inspectors and sidebars
+        (function initTouchGestureController() {
+            let touchStartX = 0;
+            let touchStartY = 0;
+            let currentTouchX = 0;
+            let currentTouchY = 0;
+            let isDraggingSidebar = false;
+            let isDraggingInspector = false;
+
+            const getSidebar = () => document.getElementById('sidebar-panel');
+            const getInspector = () => document.getElementById('inspector-panel');
+
+            let sidebarOverlay = document.getElementById('sidebar-touch-overlay');
+            if (!sidebarOverlay) {
+                sidebarOverlay = document.createElement('div');
+                sidebarOverlay.id = 'sidebar-touch-overlay';
+                sidebarOverlay.className = "fixed inset-0 bg-black/60 z-[35] hidden transition-opacity duration-150 pointer-events-auto";
+                sidebarOverlay.onclick = () => closeSidebarMobile();
+                document.body.appendChild(sidebarOverlay);
+            }
+
+            let inspectorOverlay = document.getElementById('inspector-touch-overlay');
+            if (!inspectorOverlay) {
+                inspectorOverlay = document.createElement('div');
+                inspectorOverlay.id = 'inspector-touch-overlay';
+                inspectorOverlay.className = "fixed inset-0 bg-black/60 z-[145] hidden transition-opacity duration-150 pointer-events-auto";
+                inspectorOverlay.onclick = () => closeInspector();
+                document.body.appendChild(inspectorOverlay);
+            }
+
+            document.addEventListener('touchstart', (e) => {
+                if (window.innerWidth >= 768) return;
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                currentTouchX = touchStartX;
+                currentTouchY = touchStartY;
+
+                const sidebar = getSidebar();
+                const isSidebarOpen = sidebar && !AppState.sidebarCollapsed;
+
+                const inspector = getInspector();
+                const isInspectorOpen = inspector && AppState.selectedTaskId !== null;
+
+                if (isSidebarOpen) {
+                    if (touchStartX > 200 || e.target.closest('#sidebar-panel')) {
+                        isDraggingSidebar = true;
+                    }
+                } else {
+                    isDraggingSidebar = true;
+                }
+
+                if (isInspectorOpen && e.target.closest('#inspector-panel')) {
+                    const scrollContainer = e.target.closest('.overflow-y-auto');
+                    if (!scrollContainer || scrollContainer.scrollTop <= 0) {
+                        isDraggingInspector = true;
+                    }
+                }
+            }, { passive: true });
+
+            document.addEventListener('touchmove', (e) => {
+                if (window.innerWidth >= 768) return;
+                currentTouchX = e.touches[0].clientX;
+                currentTouchY = e.touches[0].clientY;
+                const deltaX = currentTouchX - touchStartX;
+                const deltaY = currentTouchY - touchStartY;
+
+                const sidebar = getSidebar();
+                const isSidebarOpen = sidebar && !AppState.sidebarCollapsed;
+
+                if (isDraggingSidebar && sidebar) {
+                    if (isSidebarOpen && deltaX < 0) {
+                        const progress = Math.max(0, Math.min(1, 1 + (deltaX / 280)));
+                        sidebar.style.transform = `translateX(${deltaX}px)`;
+                        sidebarOverlay.classList.remove('hidden');
+                        sidebarOverlay.style.opacity = progress;
+                    } else if (!isSidebarOpen && deltaX > 0) {
+                        const progress = Math.max(0, Math.min(1, deltaX / 280));
+                        sidebar.classList.remove('hidden');
+                        sidebar.style.transform = `translateX(${-280 + deltaX}px)`;
+                        sidebarOverlay.classList.remove('hidden');
+                        sidebarOverlay.style.opacity = progress;
+                    }
+                }
+
+                const inspector = getInspector();
+                const isInspectorOpen = inspector && AppState.selectedTaskId !== null;
+
+                if (isDraggingInspector && inspector && isInspectorOpen && deltaY > 0) {
+                    const progress = Math.max(0, Math.min(1, 1 - (deltaY / (window.innerHeight * 0.5))));
+                    inspector.style.transform = `translateY(${deltaY}px)`;
+                    inspectorOverlay.classList.remove('hidden');
+                    inspectorOverlay.style.opacity = progress;
+                }
+            }, { passive: true });
+
+            document.addEventListener('touchend', () => {
+                if (window.innerWidth >= 768) return;
+                const deltaX = currentTouchX - touchStartX;
+                const deltaY = currentTouchY - touchStartY;
+
+                const sidebar = getSidebar();
+                const isSidebarOpen = sidebar && !AppState.sidebarCollapsed;
+
+                if (isDraggingSidebar && sidebar) {
+                    sidebar.style.transform = '';
+                    sidebarOverlay.style.opacity = '';
+                    if (isSidebarOpen && deltaX < -60) {
+                        closeSidebarMobile();
+                        sidebarOverlay.classList.add('hidden');
+                    } else if (!isSidebarOpen && touchStartX < 35 && deltaX > 60) {
+                        openSidebarMobile();
+                        sidebarOverlay.classList.remove('hidden');
+                    } else if (isSidebarOpen) {
+                        sidebarOverlay.classList.remove('hidden');
+                        sidebarOverlay.classList.add('opacity-[#100]');
+                    } else {
+                        sidebarOverlay.classList.add('hidden');
+                    }
+                }
+
+                const inspector = getInspector();
+                const isInspectorOpen = inspector && AppState.selectedTaskId !== null;
+
+                if (isDraggingInspector && inspector && isInspectorOpen) {
+                    inspector.style.transform = '';
+                    inspectorOverlay.style.opacity = '';
+                    if (deltaY > 80) {
+                        closeInspector();
+                        inspectorOverlay.classList.add('hidden');
+                    } else {
+                        inspectorOverlay.classList.remove('hidden');
+                        inspectorOverlay.classList.add('opacity-100');
+                    }
+                }
+
+                isDraggingSidebar = false;
+                isDraggingInspector = false;
+            }, { passive: true });
+        })();
 
         function updateSyncStatusUI(status) {
             const statusIndicator = document.getElementById('storage-status');
@@ -1694,20 +1934,119 @@
             }
         }
 
-        function switchTab(tabId) {
-            AppState.currentTab = tabId;
-            renderTaskFeed();
-            updateGlobalBadges();
-
-            if (window.innerWidth < 768) {
-                closeSidebarMobile();
+        function togglePinTaskToSidebar(taskId) {
+            if (!AppState.pinnedTaskIds) AppState.pinnedTaskIds = [];
+            const idx = AppState.pinnedTaskIds.indexOf(taskId);
+            const task = AppState.tasks.find(t => t.id === taskId);
+            if (idx > -1) {
+                AppState.pinnedTaskIds.splice(idx, 1);
+                showToast('Removed from Sidebar', task ? `"${task.title}" removed from pinned sidebar items.` : 'Task unpinned.');
+            } else {
+                AppState.pinnedTaskIds.push(taskId);
+                showToast('Added to Sidebar', task ? `"${task.title}" pinned directly to sidebar.` : 'Task pinned.');
             }
+            syncDeviceDataChannels();
+            updateGlobalBadges();
+            hideContextMenu();
+        }
+        window.togglePinTaskToSidebar = togglePinTaskToSidebar;
+
+        function updateGlobalBadges() {
+            const todayStr = getTodayDateString();
+            const inboxCount = AppState.tasks.filter(t => !t.done).length;
+            const todayCount = AppState.tasks.filter(t => !t.done && t.dueDate === todayStr).length;
+            
+            const badgeInbox = document.getElementById('badge-inbox');
+            if (badgeInbox) badgeInbox.textContent = inboxCount;
+            const badgeToday = document.getElementById('badge-today');
+            if (badgeToday) badgeToday.textContent = todayCount;
+
+            const activeTabBadge = document.getElementById('active-tab-badge');
+            if (activeTabBadge) {
+                let currentCount = 0;
+                if (AppState.counterTargetPolicy === 'subtasks') {
+                    AppState.tasks.forEach(t => {
+                        if (!t.done && t.subtasks) {
+                            currentCount += t.subtasks.filter(s => !s.done).length;
+                        }
+                    });
+                    activeTabBadge.textContent = `${currentCount} subtasks`;
+                } else {
+                    currentCount = getFilteredTasks().length;
+                    activeTabBadge.textContent = `${currentCount} items`;
+                }
+            }
+
+            renderProjectsList();
+            renderSidebarPinnedTasks();
         }
 
-        function toggleSidebarCollapse() {
-            const sidebar = document.getElementById('sidebar-panel');
-            const resizer = document.getElementById('sidebar-resizer');
-            const uncollapseBtn = document.getElementById('sidebar-uncollapse-btn');
+        function renderSidebarPinnedTasks() {
+            const section = document.getElementById('sidebar-pinned-tasks-section');
+            const container = document.getElementById('sidebar-pinned-tasks-list');
+            const badge = document.getElementById('badge-pinned-count');
+            if (!section || !container) return;
+
+            if (!AppState.pinnedTaskIds) AppState.pinnedTaskIds = [];
+
+            // Filter pinned tasks that are active (disappear when done)
+            const pinnedTasks = AppState.tasks.filter(t => AppState.pinnedTaskIds.includes(t.id) && !t.done);
+
+            if (pinnedTasks.length === 0) {
+                section.classList.add('hidden');
+                return;
+            }
+
+            section.classList.remove('hidden');
+            if (badge) badge.textContent = pinnedTasks.length;
+            container.innerHTML = '';
+
+            pinnedTasks.forEach(task => {
+                const btn = document.createElement('button');
+                btn.className = `w-full flex items-center justify-between px-3 py-2 rounded-xl transition text-xs font-semibold text-left hover:bg-white/5 relative group ${AppState.selectedTaskId === task.id ? 'bg-white/10 text-white' : 'text-gray-300'}`;
+                btn.onclick = (e) => selectTask(task.id, e);
+                
+                const accentColor = task.color || '#2997ff';
+
+                btn.innerHTML = `
+                    <span class="flex items-center space-x-2.5 min-w-0 pr-2">
+                        <button onclick="toggleTaskDone('${task.id}', event)" class="w-3.5 h-3.5 rounded-full border flex items-center justify-center flex-shrink-0 transition" style="border-color: ${accentColor};" title="Complete">
+                        </button>
+                        <span class="truncate text-xs font-medium ${task.done ? 'line-through text-gray-500' : 'text-gray-200'}">${escapeHTML(task.title)}</span>
+                    </span>
+                    <i data-lucide="pin" class="w-3 h-3 text-amber-400 opacity-60 group-hover:opacity-100 transition flex-shrink-0"></i>
+                `;
+                container.appendChild(btn);
+            });
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        function renderProjectsList() {
+            const container = document.getElementById('projects-list-container');
+            if (!container) return;
+
+            container.innerHTML = '';
+            AppState.projects.forEach(project => {
+                const count = AppState.tasks.filter(t => !t.done && t.projectId === project.id).length;
+                const isSelected = AppState.currentTab === project.id;
+                
+                const btn = document.createElement('button');
+                btn.onclick = () => switchTab(project.id);
+                btn.oncontextmenu = (e) => openEditProjectModal(project.id, e);
+                btn.className = `w-full flex items-center justify-between px-3 py-2 rounded-xl transition text-xs font-semibold text-left hover:bg-white/5 relative group ${isSelected ? 'bg-white/10 text-white' : 'text-gray-300'}`;
+                
+                btn.innerHTML = `
+                    <span class="flex items-center space-x-2.5 min-w-0">
+                        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: ${project.color || '#FF3B30'};"></span>
+                        <i data-lucide="${project.icon || 'smile'}" class="w-3.5 h-3.5 flex-shrink-0 text-gray-400 group-hover:text-white transition"></i>
+                        <span class="truncate text-xs font-medium">${escapeHTML(project.title)}</span>
+                    </span>
+                    <span class="ui-badge font-mono text-[9px]" data-variant="secondary">${count}</span>
+                `;
+                container.appendChild(btn);
+            });
+            if (window.lucide) window.lucide.createIcons();
+        }
 
             if (!sidebar) return;
 
@@ -2045,13 +2384,13 @@
                     let subtasksHTML = '';
                     if (task.subtasks && task.subtasks.length > 0) {
                         subtasksHTML = `
-                            <div class="mt-3 pt-2.5 border-t border-white/[0.03] space-y-1.5">
+                            <div class="mt-2.5 pt-2 subtask-thread-line space-y-1.5">
                                 ${task.subtasks.map(s => {
                                     const subtaskAccent = task.done ? '#7a7a7a' : accentColor;
                                     const subBorderColor = `border-color: ${subtaskAccent};`;
                                     const subBgColor = s.done ? `background-color: ${subtaskAccent};` : `background-color: transparent;`;
                                     return `
-                                        <div class="flex items-center space-x-2 px-1 py-0.5 rounded hover:bg-white/[0.02] transition">
+                                        <div class="flex items-center space-x-2.5 px-1 py-1 rounded hover:bg-white/[0.03] transition">
                                             <button onclick="toggleCardSubtaskDone('${task.id}', '${s.id}', event)" class="w-3.5 h-3.5 rounded-full border flex items-center justify-center flex-shrink-0 transition-all duration-150" style="${subBorderColor} ${subBgColor}">
                                                 ${s.done ? `<i data-lucide="check" class="w-2.5 h-2.5 text-[#0A0A0A] font-extrabold tick-animation"></i>` : ''}
                                             </button>
@@ -2064,7 +2403,7 @@
                     }
 
                     const card = document.createElement('div');
-                    card.className = `group-card relative p-2.5 rounded-lg hover:bg-white/[0.03] transition duration-150 ${isSelected ? 'bg-white/[0.04] ring-1 ring-[#2997ff]' : ''}`;
+                    card.className = `group-card relative py-2.5 px-3 rounded-xl transition duration-150 hover:bg-white/[0.02] ${isSelected ? 'ring-1 ring-[#2997ff]/60 bg-white/[0.03]' : ''}`;
                     card.setAttribute('data-task-id', task.id); 
                     card.setAttribute('oncontextmenu', `showContextMenu(event, '${task.id}')`);
                     card.onclick = (e) => selectTask(task.id, e);
@@ -2665,6 +3004,7 @@
                 const task = AppState.tasks.find(t => t.id === taskId);
                 const isDoneView = (AppState.currentTab === 'done');
                 const isHeld = isDoneView ? (task ? task.holdDeletion : false) : (task ? !!task.isHeldTask : false);
+                const isPinned = AppState.pinnedTaskIds && AppState.pinnedTaskIds.includes(taskId);
                 
                 let holdLabel = 'Hold Task';
                 let holdIcon = isHeld ? 'play-circle' : 'pause-circle';
@@ -2680,6 +3020,10 @@
                     <button onmouseenter="hideGroupSubmenu()" onclick="contextToggleComplete()" class="ui-menu-item">
                         <span>Toggle Complete</span>
                         <i data-lucide="check" class="w-4 h-4 text-gray-400"></i>
+                    </button>
+                    <button onmouseenter="hideGroupSubmenu()" onclick="togglePinTaskToSidebar('${taskId}')" class="ui-menu-item">
+                        <span>${isPinned ? 'Remove from sidebar' : 'Add to sidebar'}</span>
+                        <i data-lucide="pin" class="w-4 h-4 text-amber-400"></i>
                     </button>
                     <button onmouseenter="hideGroupSubmenu()" onclick="handleUnifiedHoldAction()" class="ui-menu-item">
                         <span>${holdLabel}</span>
@@ -5344,6 +5688,15 @@
                 if (resizer) resizer.style.display = 'none';
                 if (uncollapseBtn) uncollapseBtn.classList.remove('hidden');
             }
+
+            // Bind draggable bottom sheet gesture logic to all app sheets & modals
+            makeModalDraggable(document.getElementById('task-modal-container'), closeAddTaskModal);
+            makeModalDraggable(document.getElementById('project-modal-container'), closeProjectModal);
+            makeModalDraggable(document.getElementById('group-modal-container'), closeGroupModal);
+            makeModalDraggable(document.getElementById('archive-modal-container'), closeArchiveModal);
+            makeModalDraggable(document.getElementById('profile-customizer-container'), closeProfileCustomizerModal);
+            makeModalDraggable(document.getElementById('mobile-drawer'), closeMobileDrawer);
+            makeModalDraggable(document.getElementById('inspector-panel'), closeInspector);
 
             initSupabaseAuth();
 

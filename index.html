@@ -89,6 +89,17 @@
                         </button>
                     </div>
 
+                    <!-- Pinned Tasks Section (Between Workspace & Collections) -->
+                    <div id="sidebar-pinned-tasks-section" class="hidden space-y-2">
+                        <div class="flex items-center justify-between px-3 mb-1">
+                            <h3 class="text-[10px] font-bold tracking-widest uppercase text-amber-400/90 flex items-center">
+                                <i data-lucide="pin" class="w-3 h-3 mr-1 text-amber-400"></i> Pinned Tasks
+                            </h3>
+                            <span id="badge-pinned-count" class="ui-badge font-mono text-[9px]" data-variant="secondary">0</span>
+                        </div>
+                        <div id="sidebar-pinned-tasks-list" class="space-y-1"></div>
+                    </div>
+
                     <div class="space-y-2">
                         <div class="flex items-center justify-between px-3 mb-1">
                             <h3 class="text-[10px] font-bold tracking-widest uppercase text-gray-500">Collections</h3>
@@ -275,34 +286,75 @@
                         </div>
                     </div>
 
-                    <!-- Mobile Compact Icons Bar -->
-                    <div id="mobile-action-section-header" class="flex md:hidden items-center space-x-3 text-[#2997ff]">
-                        <button onclick="toggleMobileSearchBar()" class="p-2 hover:bg-white/5 rounded-full transition" title="Search">
-                            <i data-lucide="search" class="w-5 h-5 text-[#2997ff]"></i>
-                        </button>
-                        <button onclick="openAddTaskModal()" class="p-2 hover:bg-white/5 rounded-full transition" title="Create Task">
-                            <i data-lucide="circle-plus" class="w-5 h-5 text-[#2997ff]"></i>
-                        </button>
-                        <button onclick="openAddGroupModal()" class="p-2 hover:bg-white/5 rounded-full transition" title="Create Group">
-                            <i data-lucide="folder-pen" class="w-5 h-5 text-[#2997ff]"></i>
-                        </button>
-                        <button onclick="toggleCustomDropdown('sort-dropdown-options-mobile', event)" class="p-2 hover:bg-white/5 rounded-full transition relative" title="Sort">
-                            <i data-lucide="arrow-up-down" class="w-5 h-5 text-[#2997ff]"></i>
-                        </button>
-                        <div id="sort-dropdown-options-mobile" class="hidden absolute right-4 top-12 w-48 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-50 py-2 text-xs text-gray-200 backdrop-blur-xl">
-                            <button type="button" onclick="selectSortOption('created', 'Date created')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition">Date created</button>
-                            <button type="button" onclick="selectSortOption('due', 'Due date')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition">Due date</button>
-                            <button type="button" onclick="selectSortOption('priority', 'Priority level')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition">Priority level</button>
-                            <button type="button" onclick="selectSortOption('alphabetical', 'Alphabetical')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition">Alphabetical</button>
+                    <!-- Mobile Grouped Action Header Section -->
+                    <div id="mobile-action-section-header" class="flex md:hidden items-center justify-end space-x-1.5 text-[#2997ff] w-full">
+                        <!-- Mobile Search active replacement bar -->
+                        <div id="mobile-search-active-container" class="hidden flex-1 items-center bg-white/5 border border-white/10 rounded-full px-3 py-1 mr-1 transition-all">
+                            <i data-lucide="search" class="w-3.5 h-3.5 text-[#2997ff] mr-2 flex-shrink-0"></i>
+                            <input type="text" id="mobile-search-input-active" oninput="handleSearch(this.value)" placeholder="Search tasks..." class="w-full bg-transparent text-xs text-white placeholder-gray-500 focus:outline-none">
+                            <button type="button" onclick="closeMobileSearchMode()" class="p-1 text-gray-400 hover:text-white rounded-full ml-1">
+                                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            </button>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Mobile Expandable Search Bar Input -->
-                <div id="mobile-search-bar-container" class="hidden md:hidden px-4 py-2 bg-[#0C0C0C] border-b border-white/5">
-                    <div class="relative">
-                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4"></i>
-                        <input type="text" id="mobile-search-input" oninput="handleSearch(this.value)" placeholder="Search tasks..." class="w-full bg-white/5 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/10">
+                        <!-- Mobile Header Action Groups (Disappears when search is open) -->
+                        <div id="mobile-header-groups-wrapper" class="flex items-center space-x-1.5">
+                            <!-- Group 1: Task Creation, Add Group, Archive -->
+                            <div class="ui-button-group border border-white/10 bg-white/[0.03] rounded-full p-0.5 flex items-center shadow-lg" role="group">
+                                <button onclick="openAddTaskModal()" class="p-1.5 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="New Task">
+                                    <i data-lucide="plus-circle" class="w-4 h-4 text-[#2997ff]"></i>
+                                </button>
+                                <div class="ui-button-group-separator w-[1px] h-3.5 bg-white/10 mx-0.5" role="separator"></div>
+                                <button onclick="openAddGroupModal()" class="p-1.5 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="Add Group">
+                                    <i data-lucide="plus-square" class="w-4 h-4 text-[#2997ff]"></i>
+                                </button>
+                                <div class="ui-button-group-separator w-[1px] h-3.5 bg-white/10 mx-0.5" role="separator"></div>
+                                <button onclick="openArchiveModal()" class="p-1.5 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="Archive">
+                                    <i data-lucide="archive" class="w-4 h-4 text-emerald-400"></i>
+                                </button>
+                            </div>
+
+                            <!-- Group 2: Search, Sort, Three Dots -->
+                            <div class="ui-button-group border border-white/10 bg-white/[0.03] rounded-full p-0.5 flex items-center shadow-lg relative" role="group">
+                                <button onclick="openMobileSearchMode()" class="p-1.5 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center" title="Search">
+                                    <i data-lucide="search" class="w-4 h-4"></i>
+                                </button>
+                                <div class="ui-button-group-separator w-[1px] h-3.5 bg-white/10 mx-0.5" role="separator"></div>
+                                <button onclick="toggleCustomDropdown('sort-dropdown-options-mobile', event)" class="p-1.5 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center relative" title="Sort">
+                                    <i data-lucide="arrow-up-down" class="w-4 h-4"></i>
+                                </button>
+                                <div id="sort-dropdown-options-mobile" class="hidden absolute right-6 top-10 w-44 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-50 py-2 text-xs text-gray-200 backdrop-blur-xl">
+                                    <button type="button" onclick="selectSortOption('created', 'Date created')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition">Date created</button>
+                                    <button type="button" onclick="selectSortOption('due', 'Due date')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition">Due date</button>
+                                    <button type="button" onclick="selectSortOption('priority', 'Priority level')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition">Priority level</button>
+                                    <button type="button" onclick="selectSortOption('alphabetical', 'Alphabetical')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition">Alphabetical</button>
+                                </div>
+                                <div class="ui-button-group-separator w-[1px] h-3.5 bg-white/10 mx-0.5" role="separator"></div>
+                                <button onclick="toggleCustomDropdown('nav-menu-dropdown-options-mobile', event)" class="p-1.5 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center" title="More Options">
+                                    <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+                                </button>
+                                <div id="nav-menu-dropdown-options-mobile" class="hidden absolute right-0 top-full mt-2 w-48 bg-[#161616] border border-white/10 rounded-xl shadow-2xl z-50 py-1 text-xs text-gray-200 backdrop-blur-xl">
+                                    <button type="button" onclick="openProfileCustomizerModal()" class="ui-menu-item">
+                                        <span>Account Options</span>
+                                        <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
+                                    </button>
+                                    <div class="ui-separator my-1" data-orientation="horizontal"></div>
+                                    <button type="button" onclick="triggerImport()" class="ui-menu-item">
+                                        <span>Import Backup</span>
+                                        <i data-lucide="upload" class="w-4 h-4 text-gray-400"></i>
+                                    </button>
+                                    <button type="button" onclick="exportData()" class="ui-menu-item">
+                                        <span>Export Backup</span>
+                                        <i data-lucide="download" class="w-4 h-4 text-gray-400"></i>
+                                    </button>
+                                    <div class="ui-separator my-1" data-orientation="horizontal"></div>
+                                    <button type="button" onclick="executeLogoutAction()" class="ui-menu-item" data-destructive="true">
+                                        <span>Disconnect Session</span>
+                                        <i data-lucide="log-out" class="w-4 h-4 text-red-400"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -803,7 +855,7 @@
         </div>
     </div>
 
-    <div id="delete-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[60] flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
+    <div id="delete-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[260] flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
         <div id="delete-modal-container" class="bg-[#121212] rounded-3xl max-w-sm w-full mx-4 p-6 shadow-2xl border border-white/[0.08] transform scale-95 transition-transform duration-150 ease-out">
             <div class="flex items-center space-x-2 text-red-400 mb-3 border-b border-white/5 pb-3">
                 <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
