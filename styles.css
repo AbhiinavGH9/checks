@@ -38,20 +38,20 @@
             --sidebar-primary-foreground: oklch(0.293 0.066 243.157);
             --sidebar-accent: oklch(0.269 0 0);
             --sidebar-accent-foreground: oklch(0.985 0 0);
-        /* Shared Modal System Tokens */
-        --modal-bg: #121212;
-        --modal-radius: 24px;
-        --modal-control-radius: 14px;
-        --modal-muted-bg: rgba(255, 255, 255, 0.04);
-        --modal-border: rgba(255, 255, 255, 0.08);
-        --modal-text: #FFFFFF;
-        --modal-text-muted: #9CA3AF;
-        --modal-label-size: 10px;
-        --modal-body-size: 13px;
-        --modal-accent: #2997ff;
-        --modal-danger: #EF4444;
-        --modal-section-gap: 16px;
-    }
+            /* Shared Modal System Tokens */
+            --modal-bg: #121212;
+            --modal-radius: 20px;
+            --modal-control-radius: 12px;
+            --modal-muted-bg: rgba(255, 255, 255, 0.05);
+            --modal-border: rgba(255, 255, 255, 0.08);
+            --modal-text: #FFFFFF;
+            --modal-text-muted: #9CA3AF;
+            --modal-label-size: 10px;
+            --modal-body-size: 12px;
+            --modal-accent: #2997ff;
+            --modal-danger: #EF4444;
+            --modal-section-gap: 16px;
+        }
 
         .light-mode {
             --background: oklch(1 0 0);
