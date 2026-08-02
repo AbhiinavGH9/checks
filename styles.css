@@ -1,8 +1,8 @@
         :root, .dark {
             /* Typeset Rhythm & Typography Tokens */
-            --typeset-font-body: 'Plus Jakarta Sans', SF Pro Display, SF Pro Text, system-ui, -apple-system, sans-serif;
-            --typeset-font-heading: 'Plus Jakarta Sans', SF Pro Display, SF Pro Text, system-ui, -apple-system, sans-serif;
-            --typeset-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            --typeset-font-body: 'Geist', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            --typeset-font-heading: 'Geist', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            --typeset-font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
             --typeset-size: 14px;
             --typeset-leading: 1.6;
             --typeset-flow: 1.25em;
@@ -115,21 +115,23 @@
             color: #1d1d1f !important;
         }
 
-        /* Task Row Pill-Shaped Container System (No Card Boxes, No Visual Container Borders) */
+        /* Task Row Pill-Shaped Container System (Completely Invisible Pill Containers, No Hover Backgrounds, No Shadows, No Outlines) */
         .group-card {
             border: none !important;
             background: transparent !important;
+            background-color: transparent !important;
             box-shadow: none !important;
+            outline: none !important;
             border-radius: 9999px !important;
             padding: 8px 16px !important;
             margin-bottom: 4px !important;
-            transition: background-color 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            transition: none !important;
         }
-        .group-card:hover {
-            background-color: rgba(255, 255, 255, 0.03) !important;
-        }
-        .light-mode .group-card:hover {
-            background-color: rgba(0, 0, 0, 0.03) !important;
+        .group-card:hover, .light-mode .group-card:hover, .group-card:focus, .group-card:active {
+            background: transparent !important;
+            background-color: transparent !important;
+            box-shadow: none !important;
+            outline: none !important;
         }
 
         /* YouTube / Reddit Style L-shaped Subtask Tree Lines */

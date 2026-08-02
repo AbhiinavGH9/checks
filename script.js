@@ -609,6 +609,43 @@
             return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
         }
 
+        function toggleCustomDropdown(dropdownId, event) {
+            if (event) {
+                event.stopPropagation();
+                event.preventDefault();
+            }
+            const dropdown = document.getElementById(dropdownId);
+            if (!dropdown) return;
+
+            const isHidden = dropdown.classList.contains('hidden');
+            
+            // Close any currently active floating dropdowns
+            document.querySelectorAll('[id*="dropdown-options"]').forEach(el => {
+                el.classList.add('hidden');
+            });
+
+            if (isHidden) {
+                dropdown.classList.remove('hidden');
+                const triggerBtn = (event && (event.currentTarget || event.target.closest('button')));
+                if (triggerBtn && window.innerWidth >= 768) {
+                    const rect = triggerBtn.getBoundingClientRect();
+                    positionFloatingElement(dropdown, rect, { alignRight: true });
+                }
+            } else {
+                hideFloatingElement(dropdown);
+            }
+        }
+        window.toggleCustomDropdown = toggleCustomDropdown;
+
+        // Document click listener to dismiss floating dropdowns
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('[id*="dropdown"]') && !e.target.closest('button')) {
+                document.querySelectorAll('[id*="dropdown-options"]').forEach(el => {
+                    el.classList.add('hidden');
+                });
+            }
+        });
+
         let activeFloatingElement = null;
 
         function positionFloatingElement(el, anchorRect, options = {}) {
@@ -2598,7 +2635,7 @@
                     }
 
                     const card = document.createElement('div');
-                    card.className = `group-card relative py-2 px-3 transition duration-150 ${isSelected ? 'ring-1 ring-[#2997ff]/60 bg-white/[0.03]' : ''}`;
+                    card.className = `group-card relative py-2 px-3`;
                     card.setAttribute('data-task-id', task.id); 
                     card.setAttribute('oncontextmenu', `showContextMenu(event, '${task.id}')`);
                     
@@ -5983,8 +6020,7 @@
         function updateHeaderDateGreeting() {
             const dateEl = document.getElementById('header-date-month');
             const greetingEl = document.getElementById('header-dynamic-greeting');
-            const userEl = document.getElementById('header-user-name');
-            if (userEl) userEl.textContent = AppState.profileName || 'User';
+            const subtextEl = document.getElementById('header-greeting-subtext');
 
             const now = new Date();
             const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -6000,17 +6036,23 @@
             else if (dayNum === 3 || dayNum === 23) suffix = 'rd';
 
             if (dateEl) {
-                dateEl.textContent = `${dayName} ${dayNum}${suffix}, ${monthName}`;
+                dateEl.innerHTML = `<span class="font-extrabold text-white">${dayName} ${dayNum}${suffix},</span> <span class="font-normal text-gray-400 opacity-70">${monthName}</span>`;
             }
 
             const hour = now.getHours();
-            let greetingText = 'Good day';
-            if (hour < 12) greetingText = 'Good morning';
-            else if (hour < 17) greetingText = 'Good afternoon';
-            else greetingText = 'Good evening';
+            let greetingText = 'Good Night';
+            if (hour >= 5 && hour < 12) greetingText = 'Good Morning';
+            else if (hour >= 12 && hour < 17) greetingText = 'Good Afternoon';
+            else if (hour >= 17 && hour < 22) greetingText = 'Good Evening';
+
+            const userDisplayName = escapeHTML(AppState.profileName || 'Abhinav');
 
             if (greetingEl) {
-                greetingEl.innerHTML = `${greetingText}, <span id="header-user-name">${escapeHTML(AppState.profileName || 'User')}</span>`;
+                greetingEl.innerHTML = `<span class="font-extrabold text-white">${greetingText}, ${userDisplayName}</span><span class="text-[#007AFF] font-black inline-block ml-0.5">.</span>`;
+            }
+
+            if (subtextEl) {
+                subtextEl.textContent = 'This is your private space';
             }
         }
 
