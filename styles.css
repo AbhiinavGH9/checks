@@ -38,8 +38,19 @@
             --sidebar-primary-foreground: oklch(0.293 0.066 243.157);
             --sidebar-accent: oklch(0.269 0 0);
             --sidebar-accent-foreground: oklch(0.985 0 0);
-            --sidebar-border: oklch(1 0 0 / 10%);
-            --sidebar-ring: oklch(0.556 0 0);
+            /* Shared Modal System Tokens */
+            --modal-bg: #121212;
+            --modal-radius: 20px;
+            --modal-control-radius: 12px;
+            --modal-muted-bg: rgba(255, 255, 255, 0.05);
+            --modal-border: rgba(255, 255, 255, 0.08);
+            --modal-text: #FFFFFF;
+            --modal-text-muted: #9CA3AF;
+            --modal-label-size: 10px;
+            --modal-body-size: 12px;
+            --modal-accent: #2997ff;
+            --modal-danger: #EF4444;
+            --modal-section-gap: 16px;
         }
 
         .light-mode {
@@ -203,6 +214,178 @@
         .ui-menu-item[data-destructive="true"]:hover {
             background-color: rgba(239, 68, 68, 0.12);
             color: #FCA5A5;
+        }
+
+        /* Unified Modal Primitives Style System */
+        .modal-shell {
+            background: var(--modal-bg);
+            border-radius: var(--modal-radius);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px 14px;
+            border-bottom: 1px solid var(--modal-border);
+        }
+        .modal-header__lead {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .modal-header__lead h2, .modal-header__lead h3 {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--modal-text);
+            margin: 0;
+            letter-spacing: -0.01em;
+        }
+        .modal-header__trail {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .modal-icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 9999px;
+            border: 1px solid var(--modal-border);
+            background: var(--modal-muted-bg);
+            color: var(--modal-text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .modal-icon-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--modal-text);
+        }
+
+        .modal-section {
+            padding: 14px 20px;
+            border-top: 1px solid var(--modal-border);
+        }
+        .modal-section:first-child {
+            border-top: none;
+        }
+        .modal-section--accent {
+            border-left: 2px solid var(--modal-accent);
+        }
+        .modal-section__label-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            user-select: none;
+        }
+        .modal-section__label {
+            font-size: var(--modal-label-size);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--modal-text-muted);
+            font-weight: 700;
+        }
+        .modal-section__badge {
+            color: var(--modal-accent);
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .modal-section__chevron {
+            margin-left: auto;
+            color: var(--modal-text-muted);
+            transition: transform 0.2s ease;
+        }
+        .modal-section__chevron.is-open {
+            transform: rotate(180deg);
+        }
+        .modal-section__body {
+            margin-top: 10px;
+        }
+
+        .modal-field {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .modal-field__control {
+            flex: 1;
+            background: var(--modal-muted-bg);
+            border: 1px solid var(--modal-border);
+            border-radius: var(--modal-control-radius);
+            padding: 10px 14px;
+            color: var(--modal-text);
+            font-size: var(--modal-body-size);
+            outline: none;
+            transition: border-color 0.15s ease;
+        }
+        .modal-field__control:focus {
+            border-color: var(--modal-accent);
+        }
+        .modal-field__action {
+            width: 36px;
+            height: 36px;
+            border-radius: 9999px;
+            border: none;
+            background: var(--modal-accent);
+            color: #0A0A0A;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: transform 0.15s ease;
+        }
+        .modal-field__action:hover {
+            transform: scale(1.05);
+        }
+
+        .modal-footer {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 16px 20px 20px;
+            border-top: 1px solid var(--modal-border);
+        }
+        .modal-btn {
+            width: 100%;
+            border-radius: var(--modal-control-radius);
+            padding: 11px 0;
+            font-size: var(--modal-body-size);
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+        .modal-btn--primary {
+            background: var(--modal-accent);
+            color: #0A0A0A;
+        }
+        .modal-btn--primary:hover {
+            opacity: 0.9;
+        }
+        .modal-btn--secondary {
+            background: var(--modal-muted-bg);
+            color: var(--modal-text);
+            border: 1px solid var(--modal-border);
+        }
+        .modal-btn--secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .modal-btn--destructive {
+            background: rgba(239, 68, 68, 0.12);
+            color: #FCA5A5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        .modal-btn--destructive:hover {
+            background: rgba(239, 68, 68, 0.2);
         }
 
         /* Base UI Side Drawer & Draggable Bottom Sheet Specification */

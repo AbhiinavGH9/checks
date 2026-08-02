@@ -3059,7 +3059,7 @@
                     </button>
                     <button onmouseenter="hideGroupSubmenu()" onclick="togglePinTaskToSidebar('${taskId}')" class="ui-menu-item">
                         <span>${isPinned ? 'Remove from sidebar' : 'Add to sidebar'}</span>
-                        <i data-lucide="pin" class="w-4 h-4 text-amber-400"></i>
+                        <i data-lucide="sidebar" class="w-4 h-4 text-amber-400"></i>
                     </button>
                     <button onmouseenter="hideGroupSubmenu()" onclick="handleUnifiedHoldAction()" class="ui-menu-item">
                         <span>${holdLabel}</span>

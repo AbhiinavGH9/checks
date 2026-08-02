@@ -569,29 +569,40 @@
     </div>
 
     <div id="profile-customizer-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[150] flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
-        <div id="profile-customizer-container" class="bg-[#121212] rounded-2xl max-w-md w-full mx-4 p-5 shadow-2xl border border-white/[0.04] transform scale-95 transition-transform duration-150 ease-out">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-bold text-white flex items-center"><i data-lucide="user-cog" class="text-[#2997ff] mr-2 w-4.5 h-4.5"></i> Profile Configuration</h3>
-                <button onclick="closeProfileCustomizerModal()" class="text-gray-400 hover:text-white btn-scale p-1 bg-white/5 rounded-md">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
+        <div id="profile-customizer-container" class="modal-shell max-w-md w-full mx-4 shadow-2xl border border-white/[0.08] transform scale-95 transition-transform duration-150 ease-out">
+            <div class="modal-header">
+                <div class="modal-header__lead">
+                    <i data-lucide="user-cog" class="text-[#2997ff] w-4 h-4 flex-shrink-0"></i>
+                    <h2>Profile Configuration</h2>
+                </div>
+                <div class="modal-header__trail">
+                    <button type="button" onclick="closeProfileCustomizerModal()" class="modal-icon-btn" aria-label="Close">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
             </div>
-            <form onsubmit="handleProfileUpdates(event)" class="space-y-4">
-                <div class="flex flex-col items-center space-y-2">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Avatar Stamp Symbol</label>
-                    <div class="flex items-center space-x-2">
-                        <button type="button" onclick="rotateProfileGlyphIcon(-1)" class="p-2 bg-white/5 text-gray-400 hover:text-white rounded-xl"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+            <form onsubmit="handleProfileUpdates(event)" class="text-left flex flex-col">
+                <div class="modal-section flex flex-col items-center">
+                    <div class="modal-section__label-row mb-3">
+                        <span class="modal-section__label">Avatar Stamp Symbol</span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button type="button" onclick="rotateProfileGlyphIcon(-1)" class="modal-icon-btn" title="Previous Icon"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
                         <div id="profile-customizer-dp-preview" class="w-16 h-16 rounded-full bg-[#2997ff]/10 text-[#2997ff] border border-[#2997ff]/20 flex items-center justify-center text-xl font-bold uppercase tracking-tight"></div>
-                        <button type="button" onclick="rotateProfileGlyphIcon(1)" class="p-2 bg-white/5 text-gray-400 hover:text-white rounded-xl"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                        <button type="button" onclick="rotateProfileGlyphIcon(1)" class="modal-icon-btn" title="Next Icon"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
                     </div>
                 </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Public Display Name</label>
-                    <input type="text" id="profile-customizer-name-field" required class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
+                <div class="modal-section">
+                    <div class="modal-section__label-row mb-2">
+                        <span class="modal-section__label">Public Display Name</span>
+                    </div>
+                    <div class="modal-field">
+                        <input type="text" id="profile-customizer-name-field" required class="modal-field__control font-medium">
+                    </div>
                 </div>
-                <div class="flex flex-col space-y-2 pt-3 border-t border-white/5">
-                    <button type="submit" class="btn-scale w-full bg-[#2997ff] text-black py-3 rounded-full text-xs font-extrabold hover:bg-[#0066cc] hover:text-white transition shadow-md">Apply Changes</button>
-                    <button type="button" onclick="closeProfileCustomizerModal()" class="btn-scale w-full bg-white/5 text-gray-300 py-2.5 rounded-full text-xs font-bold hover:bg-white/10 transition">Cancel</button>
+                <div class="modal-footer">
+                    <button type="submit" class="modal-btn modal-btn--primary">Apply Changes</button>
+                    <button type="button" onclick="closeProfileCustomizerModal()" class="modal-btn modal-btn--secondary">Cancel</button>
                 </div>
             </form>
         </div>
@@ -657,127 +668,146 @@
     </div>
 
     <div id="task-modal-backdrop" onclick="if(event.target === this) closeAddTaskModal(true)" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
-        <div id="task-modal-container" class="bg-[#121212] rounded-3xl w-full mx-4 shadow-2xl border border-white/[0.08] transform scale-95 transition-all duration-200 ease-out flex flex-row overflow-visible" style="max-width: 440px;">
+        <div id="task-modal-container" class="modal-shell bg-[#121212] rounded-3xl w-full mx-4 shadow-2xl border border-white/[0.08] transform scale-95 transition-all duration-200 ease-out flex flex-row overflow-visible" style="max-width: 440px;">
             
-            <div class="w-[440px] p-6 flex flex-col justify-between flex-shrink-0">
-                <div class="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
-                    <div class="flex items-center space-x-2">
-                        <button type="button" id="task-modal-back-btn" onclick="handleTaskModalBackStep()" class="hidden text-gray-400 hover:text-white btn-scale p-1 bg-white/5 rounded-lg mr-1" title="Back">
+            <div class="w-[440px] flex flex-col justify-between flex-shrink-0">
+                <div class="modal-header">
+                    <div class="modal-header__lead">
+                        <button type="button" id="task-modal-back-btn" onclick="handleTaskModalBackStep()" class="hidden modal-icon-btn mr-1" title="Back">
                             <i data-lucide="chevron-left" class="w-4 h-4 text-[#2997ff]"></i>
                         </button>
-                        <h3 class="text-xs font-extrabold text-white uppercase tracking-wider" id="task-modal-step-title">Create Task</h3>
+                        <i data-lucide="plus-circle" class="w-4 h-4 text-[#2997ff]"></i>
+                        <h2 id="task-modal-step-title">Create Task</h2>
                     </div>
-                    <button onclick="closeAddTaskModal(true)" class="text-gray-400 hover:text-white btn-scale p-1 bg-white/5 rounded-lg">
-                        <i data-lucide="x" class="w-4 h-4"></i>
-                    </button>
+                    <div class="modal-header__trail">
+                        <button type="button" onclick="closeAddTaskModal(true)" class="modal-icon-btn" aria-label="Close">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Step Indicator Progress Bar (Line Indicators) -->
-                <div id="task-modal-step-indicator" class="flex items-center space-x-1.5 mb-4 md:hidden">
+                <div id="task-modal-step-indicator" class="flex items-center space-x-1.5 px-5 pt-3 md:hidden">
                     <div id="step-line-1" class="h-1 flex-1 bg-[#2997ff] rounded-full transition-all duration-200"></div>
                     <div id="step-line-2" class="h-1 flex-1 bg-white/10 rounded-full transition-all duration-200"></div>
                     <div id="step-line-3" class="h-1 flex-1 bg-white/10 rounded-full transition-all duration-200"></div>
                 </div>
 
-                <form onsubmit="handleAddTaskForm(event)" class="space-y-4">
-                    <div id="task-modal-step-1-fields" class="space-y-3.5 text-left">
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-left">Task Title</label>
-                            <input type="text" id="new-task-title" required placeholder="Enter task title..." class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition border border-white/5 font-medium">
+                <form onsubmit="handleAddTaskForm(event)" class="flex flex-col flex-1">
+                    <div id="task-modal-step-1-fields" class="space-y-0 text-left">
+                        <div class="modal-section">
+                            <div class="modal-section__label-row mb-2">
+                                <span class="modal-section__label">Task Title</span>
+                            </div>
+                            <div class="modal-field">
+                                <input type="text" id="new-task-title" required placeholder="Enter task title..." class="modal-field__control font-medium">
+                            </div>
                         </div>
 
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-left">Description</label>
-                            <textarea id="new-task-desc" rows="2" onkeydown="handleDescriptionKeydown(event)" placeholder="Optional notes... (Shift+Enter for • bullets)" class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition resize-none border border-white/5"></textarea>
+                        <div class="modal-section">
+                            <div class="modal-section__label-row mb-2">
+                                <span class="modal-section__label">Description</span>
+                            </div>
+                            <div class="modal-field">
+                                <textarea id="new-task-desc" rows="2" onkeydown="handleDescriptionKeydown(event)" placeholder="Optional notes... (Shift+Enter for • bullets)" class="modal-field__control resize-none"></textarea>
+                            </div>
                         </div>
 
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-left">Short Notes (Yellow Pills)</label>
-                            <div id="new-task-notes-list" class="space-y-1.5 max-h-24 overflow-y-auto pr-1"></div>
-                            <div class="flex items-center space-x-1.5">
-                                <input type="text" id="new-task-note-input" placeholder="Add a short note..." class="flex-1 bg-white/5 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
-                                <button type="button" onclick="addNewTaskNoteDraft()" class="btn-scale bg-[#2997ff] hover:bg-[#0066cc] text-black hover:text-white p-2 rounded-xl transition">
-                                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                        <div class="modal-section">
+                            <div class="modal-section__label-row mb-2">
+                                <span class="modal-section__label">Short Notes (Yellow Pills)</span>
+                            </div>
+                            <div id="new-task-notes-list" class="space-y-1.5 max-h-24 overflow-y-auto pr-1 mb-2"></div>
+                            <div class="modal-field">
+                                <input type="text" id="new-task-note-input" placeholder="Add a short note..." class="modal-field__control">
+                                <button type="button" onclick="addNewTaskNoteDraft()" class="modal-field__action">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
                                 </button>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-3 items-end pt-1">
-                            <div class="space-y-1 relative" id="new-task-project-container">
-                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block mb-1 text-left">Collection</label>
-                                <button type="button" onclick="toggleNewTaskProjectDropdown(event)" class="w-full h-11 flex items-center justify-between bg-white/5 rounded-xl px-3.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5 text-left">
-                                    <span id="new-task-project-label" class="flex-1 text-left truncate">None / Inbox</span>
+                        <div class="modal-section">
+                            <div class="grid grid-cols-2 gap-3 items-end">
+                                <div class="space-y-1 relative" id="new-task-project-container">
+                                    <span class="modal-section__label block mb-1">Collection</span>
+                                    <button type="button" onclick="toggleNewTaskProjectDropdown(event)" class="modal-field__control w-full h-10 flex items-center justify-between text-left">
+                                        <span id="new-task-project-label" class="flex-1 text-left truncate">None / Inbox</span>
+                                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
+                                    </button>
+                                    <div id="new-task-project-options" class="hidden absolute left-0 right-0 top-full mt-1 w-full bg-[#141414] rounded-xl shadow-2xl z-50 max-h-40 overflow-y-auto py-1 border border-white/[0.05]"></div>
+                                    <input type="hidden" id="new-task-project" value="">
+                                </div>
+
+                                <div class="space-y-1 relative">
+                                    <span class="modal-section__label block mb-1">Deadline</span>
+                                    <div class="flex items-center space-x-1 h-10">
+                                        <button type="button" onclick="openCustomCalendar('new-task-date', event)" id="new-task-date-btn" class="modal-field__control flex-1 h-full flex items-center justify-between text-left">
+                                            <span id="new-task-date-label" class="flex-1 text-left truncate">No Deadline</span>
+                                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-400"></i>
+                                        </button>
+                                        <button type="button" onclick="clearDeadline('new-task-date', event)" class="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition h-full flex items-center justify-center" title="Clear Deadline">
+                                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </div>
+                                    <input type="hidden" id="new-task-date" value="">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-section">
+                            <div class="space-y-1 relative" id="new-task-group-container">
+                                <span class="modal-section__label block mb-1">Target Column</span>
+                                <button type="button" onclick="toggleNewTaskGroupDropdown(event)" class="modal-field__control w-full h-10 flex items-center justify-between text-left">
+                                    <span id="new-task-group-label" class="flex-1 text-left truncate">Select Group Column</span>
                                     <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
                                 </button>
-                                <div id="new-task-project-options" class="hidden absolute left-0 right-0 top-full mt-1 w-full bg-[#141414] rounded-xl shadow-2xl z-50 max-h-40 overflow-y-auto py-1 border border-white/[0.05]"></div>
-                                <input type="hidden" id="new-task-project" value="">
-                            </div>
-
-                            <div class="space-y-1 relative">
-                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 text-left block mb-1">Deadline</label>
-                                <div class="flex items-center space-x-1 h-11">
-                                    <button type="button" onclick="openCustomCalendar('new-task-date', event)" id="new-task-date-btn" class="flex-1 bg-white/5 rounded-xl px-3 text-xs text-white border border-white/5 hover:bg-white/10 h-full flex items-center justify-between text-left">
-                                        <span id="new-task-date-label" class="flex-1 text-left truncate">No Deadline</span>
-                                        <i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-400"></i>
-                                    </button>
-                                    <button type="button" onclick="clearDeadline('new-task-date', event)" class="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition h-full flex items-center justify-center" title="Clear Deadline">
-                                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
-                                    </button>
-                                </div>
-                                <input type="hidden" id="new-task-date" value="">
+                                <div id="new-task-group-options" class="hidden absolute left-0 right-0 top-full mt-1 w-full bg-[#141414] rounded-xl shadow-2xl z-50 max-h-40 overflow-y-auto py-1 border border-white/[0.05]"></div>
+                                <input type="hidden" id="new-task-group-id" value="">
                             </div>
                         </div>
 
-                        <div class="space-y-1 relative" id="new-task-group-container">
-                            <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block mb-1 text-left">Target Column</label>
-                            <button type="button" onclick="toggleNewTaskGroupDropdown(event)" class="w-full h-11 flex items-center justify-between bg-white/5 rounded-xl px-3.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5 text-left">
-                                <span id="new-task-group-label" class="flex-1 text-left truncate">Select Group Column</span>
-                                <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
-                            </button>
-                            <div id="new-task-group-options" class="hidden absolute left-0 right-0 top-full mt-1 w-full bg-[#141414] rounded-xl shadow-2xl z-50 max-h-40 overflow-y-auto py-1 border border-white/[0.05]"></div>
-                            <input type="hidden" id="new-task-group-id" value="">
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3 items-end">
-                            <div class="space-y-1 relative" id="new-task-autodelete-container">
-                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block mb-1 text-left">Auto-Delete Policy</label>
-                                <button type="button" onclick="toggleNewTaskAutodeleteDropdown(event)" class="w-full h-11 flex items-center justify-between bg-white/5 rounded-xl px-3.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5 text-left">
-                                    <span id="new-task-autodelete-label" class="flex-1 text-left truncate">Do not delete</span>
-                                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
-                                </button>
-                                <div id="new-task-autodelete-options" class="hidden absolute left-0 right-0 top-full mt-1 w-full bg-[#141414] rounded-xl shadow-2xl z-50 py-1 border border-white/[0.05]">
-                                    <button type="button" onclick="selectNewTaskAutodelete('never', 'Do not delete')" class="w-full text-left px-4 py-2 text-xs text-white hover:bg-white/5 transition">Do not delete</button>
-                                    <button type="button" onclick="selectNewTaskAutodelete('1day', '1 Day after')" class="w-full text-left px-4 py-2 text-xs text-white hover:bg-white/5 transition">1 Day after</button>
-                                    <button type="button" onclick="selectNewTaskAutodelete('1week', '1 Week after')" class="w-full text-left px-4 py-2 text-xs text-white hover:bg-white/5 transition">1 Week after</button>
-                                    <button type="button" onclick="selectNewTaskAutodelete('custom', 'Custom duration')" class="w-full text-left px-4 py-2 text-xs text-white hover:bg-white/5 transition">Custom duration</button>
+                        <div class="modal-section">
+                            <div class="grid grid-cols-2 gap-3 items-end">
+                                <div class="space-y-1 relative" id="new-task-autodelete-container">
+                                    <span class="modal-section__label block mb-1">Auto-Delete Policy</span>
+                                    <button type="button" onclick="toggleNewTaskAutodeleteDropdown(event)" class="modal-field__control w-full h-10 flex items-center justify-between text-left">
+                                        <span id="new-task-autodelete-label" class="flex-1 text-left truncate">Do not delete</span>
+                                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
+                                    </button>
+                                    <div id="new-task-autodelete-options" class="hidden absolute left-0 right-0 top-full mt-1 w-full bg-[#141414] rounded-xl shadow-2xl z-50 py-1 border border-white/[0.05]">
+                                        <button type="button" onclick="selectNewTaskAutodelete('never', 'Do not delete')" class="w-full text-left px-4 py-2 text-xs text-white hover:bg-white/5 transition">Do not delete</button>
+                                        <button type="button" onclick="selectNewTaskAutodelete('1day', '1 Day after')" class="w-full text-left px-4 py-2 text-xs text-white hover:bg-white/5 transition">1 Day after</button>
+                                        <button type="button" onclick="selectNewTaskAutodelete('1week', '1 Week after')" class="w-full text-left px-4 py-2 text-xs text-white hover:bg-white/5 transition">1 Week after</button>
+                                        <button type="button" onclick="selectNewTaskAutodelete('custom', 'Custom duration')" class="w-full text-left px-4 py-2 text-xs text-white hover:bg-white/5 transition">Custom duration</button>
+                                    </div>
+                                    <input type="hidden" id="new-task-autodelete" value="never">
                                 </div>
-                                <input type="hidden" id="new-task-autodelete" value="never">
-                            </div>
-                            <div id="custom-autodelete-container" class="space-y-1 hidden">
-                                <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 text-left block">Duration (Hours)</label>
-                                <input type="number" id="new-task-autodelete-custom" min="1" max="8760" value="24" class="w-full h-11 bg-white/5 text-xs text-white text-left rounded-xl px-3.5 border border-white/5 focus:outline-none focus:ring-1 focus:ring-[#2997ff]">
+                                <div id="custom-autodelete-container" class="space-y-1 hidden">
+                                    <span class="modal-section__label block mb-1">Duration (Hours)</span>
+                                    <input type="number" id="new-task-autodelete-custom" min="1" max="8760" value="24" class="modal-field__control h-10">
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Step 2 Substep A: Color Selection (Mobile) -->
-                    <div id="task-modal-step-2-color" class="space-y-3.5 hidden">
-                        <label class="text-[11px] font-bold tracking-wider uppercase text-gray-400 block text-left">Choose Vibrant Priority Color</label>
+                    <div id="task-modal-step-2-color" class="modal-section space-y-3 hidden">
+                        <span class="modal-section__label block">Choose Vibrant Priority Color</span>
                         <div id="new-task-color-grid-mobile" class="grid grid-cols-6 gap-2.5 p-3 bg-white/[0.03] rounded-2xl border border-white/5 justify-items-center"></div>
                     </div>
 
                     <!-- Step 2 Substep B: Icon Selection (Mobile) -->
-                    <div id="task-modal-step-2-icon" class="space-y-3.5 hidden">
-                        <label class="text-[11px] font-bold tracking-wider uppercase text-gray-400 block text-left">Choose Icon Glyph</label>
+                    <div id="task-modal-step-2-icon" class="modal-section space-y-3 hidden">
+                        <span class="modal-section__label block">Choose Icon Glyph</span>
                         <div id="new-task-icon-grid-mobile" class="grid grid-cols-6 gap-2.5 max-h-56 overflow-y-auto p-3 bg-white/[0.03] rounded-2xl border border-white/5 justify-items-center"></div>
                     </div>
 
-                    <div class="flex flex-col space-y-2 pt-3 border-t border-white/5" id="task-modal-actions-container">
-                        <button type="button" id="btn-modal-customization-step" onclick="handleTaskModalNextStep()" class="btn-scale w-full py-3 bg-white/5 hover:bg-white/10 text-white rounded-full text-xs font-bold transition flex items-center justify-center space-x-2 border border-white/10">
+                    <div class="modal-footer" id="task-modal-actions-container">
+                        <button type="button" id="btn-modal-customization-step" onclick="handleTaskModalNextStep()" class="modal-btn modal-btn--secondary">
                             <i data-lucide="palette" class="w-4 h-4 text-[#2997ff]"></i>
                             <span id="btn-modal-step-label">Customize</span>
                         </button>
-                        <button type="submit" id="btn-modal-submit-task" class="btn-scale w-full bg-[#2997ff] text-black py-3 rounded-full text-xs font-extrabold hover:bg-[#0066cc] hover:text-white transition shadow-md">
+                        <button type="submit" id="btn-modal-submit-task" class="modal-btn modal-btn--primary">
                             Create Task
                         </button>
                     </div>
@@ -802,106 +832,148 @@
     </div>
 
     <div id="project-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
-        <div id="project-modal-container" class="bg-[#121212] rounded-3xl max-w-md w-full mx-4 p-6 shadow-2xl border border-white/[0.08] transform scale-95 transition-transform duration-150 ease-out">
-            <div class="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
-                <div id="project-modal-title" class="flex items-center space-x-2 text-white">
-                    <i data-lucide="folder-plus" class="text-[#2997ff] w-5 h-5 flex-shrink-0"></i>
-                    <span class="text-sm font-bold text-white">Configure Collection</span>
+        <div id="project-modal-container" class="modal-shell max-w-md w-full mx-4 shadow-2xl border border-white/[0.08] transform scale-95 transition-transform duration-150 ease-out">
+            <div class="modal-header">
+                <div id="project-modal-title" class="modal-header__lead">
+                    <i data-lucide="folder-plus" class="text-[#2997ff] w-4 h-4 flex-shrink-0"></i>
+                    <h2>Configure Collection</h2>
                 </div>
-                <button onclick="closeProjectModal()" class="text-gray-400 hover:text-white btn-scale p-1 bg-white/5 rounded-lg">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
+                <div class="modal-header__trail">
+                    <button type="button" onclick="closeProjectModal()" class="modal-icon-btn" aria-label="Close">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
             </div>
 
-            <form onsubmit="handleProjectCreation(event)" class="space-y-4 text-left">
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-left">Collection Name</label>
-                    <input type="text" id="new-project-title" required placeholder="Enter collection folder name..." class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition border border-white/5 font-medium">
+            <form onsubmit="handleProjectCreation(event)" class="text-left flex flex-col">
+                <div class="modal-section">
+                    <div class="modal-section__label-row mb-2">
+                        <span class="modal-section__label">Collection Name</span>
+                    </div>
+                    <div class="modal-field">
+                        <input type="text" id="new-project-title" required placeholder="Enter collection folder name..." class="modal-field__control font-medium">
+                    </div>
                 </div>
-                <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-left">Vibrant Colors Palette</label>
+                <div class="modal-section">
+                    <div class="modal-section__label-row mb-2">
+                        <span class="modal-section__label">Vibrant Colors Palette</span>
+                    </div>
                     <div class="grid grid-cols-6 gap-2" id="project-color-options"></div>
                 </div>
-                <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-left">Collection Glyph</label>
+                <div class="modal-section">
+                    <div class="modal-section__label-row mb-2">
+                        <span class="modal-section__label">Collection Glyph</span>
+                    </div>
                     <div class="grid grid-cols-6 gap-2 p-2.5 bg-[#141414] rounded-2xl border border-white/5 max-h-44 overflow-y-auto no-scrollbar" id="project-icon-options"></div>
                 </div>
-                <div class="flex flex-col space-y-2 pt-3 border-t border-white/5 modal-sticky-actions">
-                    <button type="submit" id="project-submit-btn" class="btn-scale w-full bg-[#2997ff] text-black py-3 rounded-full text-xs font-extrabold hover:bg-[#0066cc] hover:text-white transition shadow-md">Create Collection</button>
-                    <button type="button" onclick="closeProjectModal()" class="btn-scale w-full bg-white/5 text-gray-300 py-2.5 rounded-full text-xs font-bold hover:bg-white/10 transition">Cancel</button>
+                <div class="modal-footer">
+                    <button type="submit" id="project-submit-btn" class="modal-btn modal-btn--primary">Create Collection</button>
+                    <button type="button" onclick="closeProjectModal()" class="modal-btn modal-btn--secondary">Cancel</button>
                 </div>
             </form>
         </div>
     </div>
 
     <div id="group-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
-        <div id="group-modal-container" class="bg-[#121212] rounded-3xl max-w-md w-full mx-4 p-6 shadow-2xl border border-white/[0.08] transform scale-95 transition-transform duration-150 ease-out">
-            <div class="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
-                <div id="group-modal-title-text" class="flex items-center space-x-2 text-white">
-                    <i data-lucide="plus-square" class="text-[#2997ff] w-5 h-5 flex-shrink-0"></i>
-                    <span class="text-sm font-bold text-white">Create Group Column</span>
+        <div id="group-modal-container" class="modal-shell max-w-md w-full mx-4 shadow-2xl border border-white/[0.08] transform scale-95 transition-transform duration-150 ease-out">
+            <div class="modal-header">
+                <div id="group-modal-title-text" class="modal-header__lead">
+                    <i data-lucide="plus-square" class="text-[#2997ff] w-4 h-4 flex-shrink-0"></i>
+                    <h2>Create Group Column</h2>
                 </div>
-                <button onclick="closeAddGroupModal()" class="text-gray-400 hover:text-white btn-scale p-1 bg-white/5 rounded-lg">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
+                <div class="modal-header__trail">
+                    <button type="button" onclick="closeAddGroupModal()" class="modal-icon-btn" aria-label="Close">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
             </div>
 
-            <form onsubmit="handleAddGroupForm(event)" class="space-y-4 text-left">
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-left">Group Name</label>
-                    <input type="text" id="new-group-title" required placeholder="Enter group column title..." class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] transition border border-white/5 font-medium">
+            <form onsubmit="handleAddGroupForm(event)" class="text-left flex flex-col">
+                <div class="modal-section">
+                    <div class="modal-section__label-row mb-2">
+                        <span class="modal-section__label">Group Name</span>
+                    </div>
+                    <div class="modal-field">
+                        <input type="text" id="new-group-title" required placeholder="Enter group column title..." class="modal-field__control font-medium">
+                    </div>
                 </div>
-                <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-left">Accent Color Palette</label>
+                <div class="modal-section">
+                    <div class="modal-section__label-row mb-2">
+                        <span class="modal-section__label">Accent Color Palette</span>
+                    </div>
                     <div class="grid grid-cols-6 gap-2" id="group-color-options"></div>
                 </div>
-                <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-400 block text-left">Group Glyph</label>
+                <div class="modal-section">
+                    <div class="modal-section__label-row mb-2">
+                        <span class="modal-section__label">Group Glyph</span>
+                    </div>
                     <div class="grid grid-cols-6 gap-2 p-2.5 bg-[#141414] rounded-2xl border border-white/5 max-h-44 overflow-y-auto no-scrollbar" id="group-icon-options"></div>
                 </div>
-                <div class="flex flex-col space-y-2 pt-3 border-t border-white/5 modal-sticky-actions">
-                    <button type="submit" id="group-submit-btn" class="btn-scale w-full bg-[#2997ff] text-black py-3 rounded-full text-xs font-extrabold hover:bg-[#0066cc] hover:text-white transition shadow-md">Create Group</button>
-                    <button type="button" onclick="closeAddGroupModal()" class="btn-scale w-full bg-white/5 text-gray-300 py-2.5 rounded-full text-xs font-bold hover:bg-white/10 transition">Cancel</button>
+                <div class="modal-footer">
+                    <button type="submit" id="group-submit-btn" class="modal-btn modal-btn--primary">Create Group</button>
+                    <button type="button" onclick="closeAddGroupModal()" class="modal-btn modal-btn--secondary">Cancel</button>
                 </div>
             </form>
         </div>
     </div>
 
     <div id="delete-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[260] flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
-        <div id="delete-modal-container" class="bg-[#121212] rounded-3xl max-w-sm w-full mx-4 p-6 shadow-2xl border border-white/[0.08] transform scale-95 transition-transform duration-150 ease-out">
-            <div class="flex items-center space-x-2 text-red-400 mb-3 border-b border-white/5 pb-3">
-                <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0"></i>
-                <h3 class="text-xs font-extrabold text-white uppercase tracking-wider">Confirm Deletion</h3>
+        <div id="delete-modal-container" class="modal-shell max-w-sm w-full mx-4 shadow-2xl border border-white/[0.08] transform scale-95 transition-transform duration-150 ease-out">
+            <div class="modal-header">
+                <div class="modal-header__lead text-red-400">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0"></i>
+                    <h2>Confirm Deletion</h2>
+                </div>
+                <div class="modal-header__trail">
+                    <button type="button" onclick="closeDeleteModal()" class="modal-icon-btn" aria-label="Close">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
             </div>
-            <p class="text-xs text-gray-400 mb-5 leading-relaxed text-left" id="delete-modal-message">Are you sure you want to proceed with this deletion? This action cannot be undone.</p>
-            <div class="flex flex-col space-y-2">
-                <button id="delete-confirm-btn" class="btn-scale w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-full text-xs font-extrabold transition shadow-md">Proceed</button>
-                <button onclick="closeDeleteModal()" class="btn-scale w-full bg-white/5 text-gray-300 py-2.5 rounded-full text-xs font-bold hover:bg-white/10 transition">Cancel</button>
+            <div class="modal-section">
+                <p class="text-xs text-gray-400 leading-relaxed text-left" id="delete-modal-message">Are you sure you want to proceed with this deletion? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button id="delete-confirm-btn" class="modal-btn modal-btn--destructive">Proceed</button>
+                <button type="button" onclick="closeDeleteModal()" class="modal-btn modal-btn--secondary">Cancel</button>
             </div>
         </div>
     </div>
 
     <div id="hold-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[60] flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
-        <div id="hold-modal-container" class="bg-[#121212] rounded-2xl max-w-sm w-full mx-4 p-5 shadow-2xl border border-white/[0.04] transform scale-95 transition-transform duration-150 ease-out">
-            <div class="flex items-center space-x-3 text-[#2997ff] mb-4">
-                <i data-lucide="lock" class="w-5 h-5 flex-shrink-0"></i>
-                <h3 class="text-sm font-bold text-white" id="hold-modal-title">Configure Auto-Delete Hold</h3>
+        <div id="hold-modal-container" class="modal-shell max-w-sm w-full mx-4 shadow-2xl border border-white/[0.08] transform scale-95 transition-transform duration-150 ease-out">
+            <div class="modal-header">
+                <div class="modal-header__lead">
+                    <i data-lucide="lock" class="text-[#2997ff] w-4 h-4 flex-shrink-0"></i>
+                    <h2 id="hold-modal-title">Configure Auto-Delete Hold</h2>
+                </div>
+                <div class="modal-header__trail">
+                    <button type="button" onclick="closeHoldModal()" class="modal-icon-btn" aria-label="Close">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
             </div>
             
-            <form onsubmit="handleApplyHold(event)" class="space-y-4">
-                <div class="flex items-center space-x-2.5 py-1">
-                    <input type="checkbox" id="hold-indefinitely-checkbox" checked onchange="toggleHoldUntilInput()" class="w-3.5 h-3.5 bg-white/5 border border-white/5 rounded focus:ring-0 text-[#2997ff]">
-                    <label for="hold-indefinitely-checkbox" class="text-xs text-gray-300 font-semibold cursor-pointer select-none">Hold Indefinitely</label>
+            <form onsubmit="handleApplyHold(event)" class="flex flex-col">
+                <div class="modal-section">
+                    <div class="flex items-center space-x-2.5 py-1">
+                        <input type="checkbox" id="hold-indefinitely-checkbox" checked onchange="toggleHoldUntilInput()" class="w-3.5 h-3.5 bg-white/5 border border-white/5 rounded focus:ring-0 text-[#2997ff]">
+                        <label for="hold-indefinitely-checkbox" class="text-xs text-gray-300 font-semibold cursor-pointer select-none">Hold Indefinitely</label>
+                    </div>
                 </div>
                 
-                <div id="hold-until-container" class="space-y-1.5 hidden">
-                    <label class="text-[10px] font-bold tracking-wider uppercase text-gray-500">Hold Until (Date/Time)</label>
-                    <input type="datetime-local" id="hold-until-input" class="w-full bg-white/5 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#2997ff] border border-white/5">
+                <div id="hold-until-container" class="modal-section hidden">
+                    <div class="modal-section__label-row mb-2">
+                        <span class="modal-section__label">Hold Until (Date/Time)</span>
+                    </div>
+                    <div class="modal-field">
+                        <input type="datetime-local" id="hold-until-input" class="modal-field__control">
+                    </div>
                 </div>
                 
-                <div class="flex items-center justify-end space-x-2 pt-2 border-t border-white/5">
-                    <button type="button" onclick="closeHoldModal()" class="btn-scale bg-white/5 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-white/10 transition">Cancel</button>
-                    <button type="submit" class="btn-scale bg-[#2997ff] text-black px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-[#0066cc] hover:text-white transition">Apply Hold</button>
+                <div class="modal-footer">
+                    <button type="submit" class="modal-btn modal-btn--primary">Apply Hold</button>
+                    <button type="button" onclick="closeHoldModal()" class="modal-btn modal-btn--secondary">Cancel</button>
                 </div>
             </form>
         </div>
@@ -909,23 +981,25 @@
 
     <!-- Completed Tasks Archive Modal -->
     <div id="archive-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
-        <div id="archive-modal-container" class="bg-[#121212] rounded-3xl max-w-lg w-full mx-4 p-6 shadow-2xl border border-white/[0.08] transform scale-95 transition-transform duration-150 ease-out flex flex-col max-h-[80vh]">
-            <div class="flex items-center justify-between mb-4 border-b border-white/5 pb-3 flex-shrink-0">
-                <div class="flex items-center space-x-2 text-emerald-400">
-                    <i data-lucide="archive" class="w-5 h-5 flex-shrink-0"></i>
-                    <h3 class="text-sm font-bold text-white">Completed Tasks Archive</h3>
+        <div id="archive-modal-container" class="modal-shell max-w-lg w-full mx-4 shadow-2xl border border-white/[0.08] transform scale-95 transition-transform duration-150 ease-out flex flex-col max-h-[80vh]">
+            <div class="modal-header">
+                <div class="modal-header__lead text-emerald-400">
+                    <i data-lucide="archive" class="w-4 h-4 flex-shrink-0"></i>
+                    <h2>Completed Tasks Archive</h2>
                 </div>
-                <button onclick="closeArchiveModal()" class="text-gray-400 hover:text-white btn-scale p-1 bg-white/5 rounded-lg">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
+                <div class="modal-header__trail">
+                    <button type="button" onclick="closeArchiveModal()" class="modal-icon-btn" aria-label="Close">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
             </div>
-            <div id="archive-modal-tasks-list" class="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[180px]"></div>
-            <div class="flex flex-col space-y-2.5 pt-4 border-t border-white/5 flex-shrink-0 mt-3">
-                <button onclick="clearCompletedTasks()" class="btn-scale w-full text-xs text-red-400 hover:text-red-300 font-extrabold py-3 bg-red-500/15 hover:bg-red-500/25 rounded-full border border-red-500/30 transition flex items-center justify-center space-x-2">
+            <div id="archive-modal-tasks-list" class="flex-1 overflow-y-auto space-y-2 px-5 py-4 min-h-[180px]"></div>
+            <div class="modal-footer">
+                <button type="button" onclick="clearCompletedTasks()" class="modal-btn modal-btn--destructive">
                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                     <span>Clear Archive</span>
                 </button>
-                <button onclick="closeArchiveModal()" class="btn-scale w-full bg-white/5 text-gray-300 py-3 rounded-full text-xs font-bold border border-white/5 hover:bg-white/10 transition text-center">
+                <button type="button" onclick="closeArchiveModal()" class="modal-btn modal-btn--secondary">
                     Close
                 </button>
             </div>
