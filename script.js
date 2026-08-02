@@ -2045,8 +2045,20 @@
                 `;
                 container.appendChild(btn);
             });
-            if (window.lucide) window.lucide.createIcons();
+        function switchTab(tabId) {
+            AppState.currentTab = tabId;
+            renderTaskFeed();
+            updateGlobalBadges();
+
+            if (window.innerWidth < 768) {
+                closeSidebarMobile();
+            }
         }
+
+        function toggleSidebarCollapse() {
+            const sidebar = document.getElementById('sidebar-panel');
+            const resizer = document.getElementById('sidebar-resizer');
+            const uncollapseBtn = document.getElementById('sidebar-uncollapse-btn');
 
             if (!sidebar) return;
 
