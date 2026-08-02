@@ -1,7 +1,7 @@
         :root, .dark {
             /* Typeset Rhythm & Typography Tokens */
-            --typeset-font-body: 'Plus Jakarta Sans', SF Pro Display, SF Pro Text, system-ui, -apple-system, sans-serif;
-            --typeset-font-heading: 'Plus Jakarta Sans', SF Pro Display, SF Pro Text, system-ui, -apple-system, sans-serif;
+            --typeset-font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            --typeset-font-heading: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
             --typeset-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
             --typeset-size: 14px;
             --typeset-leading: 1.6;
@@ -82,143 +82,15 @@
             --sidebar-ring: oklch(0.708 0 0);
         }
 
-        /* Light Mode Theme Overrides */
-        body.light-mode, .light-mode #app-main-view {
-            background-color: #f5f5f7 !important;
-            color: #1d1d1f !important;
-        }
-        .light-mode #sidebar-panel,
-        .light-mode #task-feed-scroll,
-        .light-mode #empty-state-screen,
-        .light-mode .bg-\[\#0A0A0A\],
-        .light-mode .bg-\[\#0F0F0F\],
-        .light-mode .bg-\[\#0E0E0E\] {
-            background-color: #f5f5f7 !important;
-            color: #1d1d1f !important;
-        }
-        .light-mode .text-white {
-            color: #1d1d1f !important;
-        }
-        .light-mode .text-gray-300, .light-mode .text-gray-400 {
-            color: #515154 !important;
-        }
-        .light-mode .text-gray-500, .light-mode .text-gray-600 {
-            color: #86868b !important;
-        }
-        .light-mode .bg-white\/5, .light-mode .bg-white\/10, .light-mode .bg-white\/\[0\.03\] {
-            background-color: rgba(0, 0, 0, 0.04) !important;
-        }
-        .light-mode .border-white\/10, .light-mode .border-white\/5, .light-mode .border-white\/\[0\.04\] {
-            border-color: rgba(0, 0, 0, 0.08) !important;
-        }
-        .light-mode #main-greeting-header-block #header-dynamic-greeting {
-            color: #1d1d1f !important;
-        }
-
-        /* Task Row Pill-Shaped Container System (No Card Boxes, No Visual Container Borders) */
-        .group-card {
-            border: none !important;
-            background: transparent !important;
-            box-shadow: none !important;
-            border-radius: 9999px !important;
-            padding: 8px 16px !important;
-            margin-bottom: 4px !important;
-            transition: background-color 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
-        }
-        .group-card:hover {
-            background-color: rgba(255, 255, 255, 0.03) !important;
-        }
-        .light-mode .group-card:hover {
-            background-color: rgba(0, 0, 0, 0.03) !important;
-        }
-
-        /* YouTube / Reddit Style L-shaped Subtask Tree Lines */
-        .subtask-thread-container {
-            position: relative;
-            padding-left: 20px;
-            margin-top: 4px;
-        }
-        .subtask-thread-item {
-            position: relative;
-            padding-left: 16px;
-            margin-top: 6px;
-        }
-        .subtask-thread-item::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: -12px;
-            bottom: 50%;
-            width: 12px;
-            border-left: 1.5px solid rgba(255, 255, 255, 0.15);
-            border-bottom: 1.5px solid rgba(255, 255, 255, 0.15);
-            border-bottom-left-radius: 8px;
-        }
-        .light-mode .subtask-thread-item::before {
-            border-left-color: rgba(0, 0, 0, 0.18);
-            border-bottom-color: rgba(0, 0, 0, 0.18);
-        }
-        .subtask-thread-item:not(:last-child)::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            bottom: -8px;
-            border-left: 1.5px solid rgba(255, 255, 255, 0.15);
-        }
-        .light-mode .subtask-thread-item:not(:last-child)::after {
-            border-left-color: rgba(0, 0, 0, 0.18);
-        }
-
-        /* iOS 18 Styled Glassmorphic Context Menu */
-        .ios-context-menu {
-            background: rgba(25, 25, 27, 0.78) !important;
-            backdrop-filter: blur(25px) saturate(190%) !important;
-            -webkit-backdrop-filter: blur(25px) saturate(190%) !important;
-            border: 1px solid rgba(255, 255, 255, 0.12) !important;
-            border-radius: 20px !important;
-            padding: 6px !important;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6) !important;
-            width: 240px !important;
-            transform-origin: top left;
-            animation: iosMenuPop 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        .light-mode .ios-context-menu {
-            background: rgba(245, 245, 247, 0.82) !important;
-            border-color: rgba(0, 0, 0, 0.08) !important;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12) !important;
-        }
-        @keyframes iosMenuPop {
-            0% { opacity: 0; transform: scale(0.92); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-        .ios-context-menu-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-            padding: 10px 14px;
-            font-size: 13px;
-            font-weight: 500;
-            color: #ffffff;
-            border-radius: 12px;
-            transition: background 0.12s ease;
-            cursor: pointer;
-        }
-        .light-mode .ios-context-menu-item {
-            color: #1d1d1f;
-        }
-        .ios-context-menu-item:hover, .ios-context-menu-item:active {
-            background: rgba(255, 255, 255, 0.12);
-        }
-        .light-mode .ios-context-menu-item:hover, .light-mode .ios-context-menu-item:active {
-            background: rgba(0, 0, 0, 0.06);
-        }
-        .ios-context-menu-item[data-destructive="true"] {
-            color: #ff453a !important;
-        }
-        .ios-context-menu-item[data-destructive="true"]:hover {
-            background: rgba(255, 69, 58, 0.15);
+        body {
+            font-family: var(--typeset-font-body);
+            font-size: var(--typeset-size);
+            line-height: var(--typeset-leading);
+            letter-spacing: -0.02em;
+            -webkit-font-smoothing: antialiased;
+            background-color: var(--background);
+            color: var(--foreground);
+            border-radius: var(--radius);
         }
 
         /* Button Group Component Styles (Shadcn / Base UI) */
