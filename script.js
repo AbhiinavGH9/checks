@@ -164,7 +164,6 @@
             tempCreatePriority: '#FF3B30',
             tempCreateIcon: 'smile',
             tempCreateNotes: [],
-            tempCreateSubtasks: [],
             tempGroupColor: '#FF3B30',
             tempGroupIcon: 'list',
             returningToTaskModal: false,
@@ -609,43 +608,6 @@
             return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
         }
 
-        function toggleCustomDropdown(dropdownId, event) {
-            if (event) {
-                event.stopPropagation();
-                event.preventDefault();
-            }
-            const dropdown = document.getElementById(dropdownId);
-            if (!dropdown) return;
-
-            const isHidden = dropdown.classList.contains('hidden');
-            
-            // Close any currently active floating dropdowns
-            document.querySelectorAll('[id*="dropdown-options"]').forEach(el => {
-                el.classList.add('hidden');
-            });
-
-            if (isHidden) {
-                dropdown.classList.remove('hidden');
-                const triggerBtn = (event && (event.currentTarget || event.target.closest('button')));
-                if (triggerBtn && window.innerWidth >= 768) {
-                    const rect = triggerBtn.getBoundingClientRect();
-                    positionFloatingElement(dropdown, rect, { alignRight: true });
-                }
-            } else {
-                hideFloatingElement(dropdown);
-            }
-        }
-        window.toggleCustomDropdown = toggleCustomDropdown;
-
-        // Document click listener to dismiss floating dropdowns
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('[id*="dropdown"]') && !e.target.closest('button')) {
-                document.querySelectorAll('[id*="dropdown-options"]').forEach(el => {
-                    el.classList.add('hidden');
-                });
-            }
-        });
-
         let activeFloatingElement = null;
 
         function positionFloatingElement(el, anchorRect, options = {}) {
@@ -945,16 +907,13 @@
 
                 const btn = document.createElement('button');
                 btn.className = 'w-full text-left py-3 px-4 rounded-xl hover:bg-white/5 transition flex items-center justify-between text-sm text-gray-300 hover:text-white';
-                const isDestructive = item.destructive || item.label?.toLowerCase().includes('delete');
-                if (isDestructive) btn.className = 'w-full text-left py-3 px-4 rounded-xl hover:bg-red-500/10 transition flex items-center justify-between text-sm text-red-400';
                 
                 let iconHTML = '';
                 if (item.icon) {
                     if (item.icon.startsWith('#') || item.icon.startsWith('rgb')) {
                         iconHTML = `<span class="w-3 h-3 rounded-full mr-3 flex-shrink-0" style="background-color: ${item.icon}"></span>`;
                     } else {
-                        const iconColor = isDestructive ? 'text-red-400' : (item.iconColor || 'text-gray-400');
-                        iconHTML = `<i data-lucide="${item.icon}" class="w-4 h-4 mr-3 ${iconColor}"></i>`;
+                        iconHTML = `<i data-lucide="${item.icon}" class="w-4 h-4 mr-3 text-gray-400"></i>`;
                     }
                 }
 
@@ -1256,35 +1215,6 @@
                         task.notes = [];
                     }
                 });
-            } else {
-                // Seed default tasks if empty
-                AppState.tasks = [
-                    {
-                        id: 'task-sample-1',
-                        title: 'Make portfolio anv edits',
-                        description: 'Review color palette and layout hierarchy',
-                        color: 'red',
-                        priorityColor: 'red',
-                        done: false,
-                        dueDate: '2026-08-10',
-                        createdDate: new Date().toISOString(),
-                        subtasks: []
-                    },
-                    {
-                        id: 'task-sample-2',
-                        title: 'Learn editing (adixsoon)',
-                        description: 'Core video composition techniques',
-                        color: 'orange',
-                        priorityColor: 'orange',
-                        done: false,
-                        dueDate: '2026-09-10',
-                        createdDate: new Date().toISOString(),
-                        subtasks: [
-                            { id: 'sub-1', title: 'View all reels', done: false },
-                            { id: 'sub-2', title: 'Try all reel effects 1 by 1', done: false }
-                        ]
-                    }
-                ];
             }
             if (projects) AppState.projects = JSON.parse(projects);
             if (groups) AppState.groups = JSON.parse(groups);
@@ -1838,67 +1768,6 @@
             showToast('Session Closed', 'Session ended successfully.');
         }
 
-        function dismissOverlay(backdropEl, containerEl) {
-            if (!backdropEl) return;
-            backdropEl.classList.remove('opacity-100');
-            backdropEl.classList.add('opacity-0');
-            if (containerEl) {
-                containerEl.classList.add('scale-95');
-            }
-            setTimeout(() => {
-                backdropEl.classList.add('hidden');
-                backdropEl.style.pointerEvents = 'none';
-            }, 150);
-        }
-
-        function isTaskModalDirty() {
-            const title = document.getElementById('new-task-title') ? document.getElementById('new-task-title').value.trim() : '';
-            const desc = document.getElementById('new-task-desc') ? document.getElementById('new-task-desc').value.trim() : '';
-            const hasNotes = AppState.tempCreateNotes && AppState.tempCreateNotes.length > 0;
-            const hasSubtasks = AppState.tempCreateSubtasks && AppState.tempCreateSubtasks.length > 0;
-            return title.length > 0 || desc.length > 0 || hasNotes || hasSubtasks;
-        }
-
-        function closeAddTaskModal(force = false) {
-            if (!force && isTaskModalDirty()) {
-                const confBackdrop = document.getElementById('confirmation-modal-backdrop');
-                const confContainer = document.getElementById('confirmation-modal-container');
-                if (confBackdrop && confContainer) {
-                    confBackdrop.classList.remove('hidden');
-                    confBackdrop.style.pointerEvents = 'auto';
-                    setTimeout(() => {
-                        confBackdrop.classList.remove('opacity-0');
-                        confContainer.classList.remove('scale-95');
-                    }, 10);
-                }
-                return;
-            }
-
-            const backdrop = document.getElementById('task-modal-backdrop');
-            const container = document.getElementById('task-modal-container');
-            dismissOverlay(backdrop, container);
-
-            // Reset fields
-            if (document.getElementById('new-task-title')) document.getElementById('new-task-title').value = '';
-            if (document.getElementById('new-task-desc')) document.getElementById('new-task-desc').value = '';
-            AppState.tempCreateNotes = [];
-            AppState.tempCreateSubtasks = [];
-        }
-        window.closeAddTaskModal = closeAddTaskModal;
-
-        function confirmDiscardModalChanges() {
-            closeConfirmationModalOnly();
-            closeAddTaskModal(true);
-        }
-        window.confirmDiscardModalChanges = confirmDiscardModalChanges;
-
-        function closeConfirmationModalOnly() {
-            const confBackdrop = document.getElementById('confirmation-modal-backdrop');
-            const confContainer = document.getElementById('confirmation-modal-container');
-            dismissOverlay(confBackdrop, confContainer);
-        }
-        window.closeConfirmationModalOnly = closeConfirmationModalOnly;
-
         function openProfileCustomizerModal() {
             const backdrop = document.getElementById('profile-customizer-backdrop');
             const container = document.getElementById('profile-customizer-container');
@@ -1908,7 +1777,6 @@
             updateProfileCustomizerDPPreview();
 
             backdrop.classList.remove('hidden');
-            backdrop.style.pointerEvents = 'auto';
             setTimeout(() => {
                 backdrop.classList.remove('opacity-0');
                 container.classList.remove('scale-95');
@@ -1919,7 +1787,9 @@
         function closeProfileCustomizerModal() {
             const backdrop = document.getElementById('profile-customizer-backdrop');
             const container = document.getElementById('profile-customizer-container');
-            dismissOverlay(backdrop, container);
+            backdrop.classList.add('opacity-0');
+            container.classList.add('scale-95');
+            setTimeout(() => { backdrop.classList.add('hidden'); }, 150);
         }
 
         function rotateProfileGlyphIcon(direction) {
@@ -1944,16 +1814,12 @@
 
         function handleProfileUpdates(event) {
             event.preventDefault();
-            const nameField = document.getElementById('profile-customizer-name-field');
-            if (nameField) {
-                AppState.profileName = nameField.value.trim() || 'Abhinav';
-            }
+            AppState.profileName = document.getElementById('profile-customizer-name-field').value.trim();
             
-            saveToLocalStorage();
             syncDeviceDataChannels();
-            updateHeaderDateGreeting();
+            syncProfileUIElements();
             closeProfileCustomizerModal();
-            showToast('Profile Configuration Saved', 'Your display name has been updated.');
+            showToast('Profile Configuration Saved', 'Ecosystem identity classifications updated.');
         }
 
         function toggleMetricCardCollapse(event) {
@@ -2119,10 +1985,10 @@
                             currentCount += t.subtasks.filter(s => !s.done).length;
                         }
                     });
-                    activeTabBadge.textContent = `${currentCount} active`;
+                    activeTabBadge.textContent = `${currentCount} subtasks`;
                 } else {
                     currentCount = getFilteredTasks().length;
-                    activeTabBadge.textContent = `${currentCount} active`;
+                    activeTabBadge.textContent = `${currentCount} items`;
                 }
             }
 
@@ -2255,74 +2121,6 @@
             }
         }
 
-        const PRIORITY_LEVELS = [
-            "red", "orange", "yellow", "green", "lightblue", "blue",
-            "violet", "magenta", "purple", "beige", "gray", "lightpink"
-        ];
-
-        const PRIORITY_COLOR_MAP = {
-            "red": "#FF3B30",
-            "orange": "#FF9500",
-            "yellow": "#FFCC00",
-            "green": "#34C759",
-            "lightblue": "#5AC8FA",
-            "blue": "#007AFF",
-            "violet": "#5856D6",
-            "magenta": "#FF2D55",
-            "purple": "#AF52DE",
-            "beige": "#A2845E",
-            "gray": "#8E8E93",
-            "lightpink": "#E4A3A1"
-        };
-
-        function comparePriority(taskA, taskB) {
-            if (taskA.manualOrderIndex != null && taskB.manualOrderIndex != null) {
-                return taskA.manualOrderIndex - taskB.manualOrderIndex;
-            }
-            const rankA = PRIORITY_LEVELS.indexOf(taskA.priorityColor || taskA.color);
-            const rankB = PRIORITY_LEVELS.indexOf(taskB.priorityColor || taskB.color);
-            return (rankA === -1 ? 99 : rankA) - (rankB === -1 ? 99 : rankB);
-        }
-
-        function setTaskPriority(task, newColor) {
-            return { ...task, priorityColor: newColor, color: newColor, manualOrderIndex: null };
-        }
-
-        function toggleAppTheme(e) {
-            if (e) e.stopPropagation();
-            const body = document.body;
-            body.classList.toggle('light-mode');
-            const isLight = body.classList.contains('light-mode');
-            localStorage.setItem('APP_THEME_MODE', isLight ? 'light' : 'dark');
-
-            const dots = [document.getElementById('theme-toggle-dot'), document.getElementById('theme-toggle-dot-mobile')];
-            const btns = [document.getElementById('theme-toggle-btn'), document.getElementById('theme-toggle-btn-mobile')];
-            
-            dots.forEach(dot => {
-                if (dot) {
-                    if (isLight) {
-                        dot.classList.remove('translate-x-0', 'bg-gray-400');
-                        dot.classList.add('translate-x-4', 'bg-white');
-                    } else {
-                        dot.classList.remove('translate-x-4', 'bg-white');
-                        dot.classList.add('translate-x-0', 'bg-gray-400');
-                    }
-                }
-            });
-            btns.forEach(btn => {
-                if (btn) {
-                    if (isLight) {
-                        btn.classList.remove('bg-white/10');
-                        btn.classList.add('bg-[#2997ff]');
-                    } else {
-                        btn.classList.remove('bg-[#2997ff]');
-                        btn.classList.add('bg-white/10');
-                    }
-                }
-            });
-        }
-        window.toggleAppTheme = toggleAppTheme;
-
         function sortTasks(taskList) {
             if (AppState.sortBy === 'created') {
                 return taskList.sort((a, b) => new Date(b.createdDate || 0) - new Date(a.createdDate || 0));
@@ -2333,11 +2131,13 @@
                     return new Date(a.dueDate) - new Date(b.dueDate);
                 });
             } else if (AppState.sortBy === 'priority') {
-                return taskList.sort(comparePriority);
+                const valMap = {};
+                SYSTEM_COLORS.forEach((color, i) => { valMap[color] = SYSTEM_COLORS.length - i; });
+                return taskList.sort((a, b) => (valMap[b.color] || 0) - (valMap[a.color] || 0));
             } else if (AppState.sortBy === 'alphabetical') {
                 return taskList.sort((a, b) => a.title.localeCompare(b.title));
             }
-            return taskList.sort(comparePriority);
+            return taskList;
         }
 
         function updateStreakCardMetrics() {
@@ -2453,36 +2253,30 @@
             const mobileActionHeader = document.getElementById('mobile-action-section-header');
             const mobileSearchContainer = document.getElementById('mobile-search-bar-container');
 
-            const mainGreetingHeaderBlock = document.getElementById('main-greeting-header-block');
-
             if (AppState.currentTab === 'manage') {
                 if (mobileActionHeader) mobileActionHeader.classList.add('hidden');
                 if (mobileSearchContainer) mobileSearchContainer.classList.add('hidden');
-                if (mainGreetingHeaderBlock) mainGreetingHeaderBlock.classList.add('hidden');
                 renderManageDashboard();
                 return;
             } else {
                 if (mobileActionHeader) mobileActionHeader.classList.remove('hidden');
-                if (mainGreetingHeaderBlock) mainGreetingHeaderBlock.classList.remove('hidden');
             }
 
             const filtered = getFilteredTasks();
             const sorted = sortTasks(filtered);
 
             const feedTitle = document.getElementById('feed-current-title');
-            if (feedTitle) {
-                if (AppState.currentTab === 'inbox') {
-                    feedTitle.textContent = 'Inbox Feed';
-                } else if (AppState.currentTab === 'today') {
-                    feedTitle.textContent = "Today's Agenda";
-                } else if (AppState.currentTab === 'done') {
-                    feedTitle.textContent = 'Completed Archive';
-                } else if (AppState.currentTab === 'search') {
-                    feedTitle.textContent = `Search matches for: "${AppState.searchQuery}"`;
-                } else {
-                    const foundProj = AppState.projects.find(p => p.id === AppState.currentTab);
-                    feedTitle.textContent = foundProj ? foundProj.title : 'Collection Folder';
-                }
+            if (AppState.currentTab === 'inbox') {
+                feedTitle.textContent = 'Inbox Feed';
+            } else if (AppState.currentTab === 'today') {
+                feedTitle.textContent = "Today's Agenda";
+            } else if (AppState.currentTab === 'done') {
+                feedTitle.textContent = 'Completed Archive';
+            } else if (AppState.currentTab === 'search') {
+                feedTitle.textContent = `Search matches for: "${AppState.searchQuery}"`;
+            } else {
+                const foundProj = AppState.projects.find(p => p.id === AppState.currentTab);
+                feedTitle.textContent = foundProj ? foundProj.title : 'Collection Folder';
             }
 
             container.innerHTML = '';
@@ -2626,13 +2420,13 @@
                     let subtasksHTML = '';
                     if (task.subtasks && task.subtasks.length > 0) {
                         subtasksHTML = `
-                            <div class="subtask-thread-container">
+                            <div class="mt-2.5 pt-2 subtask-thread-line space-y-1.5">
                                 ${task.subtasks.map(s => {
                                     const subtaskAccent = task.done ? '#7a7a7a' : accentColor;
                                     const subBorderColor = `border-color: ${subtaskAccent};`;
                                     const subBgColor = s.done ? `background-color: ${subtaskAccent};` : `background-color: transparent;`;
                                     return `
-                                        <div class="subtask-thread-item flex items-center space-x-2.5 px-1 py-1 rounded hover:bg-white/[0.03] transition">
+                                        <div class="flex items-center space-x-2.5 px-1 py-1 rounded hover:bg-white/[0.03] transition">
                                             <button onclick="toggleCardSubtaskDone('${task.id}', '${s.id}', event)" class="w-3.5 h-3.5 rounded-full border flex items-center justify-center flex-shrink-0 transition-all duration-150" style="${subBorderColor} ${subBgColor}">
                                                 ${s.done ? `<i data-lucide="check" class="w-2.5 h-2.5 text-[#0A0A0A] font-extrabold tick-animation"></i>` : ''}
                                             </button>
@@ -2645,20 +2439,9 @@
                     }
 
                     const card = document.createElement('div');
-                    card.className = `group-card relative py-2 px-3`;
+                    card.className = `group-card relative py-2.5 px-3 rounded-xl transition duration-150 hover:bg-white/[0.02] ${isSelected ? 'ring-1 ring-[#2997ff]/60 bg-white/[0.03]' : ''}`;
                     card.setAttribute('data-task-id', task.id); 
                     card.setAttribute('oncontextmenu', `showContextMenu(event, '${task.id}')`);
-                    
-                    // Touch hold long press context menu binding
-                    let touchTimer = null;
-                    card.addEventListener('touchstart', (e) => {
-                        touchTimer = setTimeout(() => {
-                            showContextMenu(e, task.id);
-                        }, 500);
-                    }, { passive: true });
-                    card.addEventListener('touchend', () => clearTimeout(touchTimer));
-                    card.addEventListener('touchmove', () => clearTimeout(touchTimer));
-
                     card.onclick = (e) => selectTask(task.id, e);
 
                     card.innerHTML = `
@@ -2676,7 +2459,43 @@
                                     </div>
                                     ${task.description ? `<p class="text-[10px] ${subtextClass} mt-1 warp-text whitespace-pre-line">${escapeHTML(task.description)}</p>` : ''}
                                     
-                                    ${subtasksHTML}
+                                    <div class="flex flex-wrap gap-1.5 mt-2 items-center">
+                                        <span class="ui-badge" style="background-color: ${task.done ? 'rgba(255,255,255,0.04)' : accentColor + '20'}; color: ${task.done ? '#6b7280' : accentColor}; border-color: ${task.done ? 'rgba(255,255,255,0.06)' : accentColor + '30'};">
+                                            <i data-lucide="check" class="w-2.5 h-2.5"></i>
+                                            <span>Priority</span>
+                                        </span>
+
+                                        ${project ? `
+                                            <span class="ui-badge" style="background-color: ${task.done ? 'rgba(255,255,255,0.04)' : (project.color + '20')}; color: ${task.done ? '#6b7280' : project.color}; border-color: ${task.done ? 'rgba(255,255,255,0.06)' : (project.color + '30')};">
+                                                <i data-lucide="${project.icon}" class="w-2.5 h-2.5 flex-shrink-0"></i>
+                                                <span>${escapeHTML(project.title)}</span>
+                                            </span>
+                                        ` : ''}
+                                        ${task.dueDate ? `
+                                            <span class="ui-badge" ${task.done ? 'style="background-color: rgba(255,255,255,0.04); color: #6b7280; border-color: rgba(255,255,255,0.06);"' : 'data-variant="secondary"'}>
+                                                <i data-lucide="calendar" class="w-2.5 h-2.5 flex-shrink-0"></i>
+                                                <span>${task.dueDate}</span>
+                                            </span>
+                                        ` : ''}
+                                        ${subTotal > 0 ? `
+                                            <span class="ui-badge" ${task.done ? 'style="background-color: rgba(255,255,255,0.04); color: #6b7280; border-color: rgba(255,255,255,0.06);"' : 'data-variant="secondary"'}>
+                                                <i data-lucide="list-checks" class="w-2.5 h-2.5 flex-shrink-0"></i>
+                                                <span>${subDone}/${subTotal}</span>
+                                            </span>
+                                        ` : ''}
+                                        ${task.isHeldTask ? `
+                                            <span class="ui-badge" style="${task.done ? 'background-color: rgba(255,255,255,0.04); color: #6b7280; border-color: rgba(255,255,255,0.06);' : 'background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3);'}" title="Task is paused on hold">
+                                                <i data-lucide="pause-circle" class="w-2.5 h-2.5 flex-shrink-0"></i>
+                                                <span>Task On Hold</span>
+                                            </span>
+                                        ` : ''}
+                                        ${isTaskOnHold(task) && AppState.currentTab === 'done' ? `
+                                            <span class="ui-badge" data-variant="secondary" style="background-color: rgba(245, 158, 11, 0.2); color: #fcd34d; border-color: rgba(245, 158, 11, 0.4);" title="${task.holdUntil ? 'Auto-delete held until ' + new Date(task.holdUntil).toLocaleString() : 'Auto-delete held indefinitely'}">
+                                                <i data-lucide="pause-circle" class="w-3 h-3 flex-shrink-0"></i>
+                                                <span>Deletion Held</span>
+                                            </span>
+                                        ` : ''}
+                                    </div>
                                     ${task.notes && task.notes.length > 0 ? `
                                         <div class="flex flex-col gap-1 mt-2">
                                             ${task.notes.map(n => `
@@ -2957,6 +2776,162 @@
             if (popup) hideFloatingElement(popup);
         }
 
+        function renderManageDashboard() {
+            const container = document.getElementById('tasks-list');
+            const emptyScreen = document.getElementById('empty-state-screen');
+            emptyScreen.classList.add('hidden');
+            
+            document.getElementById('feed-current-title').textContent = 'Manage Studio';
+            
+            container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8">
+                    <div class="bg-[#121212] p-5 rounded-2xl border border-white/[0.04] flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center space-x-2">
+                                    <span class="p-1.5 rounded-lg bg-white/5 text-white"><i data-lucide="check-square" class="w-4 h-4"></i></span>
+                                    <h4 class="text-xs font-bold text-white uppercase tracking-wider">Database Tasks</h4>
+                                </div>
+                                <span class="bg-white/5 text-gray-400 text-xs font-mono px-3 py-1 rounded-full">${AppState.tasks.length} Total</span>
+                            </div>
+                            <p class="text-[11px] text-gray-500 mb-6 leading-relaxed">Directly review, inspect specifications, or wipe your task directories securely.</p>
+                            
+                            <div class="space-y-2 max-h-80 overflow-y-auto pr-1 mb-6">
+                                ${AppState.tasks.length === 0 ? `
+                                    <div class="text-center py-8 text-xs text-gray-600 border border-dashed border-white/5 rounded-xl">No active tasks in database</div>
+                                ` : AppState.tasks.map(t => `
+                                    <div class="flex items-center justify-between bg-white/5 p-2.5 rounded-xl text-xs hover:bg-white/10 transition">
+                                        <div class="flex items-center space-x-2.5 min-w-0 flex-1">
+                                            <span class="w-3 h-3 rounded border" style="border-color: ${t.color || '#FF3B30'}; background-color: ${t.done ? t.color || '#FF3B30' : 'transparent'};"></span>
+                                            <span class="text-white truncate ${t.done ? 'line-through text-gray-500' : ''}">${escapeHTML(t.title)}</span>
+                                        </div>
+                                        <div class="flex items-center space-x-1 flex-shrink-0">
+                                            <button onclick="selectTaskFromManage('${t.id}')" class="p-1.5 hover:bg-white/10 rounded text-[#2997ff]" title="Edit Task Details">
+                                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                            <button onclick="handleDeleteTaskDirect('${t.id}')" class="text-gray-500 hover:text-red-400 p-1.5 rounded hover:bg-white/5 transition" title="Delete Task">
+                                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <button onclick="handleDeleteAllTasksTrigger()" class="btn-scale w-full mt-2 py-2.5 bg-red-500/10 text-red-400 rounded-xl text-xs font-bold hover:bg-red-500/20 transition flex items-center justify-center space-x-1.5">
+                            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                            <span>Delete All Tasks</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-[#121212] p-5 rounded-2xl border border-white/[0.04] flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center space-x-2">
+                                    <span class="p-1.5 rounded-lg bg-white/5 text-white"><i data-lucide="layout-panel-left" class="w-4 h-4"></i></span>
+                                    <h4 class="text-xs font-bold text-white uppercase tracking-wider">Group Columns</h4>
+                                </div>
+                                <span class="bg-white/5 text-gray-400 text-xs font-mono px-3 py-1 rounded-full">${AppState.groups.length} Active</span>
+                            </div>
+                            <p class="text-[11px] text-gray-500 mb-6 leading-relaxed">Modify layout settings, delete active columns, or wipe groups entirely from settings.</p>
+
+                            <div class="space-y-2 max-h-80 overflow-y-auto pr-1 mb-6">
+                                ${AppState.groups.length === 0 ? `
+                                    <div class="text-center py-8 text-xs text-gray-600 border border-dashed border-white/5 rounded-xl">No group columns in database</div>
+                                ` : AppState.groups.map(g => `
+                                    <div class="flex items-center justify-between bg-white/5 p-2.5 rounded-xl text-xs hover:bg-white/10 transition">
+                                        <div class="flex items-center space-x-2 min-w-0 flex-1">
+                                            <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: ${g.color || '#2997ff'}; box-shadow: 0 0 6px ${g.color || '#2997ff'}aa;"></span>
+                                            <i data-lucide="${g.icon || 'list'}" class="w-3.5 h-3.5 flex-shrink-0 ml-1.5" style="color: ${g.color || '#2997ff'}"></i>
+                                            <span class="text-white font-medium truncate ml-1">${escapeHTML(g.title)}</span>
+                                        </div>
+                                        <div class="flex items-center space-x-1 flex-shrink-0">
+                                            <button onclick="openEditGroupModalFromManage('${g.id}')" class="p-1.5 hover:bg-white/10 rounded text-[#2997ff]" title="Edit Group Column">
+                                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                            <button onclick="handleDeleteGroup('${g.id}')" class="p-1.5 hover:bg-white/10 rounded text-red-400" title="Delete Group Column">
+                                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <button onclick="handleDeleteAllGroupsTrigger()" class="btn-scale w-full mt-2 py-2.5 bg-red-500/10 text-red-400 rounded-xl text-xs font-bold hover:bg-red-500/20 transition flex items-center justify-center space-x-1.5">
+                            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                            <span>Delete All Groups</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-[#121212] p-6 rounded-2xl border border-white/[0.06] flex flex-col justify-between md:col-span-2 space-y-5 shadow-lg">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center space-x-2.5">
+                                    <span class="p-2 rounded-xl bg-[#2997ff]/10 text-[#2997ff] border border-[#2997ff]/20"><i data-lucide="database" class="w-4 h-4"></i></span>
+                                    <div>
+                                        <h4 class="text-xs font-extrabold text-white uppercase tracking-wider">Automated Studio Backups</h4>
+                                        <p class="text-[11px] text-gray-400 mt-0.5 leading-relaxed">Full system snapshots captured automatically every 5 days with rolling rotation.</p>
+                                    </div>
+                                </div>
+                                <span class="bg-[#2997ff]/10 text-[#2997ff] text-[10px] font-mono font-bold px-3 py-1 rounded-full border border-[#2997ff]/20 flex-shrink-0">Auto-Rolling</span>
+                            </div>
+
+                            <div class="space-y-2 max-h-60 overflow-y-auto pr-1 my-4" id="auto-backups-list">
+                                ${(() => {
+                                    let backups = [];
+                                    try { backups = JSON.parse(localStorage.getItem('ANV_5DAY_SNAPSHOTS') || '[]'); } catch(e) {}
+                                    if (backups.length === 0) {
+                                        return `<div class="text-center py-6 text-xs text-gray-600 border border-dashed border-white/5 rounded-xl">No 5-day auto snapshots captured yet.</div>`;
+                                    }
+                                    return backups.map((b, idx) => `
+                                        <div onclick="previewBackupSnapshot(${idx})" class="flex items-center justify-between bg-white/[0.03] hover:bg-white/[0.06] p-3.5 rounded-xl text-xs transition border border-white/5 gap-3 cursor-pointer group">
+                                            <div class="flex items-center space-x-3 min-w-0 flex-1">
+                                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0 text-emerald-400 group-hover:scale-105 transition">
+                                                    <i data-lucide="archive" class="w-4 h-4"></i>
+                                                </div>
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="text-white font-bold truncate text-xs group-hover:text-[#2997ff] transition flex items-center space-x-1.5">
+                                                        <span>${escapeHTML(b.label || '5-Day Full Backup Snapshot')}</span>
+                                                        <i data-lucide="eye" class="w-3.5 h-3.5 text-gray-500"></i>
+                                                    </div>
+                                                    <div class="text-[10px] text-gray-400 font-mono mt-0.5 flex items-center space-x-2">
+                                                        <span>${new Date(b.timestamp).toLocaleString()}</span>
+                                                        <span>•</span>
+                                                        <span class="text-[#2997ff] font-semibold">${b.taskCount || 0} Tasks</span>
+                                                        <span>•</span>
+                                                        <span class="text-purple-400 font-semibold">${b.groupCount || 0} Groups</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-2 flex-shrink-0">
+                                                <button onclick="event.stopPropagation(); restoreAutoSnapshot(${idx});" class="btn-scale bg-[#2997ff]/15 hover:bg-[#2997ff] text-[#2997ff] hover:text-black font-bold px-3 py-1.5 rounded-xl text-xs transition flex items-center space-x-1 border border-[#2997ff]/30">
+                                                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                                                    <span>Restore</span>
+                                                </button>
+                                                <button onclick="event.stopPropagation(); deleteAutoSnapshot(${idx});" class="btn-scale p-1.5 bg-red-500/10 hover:bg-red-500/25 text-red-400 rounded-xl transition" title="Delete Snapshot">
+                                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `).join('');
+                                })()}
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-white/5">
+                            <button onclick="triggerManualSnapshot()" class="btn-scale py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold border border-white/10 transition flex items-center justify-center space-x-2">
+                                <i data-lucide="camera" class="w-4 h-4 text-[#2997ff]"></i>
+                                <span>Capture Snapshot Now</span>
+                            </button>
+                            <button onclick="triggerImport()" class="btn-scale py-3 bg-[#2997ff] hover:bg-[#0066cc] text-black hover:text-white rounded-xl text-xs font-extrabold transition flex items-center justify-center space-x-2 shadow-md">
+                                <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                                <span>Import Previous Backup File</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
         function selectTaskFromManage(taskId) {
             switchTab('inbox');
             selectTask(taskId);
@@ -3012,37 +2987,36 @@
             }
             
             const menu = document.getElementById('context-menu');
-            menu.className = "hidden fixed ios-context-menu z-[100] text-xs text-gray-200 animate-fade-in";
 
             if (AppState.selectedTaskIds.length > 1) {
                 menu.innerHTML = `
                     <div class="px-4 py-1.5 text-[9px] font-bold tracking-widest uppercase text-[#2997ff] border-b border-white/[0.04] mb-1">
                         Selected: ${AppState.selectedTaskIds.length} tasks
                     </div>
-                    <button onclick="contextMultiToggleComplete(true)" class="ios-context-menu-item">
+                    <button onclick="contextMultiToggleComplete(true)" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
+                        <i data-lucide="check-square" class="w-3.5 h-3.5"></i>
                         <span>Mark all completed</span>
-                        <i data-lucide="check-square" class="w-4 h-4 text-[#2997ff]"></i>
                     </button>
-                    <button onclick="contextMultiToggleComplete(false)" class="ios-context-menu-item">
+                    <button onclick="contextMultiToggleComplete(false)" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
+                        <i data-lucide="square" class="w-3.5 h-3.5"></i>
                         <span>Mark all incomplete</span>
-                        <i data-lucide="square" class="w-4 h-4 text-gray-400"></i>
                     </button>
-                    <div class="ui-separator my-1" data-orientation="horizontal"></div>
-                    <button onclick="triggerMultiTaskHold()" class="ios-context-menu-item">
+                    <div class="border-t border-white/[0.03] my-1"></div>
+                    <button onclick="triggerMultiTaskHold()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
+                        <i data-lucide="lock" class="w-3.5 h-3.5 text-[#2997ff]"></i>
                         <span>Hold Auto-Delete</span>
-                        <i data-lucide="lock" class="w-4 h-4 text-[#2997ff]"></i>
                     </button>
-                    <button onclick="clearMultiTaskHold()" class="ios-context-menu-item">
+                    <button onclick="clearMultiTaskHold()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2">
+                        <i data-lucide="unlock" class="w-3.5 h-3.5"></i>
                         <span>Unhold Auto-Delete</span>
-                        <i data-lucide="unlock" class="w-4 h-4 text-gray-400"></i>
                     </button>
-                    <div class="ui-separator my-1" data-orientation="horizontal"></div>
+                    <div class="border-t border-white/[0.03] my-1"></div>
                     <div class="px-4 py-1.5 text-[9px] font-bold tracking-widest uppercase text-gray-500">Arrange all in group</div>
                     <div id="context-groups-list" class="max-h-32 overflow-y-auto"></div>
-                    <div class="ui-separator my-1" data-orientation="horizontal"></div>
-                    <button onclick="contextMultiDeleteTasks()" class="ios-context-menu-item" data-destructive="true">
+                    <div class="border-t border-white/[0.03] my-1"></div>
+                    <button onclick="contextMultiDeleteTasks()" class="w-full text-left px-4 py-2 hover:bg-red-500/10 hover:text-red-400 transition flex items-center space-x-2">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                         <span>Delete Selected (${AppState.selectedTaskIds.length})</span>
-                        <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
                     </button>
                 `;
                 
@@ -3051,15 +3025,15 @@
                 
                 const ungroupBtn = document.createElement('button');
                 ungroupBtn.onclick = () => contextMultiMoveToGroup(null);
-                ungroupBtn.className = "ios-context-menu-item text-xs text-gray-300";
-                ungroupBtn.innerHTML = `<span>No Group / Ungrouped</span><span class="w-2 h-2 rounded-full bg-gray-500"></span>`;
+                ungroupBtn.className = "w-full text-left px-4 py-1.5 hover:bg-white/5 hover:text-white transition truncate flex items-center space-x-1.5 text-xs text-gray-300";
+                ungroupBtn.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span><span>No Group / Ungrouped</span>`;
                 groupsList.appendChild(ungroupBtn);
 
                 AppState.groups.forEach(group => {
                     const groupBtn = document.createElement('button');
                     groupBtn.onclick = () => contextMultiMoveToGroup(group.id);
-                    groupBtn.className = "ios-context-menu-item text-xs text-gray-300";
-                    groupBtn.innerHTML = `<span>${escapeHTML(group.title)}</span><span class="w-2 h-2 rounded-full" style="background-color: ${group.color || '#2997ff'}"></span>`;
+                    groupBtn.className = "w-full text-left px-4 py-1.5 hover:bg-white/5 hover:text-white transition truncate flex items-center space-x-1.5 text-xs text-gray-300";
+                    groupBtn.innerHTML = `<span class="w-1.5 h-1.5 rounded-full" style="background-color: ${group.color || '#2997ff'}"></span><span>${escapeHTML(group.title)}</span>`;
                     groupsList.appendChild(groupBtn);
                 });
             } else {
@@ -3079,29 +3053,29 @@
                 }
 
                 menu.innerHTML = `
-                    <button onmouseenter="hideGroupSubmenu()" onclick="contextToggleComplete()" class="ios-context-menu-item">
+                    <button onmouseenter="hideGroupSubmenu()" onclick="contextToggleComplete()" class="ui-menu-item">
                         <span>Toggle Complete</span>
                         <i data-lucide="check" class="w-4 h-4 text-gray-400"></i>
                     </button>
-                    <button onmouseenter="hideGroupSubmenu()" onclick="togglePinTaskToSidebar('${taskId}')" class="ios-context-menu-item">
+                    <button onmouseenter="hideGroupSubmenu()" onclick="togglePinTaskToSidebar('${taskId}')" class="ui-menu-item">
                         <span>${isPinned ? 'Remove from sidebar' : 'Add to sidebar'}</span>
-                        <i data-lucide="pin" class="w-4 h-4 text-amber-400"></i>
+                        <i data-lucide="sidebar" class="w-4 h-4 text-amber-400"></i>
                     </button>
-                    <button onmouseenter="hideGroupSubmenu()" onclick="handleUnifiedHoldAction()" class="ios-context-menu-item">
+                    <button onmouseenter="hideGroupSubmenu()" onclick="handleUnifiedHoldAction()" class="ui-menu-item">
                         <span>${holdLabel}</span>
                         <i data-lucide="${holdIcon}" class="w-4 h-4 ${holdColorClass}"></i>
                     </button>
-                    <button onmouseenter="hideGroupSubmenu()" onclick="contextOpenDetails()" class="ios-context-menu-item">
+                    <button onmouseenter="hideGroupSubmenu()" onclick="contextOpenDetails()" class="ui-menu-item">
                         <span>Edit Specifications</span>
                         <i data-lucide="sliders" class="w-4 h-4 text-gray-400"></i>
                     </button>
                     <div class="ui-separator my-1" data-orientation="horizontal"></div>
-                    <button onmouseenter="showGroupSubmenu(event)" onclick="showGroupSubmenu(event)" class="ios-context-menu-item group">
+                    <button onmouseenter="showGroupSubmenu(event)" onclick="showGroupSubmenu(event)" class="ui-menu-item group">
                         <span>Move to group</span>
                         <i data-lucide="folder-output" class="w-4 h-4 text-gray-400 group-hover:text-white"></i>
                     </button>
                     <div class="ui-separator my-1" data-orientation="horizontal"></div>
-                    <button onmouseenter="hideGroupSubmenu()" onclick="contextDeleteTask()" class="ios-context-menu-item" data-destructive="true">
+                    <button onmouseenter="hideGroupSubmenu()" onclick="contextDeleteTask()" class="ui-menu-item" data-destructive="true">
                         <span>Delete Task</span>
                         <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
                     </button>
@@ -3817,10 +3791,6 @@
                 document.getElementById('new-task-desc').value = '';
                 AppState.tempCreateNotes = [];
                 renderNewTaskNotesDraft();
-                AppState.tempCreateSubtasks = [];
-                renderNewTaskSubtasksDraft();
-                const subtaskInput = document.getElementById('new-task-subtask-input');
-                if (subtaskInput) subtaskInput.value = '';
                 document.getElementById('new-task-project').value = '';
                 document.getElementById('new-task-project-label').textContent = 'None / Inbox';
                 
@@ -4034,7 +4004,7 @@
             if (shouldClearDraft) {
                 const titleVal = document.getElementById('new-task-title') ? document.getElementById('new-task-title').value.trim() : '';
                 const descVal = document.getElementById('new-task-desc') ? document.getElementById('new-task-desc').value.trim() : '';
-                if (titleVal || descVal || (AppState.tempCreateNotes && AppState.tempCreateNotes.length > 0) || (AppState.tempCreateSubtasks && AppState.tempCreateSubtasks.length > 0)) {
+                if (titleVal || descVal || (AppState.tempCreateNotes && AppState.tempCreateNotes.length > 0)) {
                     if (!confirm("You have unsaved task details. Are you sure you want to close and discard changes?")) {
                         return;
                     }
@@ -4057,10 +4027,6 @@
                 const noteInput = document.getElementById('new-task-note-input');
                 if (noteInput) noteInput.value = '';
                 renderNewTaskNotesDraft();
-                AppState.tempCreateSubtasks = [];
-                renderNewTaskSubtasksDraft();
-                const subtaskInput = document.getElementById('new-task-subtask-input');
-                if (subtaskInput) subtaskInput.value = '';
             }
         }
 
@@ -4127,7 +4093,7 @@
                 icon: AppState.tempCreateIcon,
                 autoDelete: autoDeleteVal,
                 expiryTime: expiryTime,
-                subtasks: AppState.tempCreateSubtasks && AppState.tempCreateSubtasks.length > 0 ? [...AppState.tempCreateSubtasks] : [],
+                subtasks: [],
                 createdDate: new Date().toISOString()
             };
 
@@ -4198,57 +4164,6 @@
                     <span class="text-xs text-yellow-400 truncate flex-1 mr-2">${escapeHTML(n.text)}</span>
                     <button type="button" onclick="deleteNewTaskNoteDraft('${n.id}')" class="text-gray-500 hover:text-red-400 transition p-1 flex-shrink-0">
                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                    </button>
-                `;
-                list.appendChild(item);
-            });
-            lucide.createIcons();
-        }
-
-        function addNewTaskSubtaskDraft() {
-            const input = document.getElementById('new-task-subtask-input');
-            if (!input) return;
-            const text = input.value.trim();
-            if (text) {
-                if (!AppState.tempCreateSubtasks) AppState.tempCreateSubtasks = [];
-                AppState.tempCreateSubtasks.push({
-                    id: 'sub-' + Date.now() + Math.random().toString(36).substr(2, 5),
-                    title: sanitizeSentenceCase(text),
-                    done: false
-                });
-                input.value = '';
-                renderNewTaskSubtasksDraft();
-            }
-        }
-
-        function deleteNewTaskSubtaskDraft(subtaskId) {
-            if (AppState.tempCreateSubtasks) {
-                AppState.tempCreateSubtasks = AppState.tempCreateSubtasks.filter(s => s.id !== subtaskId);
-            }
-            renderNewTaskSubtasksDraft();
-        }
-
-        function renderNewTaskSubtasksDraft() {
-            const list = document.getElementById('new-task-subtasks-list');
-            if (!list) return;
-            list.innerHTML = '';
-            const subtasks = AppState.tempCreateSubtasks || [];
-            const countEl = document.getElementById('new-task-subtask-count');
-            if (countEl) countEl.textContent = subtasks.length;
-            subtasks.forEach((s, idx) => {
-                const isLast = idx === subtasks.length - 1;
-                const item = document.createElement('div');
-                item.className = 'relative flex items-center gap-2 pl-4';
-                item.innerHTML = `
-                    <span class="absolute left-0 top-0 bottom-0 flex flex-col items-center" aria-hidden="true">
-                        <span class="w-px ${isLast ? 'h-1/2' : 'h-full'} bg-white/20"></span>
-                        ${isLast ? '' : ''}
-                    </span>
-                    <span class="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-px bg-white/20"></span>
-                    <span class="w-1.5 h-1.5 rounded-full bg-white/30 flex-shrink-0"></span>
-                    <span class="text-xs text-gray-300 flex-1 truncate">${escapeHTML(s.title)}</span>
-                    <button type="button" onclick="deleteNewTaskSubtaskDraft('${s.id}')" class="text-gray-600 hover:text-red-400 transition p-1 flex-shrink-0">
-                        <i data-lucide="x" class="w-3 h-3"></i>
                     </button>
                 `;
                 list.appendChild(item);
@@ -4618,21 +4533,14 @@
             const subtaskColor = task.color || '#2997ff';
             const borderStyle = `border-color: ${subtaskColor};`;
 
-            subtasks.forEach((s, idx) => {
-                const isLast = idx === subtasks.length - 1;
+            subtasks.forEach(s => {
                 const row = document.createElement('div');
                 row.id = `ins-subtask-row-${s.id}`;
-                row.className = `relative flex items-center justify-between transition ${s.done ? 'opacity-60' : ''}`;
-                const subtaskColor = task.color || '#2997ff';
-                const borderStyle = `border-color: ${subtaskColor};`;
+                row.className = `flex items-center justify-between bg-white/5 p-2 rounded-lg transition ${s.done ? 'opacity-70' : ''}`;
                 const bgStyle = s.done ? `background-color: ${subtaskColor};` : `background-color: transparent;`;
 
                 row.innerHTML = `
-                    <!-- Thread lines -->
-                    <span class="absolute left-0 top-0 flex flex-col items-center" style="width: 1px; height: ${isLast ? '50%' : '100%'}; background: rgba(255,255,255,0.12);" aria-hidden="true"></span>
-                    <span class="absolute left-0 top-1/2 -translate-y-px" style="width: 14px; height: 1px; background: rgba(255,255,255,0.12);" aria-hidden="true"></span>
-
-                    <div class="flex items-center space-x-2.5 flex-1 min-w-0 pr-2 pl-5">
+                    <div class="flex items-center space-x-3 flex-1 min-w-0 pr-2">
                         <button onclick="toggleSubtaskDone('${s.id}')" class="w-[18px] h-[18px] rounded-full border flex items-center justify-center flex-shrink-0 transition-all duration-200" style="${borderStyle} ${bgStyle}" title="Toggle Subtask">
                             ${s.done ? `<i data-lucide="check" class="w-3 h-3 text-[#0a0a0a] font-extrabold tick-animation"></i>` : ''}
                         </button>
@@ -5086,8 +4994,6 @@
         window.renderArchiveModalList = renderArchiveModalList;
 
         function closeProjectModal() {
-            const titleVal = document.getElementById('new-project-title') ? document.getElementById('new-project-title').value.trim() : '';
-            if (titleVal && !confirm('Discard changes to this collection?')) return;
             const backdrop = document.getElementById('project-modal-backdrop');
             const container = document.getElementById('project-modal-container');
             backdrop.classList.add('opacity-0');
@@ -5237,10 +5143,9 @@
         }
 
         function closeAddGroupModal() {
-            const titleVal = document.getElementById('new-group-title') ? document.getElementById('new-group-title').value.trim() : '';
-            if (titleVal && !AppState.returningToTaskModal && !confirm('Discard changes to this group?')) return;
             const backdrop = document.getElementById('group-modal-backdrop');
             const container = document.getElementById('group-modal-container');
+            const submitBtn = document.getElementById('group-submit-btn');
             backdrop.classList.add('opacity-0');
             container.classList.add('scale-95');
             setTimeout(() => {
@@ -5835,73 +5740,11 @@
             // Drag-to-select disabled per user request
         }
 
-        function updateHeaderDateGreeting() {
-            const dateEl = document.getElementById('header-date-month');
-            const greetingEl = document.getElementById('header-dynamic-greeting');
-            const subtextEl = document.getElementById('header-greeting-subtext');
-
-            const now = new Date();
-            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            
-            const dayName = days[now.getDay()];
-            const dayNum = now.getDate();
-            const monthName = months[now.getMonth()];
-            
-            let suffix = 'th';
-            if (dayNum === 1 || dayNum === 21 || dayNum === 31) suffix = 'st';
-            else if (dayNum === 2 || dayNum === 22) suffix = 'nd';
-            else if (dayNum === 3 || dayNum === 23) suffix = 'rd';
-
-            if (dateEl) {
-                dateEl.innerHTML = `<span class="font-extrabold text-white">${dayName} ${dayNum}${suffix},</span> <span class="font-normal text-gray-400 opacity-70">${monthName}</span>`;
-            }
-
-            const hour = now.getHours();
-            let greetingText = 'Good Night';
-            if (hour >= 5 && hour < 12) greetingText = 'Good Morning';
-            else if (hour >= 12 && hour < 17) greetingText = 'Good Afternoon';
-            else if (hour >= 17 && hour < 22) greetingText = 'Good Evening';
-
-            const userDisplayName = escapeHTML(AppState.profileName || 'Abhinav');
-
-            if (greetingEl) {
-                greetingEl.innerHTML = `<span class="font-extrabold text-white">${greetingText}, ${userDisplayName}</span><span class="text-[#007AFF] font-black inline-block ml-0.5">.</span>`;
-            }
-
-            if (subtextEl) {
-                subtextEl.textContent = 'This is your private space';
-            }
-        }
-
         window.onload = function() {
-            // Disable slide-to-reload on mobile to allow smooth drawer dragging
-            document.body.style.overscrollBehaviorY = 'contain';
-
             loadFromLocalStorage();
             initResizeHandlers();
             initDragToSelect(); 
-            updateHeaderDateGreeting();
             
-            const savedTheme = localStorage.getItem('APP_THEME_MODE');
-            if (savedTheme === 'light') {
-                document.body.classList.add('light-mode');
-                const dots = [document.getElementById('theme-toggle-dot'), document.getElementById('theme-toggle-dot-mobile')];
-                const btns = [document.getElementById('theme-toggle-btn'), document.getElementById('theme-toggle-btn-mobile')];
-                dots.forEach(dot => {
-                    if (dot) {
-                        dot.classList.remove('translate-x-0', 'bg-gray-400');
-                        dot.classList.add('translate-x-4', 'bg-white');
-                    }
-                });
-                btns.forEach(btn => {
-                    if (btn) {
-                        btn.classList.remove('bg-white/10');
-                        btn.classList.add('bg-[#2997ff]');
-                    }
-                });
-            }
-
             if (window.innerWidth < 768) {
                 AppState.sidebarCollapsed = true;
                 const sidebar = document.getElementById('sidebar-panel');

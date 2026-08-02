@@ -7,7 +7,7 @@
     <link rel="icon" type="image/x-icon" href="./favicon.png">
     <link rel="apple-touch-icon" href="./favicon.png">
     <link href="./output.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="./hugeicons.min.js"></script>
     
     <link rel="stylesheet" href="styles.css">
@@ -35,13 +35,25 @@
 
     <div class="h-full flex flex-col overflow-hidden relative">
 
-        <!-- Floating Header Action Bar & Date Greeting Header -->
-        <main class="flex-1 flex overflow-hidden relative bg-[#0A0A0A]" id="app-main-view">
+        <nav class="bg-[#0D0D0D] border-b border-white/[0.04] px-4 md:px-6 py-3 flex items-center justify-between z-40 flex-shrink-0 relative">
+            <div class="flex items-center space-x-3">
+                <button onclick="toggleSidebarCollapse()" id="sidebar-uncollapse-btn" class="hidden p-1.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-lg transition" title="Open Sidebar">
+                    <i data-lucide="sidebar" class="w-4 h-4"></i>
+                </button>
+                <h1 class="text-sm font-bold tracking-tight text-white mr-1">Anv Checks</h1>
+                <span id="active-tab-badge" oncontextmenu="handleCounterContextMenu(event)" class="ui-badge cursor-pointer select-none" data-variant="secondary">0 items</span>
+            </div>
+            <div class="flex items-center space-x-2 relative">
+                <input type="file" id="import-file-input" class="hidden" accept=".json" onchange="handleImportFile(event)">
+            </div>
+        </nav>
+
+        <main class="flex-1 flex overflow-hidden relative bg-[#0A0A0A]">
             
             <aside id="sidebar-panel" class="bg-[#0F0F0F] flex flex-col justify-between flex-shrink-0 relative overflow-hidden transition-[width] duration-200" style="width: 280px;">
                 <div class="p-4 flex-1 overflow-y-auto space-y-6">
                     
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
                         <button onclick="toggleSidebarCollapse()" class="btn-scale p-2 bg-white/5 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition flex-shrink-0" title="Collapse Sidebar">
                             <i data-lucide="sidebar" class="w-4 h-4"></i>
                         </button>
@@ -100,7 +112,64 @@
 
                 </div>
 
-                <div class="p-4 bg-[#0B0B0B] border-t border-white/[0.02]">
+                <div class="p-4 bg-[#0B0B0B] border-t border-white/[0.02] space-y-4">
+                    
+                    <div class="bg-[#111111] border border-white/[0.03] rounded-[24px] p-4 space-y-4 transition-all duration-200 overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-[10px] font-bold tracking-widest uppercase text-gray-500">Workspace Metrics</span>
+                            </div>
+                            <button onclick="toggleMetricCardCollapse(event)" class="text-gray-400 hover:text-white p-1 hover:bg-white/5 rounded-lg transition" title="Toggle metrics display">
+                                <i id="metrics-collapse-chevron" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200"></i>
+                            </button>
+                        </div>
+
+                        <div id="metrics-expandable-area" class="hidden space-y-4 pt-1 transition-all duration-200">
+                            <div class="flex items-center justify-center py-2">
+                                <div class="relative flex items-center justify-center">
+                                    <div class="absolute inset-0 bg-orange-600/30 blur-lg rounded-full"></div>
+                                    <svg class="w-9 h-9 relative filter drop-shadow-[0_0_8px_rgba(255,69,0,0.8)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <defs>
+                                            <linearGradient id="flameGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" stop-color="#FF3B30"/>
+                                                <stop offset="60%" stop-color="#FF9500"/>
+                                                <stop offset="100%" stop-color="#FFCC00"/>
+                                            </linearGradient>
+                                        </defs>
+                                        <path d="M12 2C12 2 17 6.5 17 11.5C17 15.5 14.5 19 12 21C9.5 19 7 15.5 7 11.5C7 6.5 12 2 12 2Z" fill="url(#flameGrad)"/>
+                                        <path d="M12 8C12 8 15 11 15 14C15 16.5 13.5 18.5 12 19.5C10.5 18.5 9 16.5 9 14C9 11 12 8 12 8Z" fill="#FFFFFF"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="h-[1px] bg-white/[0.05]"></div>
+                            <div class="grid grid-cols-7 gap-1 text-center">
+                                <div id="week-circle-0" class="flex flex-col items-center space-y-1.5"></div>
+                                <div id="week-circle-1" class="flex flex-col items-center space-y-1.5"></div>
+                                <div id="week-circle-2" class="flex flex-col items-center space-y-1.5"></div>
+                                <div id="week-circle-3" class="flex flex-col items-center space-y-1.5"></div>
+                                <div id="week-circle-4" class="flex flex-col items-center space-y-1.5"></div>
+                                <div id="week-circle-5" class="flex flex-col items-center space-y-1.5"></div>
+                                <div id="week-circle-6" class="flex flex-col items-center space-y-1.5"></div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1.5 pt-1">
+                            <div class="flex items-center justify-between text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+                                <span>TASKS</span>
+                                <span id="streak-tasks-percentage" class="text-gray-400 font-mono font-bold">0%</span>
+                            </div>
+                            <div id="metrics-expandable-total-row" class="hidden items-baseline space-x-1">
+                                <span id="streak-tasks-done" class="text-base font-black text-white">0</span>
+                                <span class="text-xs font-semibold text-gray-500">/</span>
+                                <span id="streak-tasks-total" class="text-xs font-semibold text-gray-500">0</span>
+                            </div>
+                            <div class="h-2 bg-white/5 rounded-full relative overflow-hidden">
+                                <div id="streak-progress-fill" class="h-full bg-gradient-to-r from-emerald-500 to-green-400 rounded-full transition-all duration-300 w-0" style="box-shadow: 0 0 10px rgba(52, 211, 153, 0.6)"></div>
+                            </div>
+                        </div>
+
+                    </div>
+
                     <div class="flex items-center justify-between text-[10px] text-gray-500 px-1">
                         <span>AnvCore v4.5</span>
                         <span id="storage-status" class="flex items-center text-emerald-400 font-medium"><i data-lucide="shield-check" class="w-3 h-3 mr-1"></i> Autosaved</span>
@@ -111,38 +180,34 @@
             <div id="sidebar-resizer" class="resize-handle w-1 bg-white/[0.03] hover:bg-[#2997ff] active:bg-[#2997ff] z-10 flex-shrink-0"></div>
 
             <section class="flex-1 flex flex-col bg-[#0A0A0A] relative overflow-hidden" id="task-feed-scroll" ondblclick="handleFeedDoubleClick(event)" oncontextmenu="handleFeedContextMenu(event)">
-                <input type="file" id="import-file-input" class="hidden" accept=".json" onchange="handleImportFile(event)">
                 
-                <!-- Floating Action Header Bar (Transparent background, floating buttons) -->
-                <div class="px-4 py-3 md:px-6 md:py-3.5 flex items-center justify-between gap-3 flex-shrink-0 z-30 relative bg-transparent">
-                    <div class="flex items-center space-x-3">
-                        <button onclick="toggleSidebarCollapse()" id="sidebar-uncollapse-btn" class="hidden p-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-xl transition flex-shrink-0" title="Open Sidebar">
-                            <i data-lucide="sidebar" class="w-4 h-4"></i>
-                        </button>
+                <div class="px-4 py-3 md:px-6 md:py-4 bg-[#0E0E0E] flex items-center justify-between gap-3 flex-shrink-0 border-b border-white/[0.03]">
+                    <div class="flex items-center space-x-2">
+                        <span id="feed-current-title" class="text-sm font-bold text-white tracking-tight">Inbox Feed</span>
                     </div>
                     
-                    <!-- Desktop Action Section (Two Pill-Shaped Group Containers) -->
+                    <!-- Desktop Action Section -->
                     <div class="hidden md:flex flex-wrap items-center gap-2 relative">
                         <button id="clear-done-archive-btn" onclick="clearCompletedTasks()" class="btn-scale flex items-center space-x-1 px-3 py-1.5 text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition hidden" title="Delete all completed tasks in this folder">
                             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                             <span>Delete All Completed</span>
                         </button>
 
-                        <!-- Group 1 Pill Container: Creation Actions -->
-                        <div class="ui-button-group border border-white/10 bg-white/[0.03] rounded-full p-1 flex items-center" role="group">
-                            <button onclick="openAddTaskModal()" class="btn-scale flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-bold bg-[#2997ff] text-black hover:bg-[#0066cc] hover:text-white rounded-full transition" title="Create a new task">
+                        <!-- Group 1: Creation Actions (New Task + Add Group + Archive) -->
+                        <div class="ui-button-group border border-white/10 bg-white/[0.03] rounded-full p-1 flex items-center" role="group" aria-label="Task & Group Creation Button Group">
+                            <button onclick="openAddTaskModal()" class="btn-scale flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold bg-[#2997ff] text-black hover:bg-[#0066cc] hover:text-white rounded-full transition" title="Create a new task">
                                 <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
                                 <span>New Task</span>
                             </button>
 
-                            <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator"></div>
+                            <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator" aria-orientation="vertical"></div>
 
                             <button onclick="openAddGroupModal()" class="btn-scale flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/10 hover:text-white rounded-full transition" title="Add custom Group column">
                                 <i data-lucide="plus-square" class="w-3.5 h-3.5 text-[#2997ff]"></i>
                                 <span>Add Group</span>
                             </button>
 
-                            <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator"></div>
+                            <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator" aria-orientation="vertical"></div>
 
                             <button onclick="openArchiveModal()" class="btn-scale flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/10 hover:text-white rounded-full transition" title="View Completed Tasks Archive">
                                 <i data-lucide="archive" class="w-3.5 h-3.5 text-emerald-400"></i>
@@ -150,8 +215,8 @@
                             </button>
                         </div>
 
-                        <!-- Group 2 Pill Container: Search, Sort & Options -->
-                        <div class="ui-button-group border border-white/10 bg-white/[0.03] rounded-full p-1 flex items-center relative" role="group">
+                        <!-- Group 2: Search, Sort & Options Button Group -->
+                        <div class="ui-button-group border border-white/10 bg-white/[0.03] rounded-full p-1 flex items-center relative" role="group" aria-label="Search & Filter Button Group">
                             <!-- Expandable Animated Search Input -->
                             <div class="relative flex items-center transition-all duration-300 ease-out" id="header-search-container" style="width: 32px;">
                                 <button type="button" onclick="toggleHeaderSearch(event)" class="p-1.5 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center flex-shrink-0" title="Search tasks">
@@ -160,17 +225,16 @@
                                 <input type="text" id="global-search" oninput="handleSearch(this.value)" placeholder="Search tasks..." class="w-full bg-transparent text-xs text-white placeholder-gray-500 focus:outline-none pl-1 pr-2 opacity-0 pointer-events-none transition-opacity duration-200">
                             </div>
 
-                            <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator"></div>
+                            <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator" aria-orientation="vertical"></div>
 
-                            <!-- Sort Dropdown & Shortened Active Task Badge ("_ active") -->
-                            <div class="relative flex items-center space-x-1.5" id="sort-dropdown-wrapper">
-                                <span id="active-tab-badge" oncontextmenu="handleCounterContextMenu(event)" class="ui-badge cursor-pointer select-none" data-variant="secondary">0 active</span>
+                            <!-- Sort Dropdown -->
+                            <div class="relative inline-block text-left" id="sort-dropdown-wrapper">
                                 <button onclick="toggleCustomDropdown('sort-dropdown-options', event)" class="flex items-center space-x-1.5 rounded-full px-3 py-1.5 text-xs text-gray-200 hover:bg-white/10 transition font-medium">
                                     <span class="text-gray-400 font-normal">Sort:</span>
                                     <span id="selected-sort-label">Date created</span>
                                     <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-400"></i>
                                 </button>
-                                <div id="sort-dropdown-options" class="hidden absolute right-0 top-full mt-2 w-48 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-50 py-2 text-xs text-gray-200 backdrop-blur-xl">
+                                <div id="sort-dropdown-options" class="hidden w-48 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-50 py-2 text-xs text-gray-200 backdrop-blur-xl">
                                     <button type="button" onclick="selectSortOption('created', 'Date created')" class="ui-menu-item w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium">
                                         <span>Date created</span>
                                         <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-created"><i data-lucide="check" class="w-3.5 h-3.5"></i></span>
@@ -190,7 +254,7 @@
                                 </div>
                             </div>
 
-                            <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator"></div>
+                            <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator" aria-orientation="vertical"></div>
 
                             <!-- Options Dropdown (Three Dots) -->
                             <div class="relative inline-block text-left" id="nav-menu-dropdown-wrapper">
@@ -202,13 +266,6 @@
                                         <span>Account Options</span>
                                         <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
                                     </button>
-                                    <div class="ui-separator my-1" data-orientation="horizontal"></div>
-                                    <div class="px-3 py-2 flex items-center justify-between text-xs hover:bg-white/5 rounded-lg">
-                                        <span class="font-medium text-gray-300">Light Mode</span>
-                                        <button type="button" onclick="toggleAppTheme(event)" id="theme-toggle-btn" class="w-9 h-5 bg-white/10 rounded-full p-0.5 transition-colors relative flex items-center">
-                                            <div id="theme-toggle-dot" class="w-4 h-4 rounded-full bg-gray-400 transition-transform transform translate-x-0"></div>
-                                        </button>
-                                    </div>
                                     <div class="ui-separator my-1" data-orientation="horizontal"></div>
                                     <button type="button" onclick="triggerImport()" class="ui-menu-item">
                                         <span>Import Backup</span>
@@ -241,19 +298,27 @@
 
                         <!-- Mobile Header Action Groups (Disappears when search is open) -->
                         <div id="mobile-header-groups-wrapper" class="flex items-center space-x-1.5">
-                            <button onclick="openAddTaskModal()" class="p-1.5 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="New Task">
-                                <i data-lucide="plus-circle" class="w-4 h-4 text-[#2997ff]"></i>
-                            </button>
-                            <button onclick="openAddGroupModal()" class="p-1.5 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="Add Group">
-                                <i data-lucide="plus-square" class="w-4 h-4 text-[#2997ff]"></i>
-                            </button>
-                            <button onclick="openArchiveModal()" class="p-1.5 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="Archive">
-                                <i data-lucide="archive" class="w-4 h-4 text-emerald-400"></i>
-                            </button>
-                            <button onclick="openMobileSearchMode()" class="p-1.5 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center" title="Search">
-                                <i data-lucide="search" class="w-4 h-4"></i>
-                            </button>
-                            <div class="relative">
+                            <!-- Group 1: Task Creation, Add Group, Archive -->
+                            <div class="ui-button-group border border-white/10 bg-white/[0.03] rounded-full p-0.5 flex items-center" role="group">
+                                <button onclick="openAddTaskModal()" class="p-1.5 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="New Task">
+                                    <i data-lucide="plus-circle" class="w-4 h-4 text-[#2997ff]"></i>
+                                </button>
+                                <div class="ui-button-group-separator w-[1px] h-3.5 bg-white/10 mx-0.5" role="separator"></div>
+                                <button onclick="openAddGroupModal()" class="p-1.5 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="Add Group">
+                                    <i data-lucide="plus-square" class="w-4 h-4 text-[#2997ff]"></i>
+                                </button>
+                                <div class="ui-button-group-separator w-[1px] h-3.5 bg-white/10 mx-0.5" role="separator"></div>
+                                <button onclick="openArchiveModal()" class="p-1.5 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="Archive">
+                                    <i data-lucide="archive" class="w-4 h-4 text-emerald-400"></i>
+                                </button>
+                            </div>
+
+                            <!-- Group 2: Search, Sort, Three Dots -->
+                            <div class="ui-button-group border border-white/10 bg-white/[0.03] rounded-full p-0.5 flex items-center relative" role="group">
+                                <button onclick="openMobileSearchMode()" class="p-1.5 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center" title="Search">
+                                    <i data-lucide="search" class="w-4 h-4"></i>
+                                </button>
+                                <div class="ui-button-group-separator w-[1px] h-3.5 bg-white/10 mx-0.5" role="separator"></div>
                                 <button onclick="toggleCustomDropdown('sort-dropdown-options-mobile', event)" class="p-1.5 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center relative" title="Sort">
                                     <i data-lucide="arrow-up-down" class="w-4 h-4"></i>
                                 </button>
@@ -263,8 +328,7 @@
                                     <button type="button" onclick="selectSortOption('priority', 'Priority level')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition">Priority level</button>
                                     <button type="button" onclick="selectSortOption('alphabetical', 'Alphabetical')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition">Alphabetical</button>
                                 </div>
-                            </div>
-                            <div class="relative">
+                                <div class="ui-button-group-separator w-[1px] h-3.5 bg-white/10 mx-0.5" role="separator"></div>
                                 <button onclick="toggleCustomDropdown('nav-menu-dropdown-options-mobile', event)" class="p-1.5 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center" title="More Options">
                                     <i data-lucide="more-horizontal" class="w-4 h-4"></i>
                                 </button>
@@ -273,13 +337,6 @@
                                         <span>Account Options</span>
                                         <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
                                     </button>
-                                    <div class="ui-separator my-1" data-orientation="horizontal"></div>
-                                    <div class="px-3 py-2 flex items-center justify-between text-xs hover:bg-white/5 rounded-lg">
-                                        <span class="font-medium text-gray-300">Light Mode</span>
-                                        <button type="button" onclick="toggleAppTheme(event)" id="theme-toggle-btn-mobile" class="w-9 h-5 bg-white/10 rounded-full p-0.5 transition-colors relative flex items-center">
-                                            <div id="theme-toggle-dot-mobile" class="w-4 h-4 rounded-full bg-gray-400 transition-transform transform translate-x-0"></div>
-                                        </button>
-                                    </div>
                                     <div class="ui-separator my-1" data-orientation="horizontal"></div>
                                     <button type="button" onclick="triggerImport()" class="ui-menu-item">
                                         <span>Import Backup</span>
@@ -301,15 +358,7 @@
                 </div>
 
                 <div class="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-6 relative">
-                    <!-- Date & Greeting Subheader Block (Bigger Date & Smaller Greeting Text) -->
-                    <div id="main-greeting-header-block" class="pt-4 pb-4 space-y-1.5 text-center flex flex-col items-center justify-center">
-                        <div id="header-date-month" class="text-xl md:text-3xl font-extrabold tracking-tight">Friday 26th, <span class="text-gray-400 opacity-70">January</span></div>
-                        <h2 id="header-dynamic-greeting" class="text-lg md:text-2xl font-bold text-white tracking-tight flex items-center justify-center">
-                            Good Night, Abhinav<span class="text-[#007AFF] font-black inline-block ml-0.5">.</span>
-                        </h2>
-                        <p id="header-greeting-subtext" class="text-xs md:text-sm text-gray-400 font-medium tracking-tight">This is your private space</p>
-                    </div>
-
+                    
                     <div id="tasks-list" class="space-y-6"></div>
 
                     <div id="empty-state-screen" class="hidden flex-col items-center justify-center text-center py-24 px-4 absolute inset-0 bg-[#0A0A0A] z-10 transition-opacity duration-150">
@@ -619,37 +668,20 @@
         </div>
     </div>
 
-    <div id="confirmation-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[200] flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
-        <div id="confirmation-modal-container" class="bg-[#121212] border border-white/10 rounded-3xl p-6 w-full max-w-xs shadow-2xl text-center space-y-4 transform scale-95 transition-transform duration-150">
-            <div class="w-12 h-12 rounded-full bg-amber-500/10 text-amber-400 mx-auto flex items-center justify-center border border-amber-500/20">
-                <i data-lucide="alert-circle" class="w-6 h-6"></i>
-            </div>
-            <div class="space-y-1">
-                <h3 class="text-sm font-bold text-white tracking-tight">Unsaved Changes</h3>
-                <p class="text-xs text-gray-400">You have filled in details. Are you sure you want to discard them?</p>
-            </div>
-            <div class="flex flex-col space-y-2 pt-2">
-                <button type="button" onclick="confirmDiscardModalChanges()" class="w-full py-3 bg-red-500/15 hover:bg-red-500/25 text-red-400 text-xs font-extrabold rounded-full border border-red-500/30 transition">
-                    Discard Changes
-                </button>
-                <button type="button" onclick="closeConfirmationModalOnly()" class="w-full py-3 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white text-xs font-bold rounded-full border border-white/5 transition">
-                    Keep Editing
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div id="task-modal-backdrop" onclick="if(event.target === this) closeAddTaskModal(false)" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
+    <div id="task-modal-backdrop" onclick="if(event.target === this) closeAddTaskModal(true)" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
         <div id="task-modal-container" class="modal-shell bg-[#121212] rounded-3xl w-full mx-4 shadow-2xl border border-white/[0.08] transform scale-95 transition-all duration-200 ease-out flex flex-row overflow-hidden" style="max-width: 440px;">
             
             <div class="task-modal-main-col flex flex-col justify-between flex-shrink-0" style="width: 440px; min-width: 440px;">
                 <div class="modal-header">
                     <div class="modal-header__lead">
+                        <button type="button" id="task-modal-back-btn" onclick="handleTaskModalBackStep()" class="hidden modal-icon-btn mr-1" title="Back">
+                            <i data-lucide="chevron-left" class="w-4 h-4 text-[#2997ff]"></i>
+                        </button>
                         <i data-lucide="plus-circle" class="w-4 h-4 text-[#2997ff]"></i>
                         <h2 id="task-modal-step-title">Create Task</h2>
                     </div>
                     <div class="modal-header__trail">
-                        <button type="button" onclick="closeAddTaskModal(false)" class="modal-icon-btn" aria-label="Close">
+                        <button type="button" onclick="closeAddTaskModal(true)" class="modal-icon-btn" aria-label="Close">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </button>
                     </div>
@@ -690,20 +722,6 @@
                             <div class="modal-field">
                                 <input type="text" id="new-task-note-input" placeholder="Add a short note..." class="modal-field__control">
                                 <button type="button" onclick="addNewTaskNoteDraft()" class="modal-field__action">
-                                    <i data-lucide="plus" class="w-4 h-4"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="modal-section">
-                            <div class="modal-section__label-row mb-2">
-                                <span class="modal-section__label">Subtasks</span>
-                                <span id="new-task-subtask-count" class="modal-section__badge">0</span>
-                            </div>
-                            <div id="new-task-subtasks-list" class="space-y-1.5 mb-2"></div>
-                            <div class="modal-field">
-                                <input type="text" id="new-task-subtask-input" placeholder="Add a subtask..." class="modal-field__control" onkeydown="if(event.key==='Enter'){event.preventDefault();addNewTaskSubtaskDraft();}">
-                                <button type="button" onclick="addNewTaskSubtaskDraft()" class="modal-field__action">
                                     <i data-lucide="plus" class="w-4 h-4"></i>
                                 </button>
                             </div>
@@ -814,7 +832,7 @@
         </div>
     </div>
 
-    <div id="project-modal-backdrop" onclick="if(event.target === this) closeProjectModal()" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
+    <div id="project-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
         <div id="project-modal-container" class="modal-shell max-w-md w-full mx-4 shadow-2xl border border-white/[0.08] transform scale-95 transition-transform duration-150 ease-out">
             <div class="modal-header">
                 <div id="project-modal-title" class="modal-header__lead">
@@ -857,7 +875,7 @@
         </div>
     </div>
 
-    <div id="group-modal-backdrop" onclick="if(event.target === this) closeAddGroupModal()" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
+    <div id="group-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
         <div id="group-modal-container" class="modal-shell max-w-md w-full mx-4 shadow-2xl border border-white/[0.08] transform scale-95 transition-transform duration-150 ease-out">
             <div class="modal-header">
                 <div id="group-modal-title-text" class="modal-header__lead">
@@ -1025,44 +1043,6 @@
             <div class="w-8"></div>
         </div>
         <div id="mobile-drawer-body" class="overflow-y-auto flex-1 min-h-0 relative"></div>
-    </div>
-
-    <!-- Profile Configuration Modal -->
-    <div id="profile-customizer-backdrop" onclick="if(event.target === this) closeProfileCustomizerModal()" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[150] flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
-        <div id="profile-customizer-container" class="modal-shell bg-[#121212] rounded-3xl max-w-md w-full mx-4 shadow-2xl border border-white/[0.08] transform scale-95 transition-transform duration-150 ease-out flex flex-col overflow-hidden">
-            <div class="modal-header px-5 py-4 border-b border-white/[0.08] flex items-center justify-between">
-                <div class="modal-header__lead flex items-center space-x-2">
-                    <i data-lucide="user-cog" class="text-[#2997ff] w-4 h-4 flex-shrink-0"></i>
-                    <h2 class="text-sm font-bold text-white tracking-tight">Profile Configuration</h2>
-                </div>
-                <div class="modal-header__trail">
-                    <button type="button" onclick="closeProfileCustomizerModal()" class="p-1.5 text-gray-400 hover:text-white rounded-full transition" aria-label="Close">
-                        <i data-lucide="x" class="w-4 h-4"></i>
-                    </button>
-                </div>
-            </div>
-            <form onsubmit="handleProfileUpdates(event)" class="text-left flex flex-col p-5 space-y-4">
-                <div class="flex flex-col items-center space-y-2">
-                    <span class="text-xs font-semibold text-gray-400">Avatar Stamp Symbol</span>
-                    <div class="flex items-center space-x-3">
-                        <button type="button" onclick="rotateProfileGlyphIcon(-1)" class="p-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-full transition"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-                        <div id="profile-customizer-dp-preview" class="w-12 h-12 rounded-full bg-[#2997ff]/20 text-[#2997ff] flex items-center justify-center border border-[#2997ff]/30 shadow-lg">
-                            <i data-lucide="smile" class="w-6 h-6"></i>
-                        </div>
-                        <button type="button" onclick="rotateProfileGlyphIcon(1)" class="p-2 bg-white/5 hover:bg-white/10 text-gray-300 rounded-full transition"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
-                    </div>
-                </div>
-                <div class="space-y-1.5">
-                    <label for="profile-customizer-name-field" class="text-xs font-semibold text-gray-300">Display Name</label>
-                    <input type="text" id="profile-customizer-name-field" required placeholder="Enter your display name..." class="w-full bg-[#181818] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#2997ff] transition">
-                </div>
-                <div class="pt-2">
-                    <button type="submit" class="w-full py-3 bg-[#2997ff] hover:bg-[#0066cc] text-black hover:text-white text-xs font-bold rounded-full transition shadow-lg">
-                        Save Profile Changes
-                    </button>
-                </div>
-            </form>
-        </div>
     </div>
 
     <div id="toast-container" class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-xs z-[300] space-y-2.5 pointer-events-none flex flex-col items-center sm:items-end"></div>
