@@ -234,6 +234,28 @@
             animation: pop-down-menu 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
+        /* Task Completion Slide-Out Animation */
+        .task-slide-out {
+            animation: slide-out-fade-right 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            pointer-events: none;
+        }
+
+        @keyframes slide-out-fade-right {
+            0% {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateX(60px) scale(0.95);
+                max-height: 0;
+                padding-top: 0;
+                padding-bottom: 0;
+                margin-top: 0;
+                margin-bottom: 0;
+            }
+        }
+
         @keyframes pop-down-menu {
             0% {
                 opacity: 0;

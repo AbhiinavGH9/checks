@@ -1671,24 +1671,26 @@
                 document.removeEventListener('mouseup', stopResizeSidebar);
             }
 
-            inspectorResizer.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                inspectorResizer.classList.add('active');
-                document.addEventListener('mousemove', resizeInspector);
-                document.addEventListener('mouseup', stopResizeInspector);
-            });
+            if (inspectorResizer) {
+                inspectorResizer.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    inspectorResizer.classList.add('active');
+                    document.addEventListener('mousemove', resizeInspector);
+                    document.addEventListener('mouseup', stopResizeInspector);
+                });
 
-            function resizeInspector(e) {
-                const currentWidth = window.innerWidth - e.clientX;
-                if (currentWidth >= 240 && currentWidth <= 550) {
-                    inspector.style.width = currentWidth + 'px';
+                function resizeInspector(e) {
+                    const currentWidth = window.innerWidth - e.clientX;
+                    if (currentWidth >= 240 && currentWidth <= 550) {
+                        inspector.style.width = currentWidth + 'px';
+                    }
                 }
-            }
 
-            function stopResizeInspector() {
-                inspectorResizer.classList.remove('active');
-                document.removeEventListener('mousemove', resizeInspector);
-                document.removeEventListener('mouseup', stopResizeInspector);
+                function stopResizeInspector() {
+                    inspectorResizer.classList.remove('active');
+                    document.removeEventListener('mousemove', resizeInspector);
+                    document.removeEventListener('mouseup', stopResizeInspector);
+                }
             }
         }
 
@@ -1728,19 +1730,19 @@
             if (AppState.currentTab === 'search') {
                 if (!AppState.searchQuery.trim()) return [];
                 const q = AppState.searchQuery.toLowerCase();
-                return list.filter(t => t.title.toLowerCase().includes(q) || (t.description && t.description.toLowerCase().includes(q)));
+                return list.filter(t => !t.done && (t.title.toLowerCase().includes(q) || (t.description && t.description.toLowerCase().includes(q))));
             }
 
             if (AppState.currentTab === 'inbox') {
-                return list; // Return all tasks instead of filtering out t.done
+                return list.filter(t => !t.done);
             } else if (AppState.currentTab === 'today') {
-                return list.filter(t => t.dueDate === todayStr);
+                return list.filter(t => !t.done && t.dueDate === todayStr);
             } else if (AppState.currentTab === 'done') {
                 return list.filter(t => t.done);
             } else if (AppState.currentTab === 'manage') {
                 return list;
             } else {
-                return list.filter(t => t.projectId === AppState.currentTab);
+                return list.filter(t => !t.done && t.projectId === AppState.currentTab);
             }
         }
 
@@ -3877,11 +3879,24 @@
             if (event) event.stopPropagation();
             const task = AppState.tasks.find(t => t.id === taskId);
             if (task) {
-                setTaskDone(task, !task.done);
-                syncDeviceDataChannels();
-                
-                if (task.done) showToast('Task Completed', `"${task.title}" has been archived.`);
-                if (AppState.selectedTaskId === taskId) renderInspector();
+                const isCompleting = !task.done;
+                const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+
+                if (isCompleting && taskElement) {
+                    taskElement.classList.add('task-slide-out');
+                    setTimeout(() => {
+                        setTaskDone(task, true);
+                        syncDeviceDataChannels();
+                        showToast('Task Completed', `"${task.title}" has been moved to Archive.`, 'success');
+                        if (AppState.selectedTaskId === taskId) closeInspector();
+                        renderTaskFeed();
+                    }, 300);
+                } else {
+                    setTaskDone(task, !task.done);
+                    syncDeviceDataChannels();
+                    if (AppState.selectedTaskId === taskId) renderInspector();
+                    renderTaskFeed();
+                }
             }
         }
 
@@ -4448,10 +4463,10 @@
             const submitBtn = document.getElementById('project-submit-btn');
             
             if (AppState.editingProjectId) {
-                titleEl.innerHTML = `<i data-lucide="edit" class="text-[#2997ff] mr-2 w-4.5 h-4.5"></i> Edit Collection Settings`;
+                titleEl.innerHTML = `<i data-lucide="edit-2" class="text-[#2997ff] mr-2 w-5 h-5 flex-shrink-0"></i><span class="text-sm font-bold text-white normal-case tracking-normal">Edit Collection Settings</span>`;
                 submitBtn.textContent = "Save Changes";
             } else {
-                titleEl.innerHTML = `<i data-lucide="folder-plus" class="text-[#2997ff] mr-2 w-4.5 h-4.5"></i> Configure Collection`;
+                titleEl.innerHTML = `<i data-lucide="folder-plus" class="text-[#2997ff] mr-2 w-5 h-5 flex-shrink-0"></i><span class="text-sm font-bold text-white normal-case tracking-normal">Configure Collection</span>`;
                 submitBtn.textContent = "Create Collection";
             }
 
@@ -4504,6 +4519,68 @@
             selectPresetColor(project.color || '#FF3B30');
             selectPresetIcon(project.icon || 'smile');
         }
+
+        function openArchiveModal() {
+            const backdrop = document.getElementById('archive-modal-backdrop');
+            const container = document.getElementById('archive-modal-container');
+            if (!backdrop || !container) return;
+
+            renderArchiveModalList();
+            backdrop.classList.remove('hidden');
+            setTimeout(() => {
+                backdrop.classList.remove('opacity-0');
+                container.classList.remove('scale-95');
+                if (window.lucide) window.lucide.createIcons();
+                if (window.hugeicons) window.hugeicons.createIcons();
+            }, 10);
+        }
+
+        function closeArchiveModal() {
+            const backdrop = document.getElementById('archive-modal-backdrop');
+            const container = document.getElementById('archive-modal-container');
+            if (!backdrop || !container) return;
+            backdrop.classList.add('opacity-0');
+            container.classList.add('scale-95');
+            setTimeout(() => { backdrop.classList.add('hidden'); }, 150);
+        }
+
+        function renderArchiveModalList() {
+            const listEl = document.getElementById('archive-modal-tasks-list');
+            if (!listEl) return;
+
+            const completedTasks = AppState.tasks.filter(t => t.done);
+            if (completedTasks.length === 0) {
+                listEl.innerHTML = `
+                    <div class="text-center py-8 text-xs text-gray-500">
+                        No completed tasks in archive
+                    </div>
+                `;
+                return;
+            }
+
+            listEl.innerHTML = completedTasks.map(t => {
+                return `
+                    <div class="flex items-center justify-between p-3 bg-white/[0.03] rounded-2xl border border-white/[0.05] hover:bg-white/[0.06] transition">
+                        <div class="flex items-center space-x-3 min-w-0 flex-1 pr-2">
+                            <button onclick="toggleTaskDone('${t.id}'); renderArchiveModalList();" class="w-5 h-5 rounded-full border border-emerald-500 bg-emerald-500 flex items-center justify-center flex-shrink-0 transition">
+                                <i data-lucide="check" class="w-3 h-3 text-[#0A0A0A] font-bold"></i>
+                            </button>
+                            <span class="text-xs font-semibold text-gray-400 line-through truncate">${escapeHTML(t.title)}</span>
+                        </div>
+                        <button onclick="deleteSingleTask('${t.id}'); renderArchiveModalList();" class="p-1.5 text-gray-500 hover:text-red-400 hover:bg-white/10 rounded-full transition flex-shrink-0" title="Delete Task">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+
+            if (window.lucide) window.lucide.createIcons();
+            if (window.hugeicons) window.hugeicons.createIcons();
+        }
+
+        window.openArchiveModal = openArchiveModal;
+        window.closeArchiveModal = closeArchiveModal;
+        window.renderArchiveModalList = renderArchiveModalList;
 
         function closeProjectModal() {
             const backdrop = document.getElementById('project-modal-backdrop');
