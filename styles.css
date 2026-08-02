@@ -192,7 +192,7 @@
             border-left-color: rgba(0, 0, 0, 0.18);
         }
 
-        /* iOS 18 Styled Glassmorphic Context Menu */
+        /* iOS 18 Styled Glassmorphic Context Menu (No Shadows) */
         .ios-context-menu {
             background: rgba(25, 25, 27, 0.78) !important;
             backdrop-filter: blur(25px) saturate(190%) !important;
@@ -200,7 +200,7 @@
             border: 1px solid rgba(255, 255, 255, 0.12) !important;
             border-radius: 20px !important;
             padding: 6px !important;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6) !important;
+            box-shadow: none !important;
             width: 240px !important;
             transform-origin: top left;
             animation: iosMenuPop 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -208,7 +208,7 @@
         .light-mode .ios-context-menu {
             background: rgba(245, 245, 247, 0.82) !important;
             border-color: rgba(0, 0, 0, 0.08) !important;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12) !important;
+            box-shadow: none !important;
         }
         @keyframes iosMenuPop {
             0% { opacity: 0; transform: scale(0.92); }

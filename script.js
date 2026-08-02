@@ -2676,43 +2676,7 @@
                                     </div>
                                     ${task.description ? `<p class="text-[10px] ${subtextClass} mt-1 warp-text whitespace-pre-line">${escapeHTML(task.description)}</p>` : ''}
                                     
-                                    <div class="flex flex-wrap gap-1.5 mt-2 items-center">
-                                        <span class="ui-badge" style="background-color: ${task.done ? 'rgba(255,255,255,0.04)' : accentColor + '20'}; color: ${task.done ? '#6b7280' : accentColor}; border-color: ${task.done ? 'rgba(255,255,255,0.06)' : accentColor + '30'};">
-                                            <i data-lucide="check" class="w-2.5 h-2.5"></i>
-                                            <span>Priority</span>
-                                        </span>
-
-                                        ${project ? `
-                                            <span class="ui-badge" style="background-color: ${task.done ? 'rgba(255,255,255,0.04)' : (project.color + '20')}; color: ${task.done ? '#6b7280' : project.color}; border-color: ${task.done ? 'rgba(255,255,255,0.06)' : (project.color + '30')};">
-                                                <i data-lucide="${project.icon}" class="w-2.5 h-2.5 flex-shrink-0"></i>
-                                                <span>${escapeHTML(project.title)}</span>
-                                            </span>
-                                        ` : ''}
-                                        ${task.dueDate ? `
-                                            <span class="ui-badge" ${task.done ? 'style="background-color: rgba(255,255,255,0.04); color: #6b7280; border-color: rgba(255,255,255,0.06);"' : 'data-variant="secondary"'}>
-                                                <i data-lucide="calendar" class="w-2.5 h-2.5 flex-shrink-0"></i>
-                                                <span>${task.dueDate}</span>
-                                            </span>
-                                        ` : ''}
-                                        ${subTotal > 0 ? `
-                                            <span class="ui-badge" ${task.done ? 'style="background-color: rgba(255,255,255,0.04); color: #6b7280; border-color: rgba(255,255,255,0.06);"' : 'data-variant="secondary"'}>
-                                                <i data-lucide="list-checks" class="w-2.5 h-2.5 flex-shrink-0"></i>
-                                                <span>${subDone}/${subTotal}</span>
-                                            </span>
-                                        ` : ''}
-                                        ${task.isHeldTask ? `
-                                            <span class="ui-badge" style="${task.done ? 'background-color: rgba(255,255,255,0.04); color: #6b7280; border-color: rgba(255,255,255,0.06);' : 'background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3);'}" title="Task is paused on hold">
-                                                <i data-lucide="pause-circle" class="w-2.5 h-2.5 flex-shrink-0"></i>
-                                                <span>Task On Hold</span>
-                                            </span>
-                                        ` : ''}
-                                        ${isTaskOnHold(task) && AppState.currentTab === 'done' ? `
-                                            <span class="ui-badge" data-variant="secondary" style="background-color: rgba(245, 158, 11, 0.2); color: #fcd34d; border-color: rgba(245, 158, 11, 0.4);" title="${task.holdUntil ? 'Auto-delete held until ' + new Date(task.holdUntil).toLocaleString() : 'Auto-delete held indefinitely'}">
-                                                <i data-lucide="pause-circle" class="w-3 h-3 flex-shrink-0"></i>
-                                                <span>Deletion Held</span>
-                                            </span>
-                                        ` : ''}
-                                    </div>
+                                    ${subtasksHTML}
                                     ${task.notes && task.notes.length > 0 ? `
                                         <div class="flex flex-col gap-1 mt-2">
                                             ${task.notes.map(n => `
