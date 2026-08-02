@@ -121,13 +121,16 @@
             justify-content: center;
             border-radius: 9999px;
             border: 1px solid transparent;
-            padding: 2px 10px;
+            padding: 3px 10px;
+            font-family: var(--typeset-font-body);
             font-size: 10px;
-            font-weight: 600;
-            line-height: 1.25;
-            transition: all 0.15s ease;
+            font-weight: 700;
+            line-height: var(--typeset-leading, 1.25);
+            letter-spacing: 0.02em;
+            transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
             white-space: nowrap;
             user-select: none;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
         .ui-badge[data-variant="default"] {
             background-color: var(--primary);
@@ -136,7 +139,7 @@
         .ui-badge[data-variant="secondary"] {
             background-color: rgba(255, 255, 255, 0.08);
             color: var(--foreground);
-            border-color: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.08);
         }
         .ui-badge[data-variant="destructive"] {
             background-color: rgba(239, 68, 68, 0.15);
@@ -146,13 +149,13 @@
         .ui-badge[data-variant="outline"] {
             background-color: transparent;
             color: var(--foreground);
-            border-color: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.18);
         }
         .ui-badge[data-variant="ghost"] {
             background-color: transparent;
             color: var(--muted-foreground);
         }
-        .ui-badge [data-icon="inline-start"] {
+        .ui-badge [data-icon="inline-start"], .ui-badge svg[data-hugeicon] {
             margin-right: 4px;
         }
         .ui-badge [data-icon="inline-end"] {

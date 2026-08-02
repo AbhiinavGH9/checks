@@ -2063,40 +2063,38 @@
                                     ${task.description ? `<p class="text-[10px] ${subtextClass} mt-1 warp-text whitespace-pre-line">${escapeHTML(task.description)}</p>` : ''}
                                     
                                     <div class="flex flex-wrap gap-1.5 mt-2 items-center">
-                                        <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[8px] font-bold" style="background-color: ${accentColor}15; color: ${accentColor}">
-                                            <span class="w-2.5 h-2.5 rounded bg-white/10 flex items-center justify-center border border-white/20">
-                                                <i data-lucide="check" class="w-2 h-2 text-current"></i>
-                                            </span>
+                                        <span class="ui-badge" style="background-color: ${accentColor}20; color: ${accentColor}; border-color: ${accentColor}30;">
+                                            <i data-lucide="check" class="w-2.5 h-2.5"></i>
                                             <span>Priority</span>
                                         </span>
 
                                         ${project ? `
-                                            <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[8px] font-bold" style="background-color: ${task.done ? '#44444420' : (project.color + '15')}; color: ${task.done ? '#7a7a7a' : project.color}">
+                                            <span class="ui-badge" style="background-color: ${task.done ? '#44444420' : (project.color + '20')}; color: ${task.done ? '#7a7a7a' : project.color}; border-color: ${task.done ? '#ffffff10' : (project.color + '30')};">
                                                 <i data-lucide="${project.icon}" class="w-2.5 h-2.5 flex-shrink-0"></i>
                                                 <span>${escapeHTML(project.title)}</span>
                                             </span>
                                         ` : ''}
                                         ${task.dueDate ? `
-                                            <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 bg-white/5 rounded text-[8px] font-medium ${task.done ? 'text-gray-600' : 'text-gray-400'}">
+                                            <span class="ui-badge" data-variant="secondary">
                                                 <i data-lucide="calendar" class="w-2.5 h-2.5 flex-shrink-0"></i>
                                                 <span>${task.dueDate}</span>
                                             </span>
                                         ` : ''}
                                         ${subTotal > 0 ? `
-                                            <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 bg-white/5 rounded text-[8px] font-medium ${task.done ? 'text-gray-600' : 'text-gray-400'}">
+                                            <span class="ui-badge" data-variant="secondary">
                                                 <i data-lucide="list-checks" class="w-2.5 h-2.5 flex-shrink-0"></i>
                                                 <span>${subDone}/${subTotal}</span>
                                             </span>
                                         ` : ''}
                                         ${task.isHeldTask ? `
-                                            <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 bg-amber-500/15 text-amber-400 rounded text-[8px] font-bold border border-amber-500/20 animate-fade-in" title="Task is paused on hold">
+                                            <span class="ui-badge" data-variant="secondary" style="background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3);" title="Task is paused on hold">
                                                 <i data-lucide="pause-circle" class="w-2.5 h-2.5 flex-shrink-0"></i>
                                                 <span>Task On Hold</span>
                                             </span>
                                         ` : ''}
                                         ${isTaskOnHold(task) && AppState.currentTab === 'done' ? `
-                                            <span class="inline-flex items-center space-x-1.5 px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded-md text-[10px] font-extrabold border border-amber-500/40 animate-fade-in shadow-sm" title="${task.holdUntil ? 'Auto-delete held until ' + new Date(task.holdUntil).toLocaleString() : 'Auto-delete held indefinitely'}">
-                                                <i data-lucide="pause-circle" class="w-3 h-3 text-amber-400 flex-shrink-0"></i>
+                                            <span class="ui-badge" data-variant="secondary" style="background-color: rgba(245, 158, 11, 0.2); color: #fcd34d; border-color: rgba(245, 158, 11, 0.4);" title="${task.holdUntil ? 'Auto-delete held until ' + new Date(task.holdUntil).toLocaleString() : 'Auto-delete held indefinitely'}">
+                                                <i data-lucide="pause-circle" class="w-3 h-3 flex-shrink-0"></i>
                                                 <span>Deletion Held</span>
                                             </span>
                                         ` : ''}
@@ -2104,7 +2102,7 @@
                                     ${task.notes && task.notes.length > 0 ? `
                                         <div class="flex flex-col gap-1 mt-2">
                                             ${task.notes.map(n => `
-                                                <span class="inline-flex items-center space-x-1.5 px-2 py-0.5 bg-yellow-500/10 text-yellow-400 rounded-lg text-[9.5px] font-bold border border-yellow-500/20 w-fit max-w-full">
+                                                <span class="ui-badge w-fit max-w-full" style="background-color: rgba(234, 179, 8, 0.12); color: #facc15; border-color: rgba(234, 179, 8, 0.25);">
                                                     <i data-lucide="sticky-note" class="w-3 h-3 flex-shrink-0"></i>
                                                     <span class="truncate">${escapeHTML(n.text)}</span>
                                                 </span>
@@ -2123,8 +2121,8 @@
                                     const hoursLeft = Math.floor((diffMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
                                     const text = daysLeft > 0 ? `${daysLeft}d ${hoursLeft}h left` : `${hoursLeft}h left`;
                                     return `
-                                        <span class="inline-flex items-center space-x-1.5 px-2 py-1 bg-red-500/25 text-red-300 rounded-md text-[10px] font-extrabold border border-red-500/50 shadow-md opacity-100 flex-shrink-0 pointer-events-none" title="Deletes automatically in ${daysLeft} days, ${hoursLeft} hours">
-                                            <i data-lucide="timer" class="w-3 h-3 text-red-400 flex-shrink-0"></i>
+                                        <span class="ui-badge" data-variant="destructive" title="Deletes automatically in ${daysLeft} days, ${hoursLeft} hours">
+                                            <i data-lucide="timer" class="w-3 h-3 flex-shrink-0"></i>
                                             <span>${text}</span>
                                         </span>
                                     `;
@@ -4152,18 +4150,21 @@
 
         function toggleInspectorSection(sectionId) {
             const content = document.getElementById(`ins-sec-content-${sectionId}`);
-            const icon = document.getElementById(`ins-sec-icon-${sectionId}`);
+            let icon = document.getElementById(`ins-sec-icon-${sectionId}`);
             if (!content || !icon) return;
 
             const isHidden = content.classList.contains('hidden');
             if (isHidden) {
                 content.classList.remove('hidden');
                 icon.setAttribute('data-lucide', 'chevron-down');
+                icon.setAttribute('data-hugeicon', 'chevron-down');
             } else {
                 content.classList.add('hidden');
                 icon.setAttribute('data-lucide', 'chevron-right');
+                icon.setAttribute('data-hugeicon', 'chevron-right');
             }
-            lucide.createIcons();
+            if (window.lucide) window.lucide.createIcons();
+            if (window.hugeicons) window.hugeicons.createIcons();
         }
 
         function addInspectorNote() {

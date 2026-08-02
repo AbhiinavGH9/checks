@@ -68,9 +68,15 @@ import Dumbbell01Icon from '@hugeicons/core-free-icons/Dumbbell01Icon';
 import KitchenUtensilsIcon from '@hugeicons/core-free-icons/KitchenUtensilsIcon';
 import GraduationCapIcon from '@hugeicons/core-free-icons/GraduationCapIcon';
 import MapPinIcon from '@hugeicons/core-free-icons/MapPinIcon';
+import Edit02Icon from '@hugeicons/core-free-icons/Edit02Icon';
+import PlusSignCircleIcon from '@hugeicons/core-free-icons/PlusSignCircleIcon';
+import PlusSignSquareIcon from '@hugeicons/core-free-icons/PlusSignSquareIcon';
 import SmileIcon from '@hugeicons/core-free-icons/SmileIcon';
 
 const coreIcons = {
+  Edit02Icon: Edit02Icon,
+  PlusSignCircleIcon: PlusSignCircleIcon,
+  PlusSignSquareIcon: PlusSignSquareIcon,
   AlertCircleIcon: AlertCircleIcon,
   Alert01Icon: Alert01Icon,
   ArchiveIcon: ArchiveIcon,
@@ -160,8 +166,9 @@ const ICON_MAPPING = {
     "circle-plus": "AddCircleIcon",
     "database": "DatabaseIcon",
     "download": "Download01Icon",
-    "edit": "PencilEdit01Icon",
-    "edit-2": "PencilEdit02Icon",
+    "edit": "Edit02Icon",
+    "edit-2": "Edit02Icon",
+    "pencil": "Edit02Icon",
     "eye": "EyeIcon",
     "folder-output": "FolderOutputIcon",
     "folder-pen": "FolderPenIcon",
@@ -177,10 +184,9 @@ const ICON_MAPPING = {
     "more-horizontal": "MoreHorizontalIcon",
     "palette": "PaintBoardIcon",
     "pause-circle": "PauseCircleIcon",
-    "pencil": "PencilIcon",
     "plus": "Add01Icon",
-    "plus-circle": "AddCircleIcon",
-    "plus-square": "AddSquareIcon",
+    "plus-circle": "PlusSignCircleIcon",
+    "plus-square": "PlusSignSquareIcon",
     "refresh-cw": "RefreshIcon",
     "rotate-ccw": "RotateLeft01Icon",
     "search": "Search01Icon",
@@ -258,6 +264,11 @@ function renderHugeiconElement(el) {
     const existingStyle = el.getAttribute('style');
     if (existingStyle) {
         svg.setAttribute('style', existingStyle);
+    }
+
+    const existingId = el.getAttribute('id');
+    if (existingId) {
+        svg.setAttribute('id', existingId);
     }
 
     svg.setAttribute('data-hugeicon', pascalName);
