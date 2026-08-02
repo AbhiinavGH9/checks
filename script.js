@@ -2083,31 +2083,31 @@
                                     ${task.description ? `<p class="text-[10px] ${subtextClass} mt-1 warp-text whitespace-pre-line">${escapeHTML(task.description)}</p>` : ''}
                                     
                                     <div class="flex flex-wrap gap-1.5 mt-2 items-center">
-                                        <span class="ui-badge" style="background-color: ${accentColor}20; color: ${accentColor}; border-color: ${accentColor}30;">
+                                        <span class="ui-badge" style="background-color: ${task.done ? 'rgba(255,255,255,0.04)' : accentColor + '20'}; color: ${task.done ? '#6b7280' : accentColor}; border-color: ${task.done ? 'rgba(255,255,255,0.06)' : accentColor + '30'};">
                                             <i data-lucide="check" class="w-2.5 h-2.5"></i>
                                             <span>Priority</span>
                                         </span>
 
                                         ${project ? `
-                                            <span class="ui-badge" style="background-color: ${task.done ? '#44444420' : (project.color + '20')}; color: ${task.done ? '#7a7a7a' : project.color}; border-color: ${task.done ? '#ffffff10' : (project.color + '30')};">
+                                            <span class="ui-badge" style="background-color: ${task.done ? 'rgba(255,255,255,0.04)' : (project.color + '20')}; color: ${task.done ? '#6b7280' : project.color}; border-color: ${task.done ? 'rgba(255,255,255,0.06)' : (project.color + '30')};">
                                                 <i data-lucide="${project.icon}" class="w-2.5 h-2.5 flex-shrink-0"></i>
                                                 <span>${escapeHTML(project.title)}</span>
                                             </span>
                                         ` : ''}
                                         ${task.dueDate ? `
-                                            <span class="ui-badge" data-variant="secondary">
+                                            <span class="ui-badge" ${task.done ? 'style="background-color: rgba(255,255,255,0.04); color: #6b7280; border-color: rgba(255,255,255,0.06);"' : 'data-variant="secondary"'}>
                                                 <i data-lucide="calendar" class="w-2.5 h-2.5 flex-shrink-0"></i>
                                                 <span>${task.dueDate}</span>
                                             </span>
                                         ` : ''}
                                         ${subTotal > 0 ? `
-                                            <span class="ui-badge" data-variant="secondary">
+                                            <span class="ui-badge" ${task.done ? 'style="background-color: rgba(255,255,255,0.04); color: #6b7280; border-color: rgba(255,255,255,0.06);"' : 'data-variant="secondary"'}>
                                                 <i data-lucide="list-checks" class="w-2.5 h-2.5 flex-shrink-0"></i>
                                                 <span>${subDone}/${subTotal}</span>
                                             </span>
                                         ` : ''}
                                         ${task.isHeldTask ? `
-                                            <span class="ui-badge" data-variant="secondary" style="background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3);" title="Task is paused on hold">
+                                            <span class="ui-badge" style="${task.done ? 'background-color: rgba(255,255,255,0.04); color: #6b7280; border-color: rgba(255,255,255,0.06);' : 'background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3);'}" title="Task is paused on hold">
                                                 <i data-lucide="pause-circle" class="w-2.5 h-2.5 flex-shrink-0"></i>
                                                 <span>Task On Hold</span>
                                             </span>
@@ -2122,7 +2122,7 @@
                                     ${task.notes && task.notes.length > 0 ? `
                                         <div class="flex flex-col gap-1 mt-2">
                                             ${task.notes.map(n => `
-                                                <span class="ui-badge w-fit max-w-full" style="background-color: rgba(234, 179, 8, 0.12); color: #facc15; border-color: rgba(234, 179, 8, 0.25);">
+                                                <span class="ui-badge w-fit max-w-full" style="${task.done ? 'background-color: rgba(255,255,255,0.04); color: #6b7280; border-color: rgba(255,255,255,0.06);' : 'background-color: rgba(234, 179, 8, 0.12); color: #facc15; border-color: rgba(234, 179, 8, 0.25);'}">
                                                     <i data-lucide="sticky-note" class="w-3 h-3 flex-shrink-0"></i>
                                                     <span class="truncate">${escapeHTML(n.text)}</span>
                                                 </span>
@@ -2741,10 +2741,15 @@
             `;
 
             AppState.groups.forEach(g => {
+                const groupIconName = g.icon || 'list';
+                const groupColor = g.color || '#2997ff';
                 html += `
                     <button onclick="contextMoveToGroup('${g.id}')" class="ui-menu-item">
                         <span class="truncate">${escapeHTML(g.title)}</span>
-                        <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${g.color || '#2997ff'}"></span>
+                        <div class="flex items-center space-x-1.5 flex-shrink-0">
+                            <i data-lucide="${groupIconName}" class="w-3.5 h-3.5" style="color: ${groupColor};"></i>
+                            <span class="w-2 h-2 rounded-full" style="background-color: ${groupColor}"></span>
+                        </div>
                     </button>
                 `;
             });
@@ -4579,10 +4584,10 @@
             const submitBtn = document.getElementById('group-submit-btn');
             
             if (contextSelectedGroupId) {
-                document.getElementById('group-modal-title-text').innerHTML = `<i data-lucide="edit" class="text-[#2997ff] mr-2 w-4.5 h-4.5"></i> Edit Group Settings`;
+                document.getElementById('group-modal-title-text').innerHTML = `<i data-lucide="edit-2" class="text-[#2997ff] mr-2 w-5 h-5 flex-shrink-0"></i><span class="text-sm font-bold text-white normal-case tracking-normal">Edit Group Settings</span>`;
                 submitBtn.textContent = "Save Changes";
             } else {
-                document.getElementById('group-modal-title-text').innerHTML = `<i data-lucide="plus-square" class="text-[#2997ff] mr-2 w-4.5 h-4.5"></i> Create Group Column`;
+                document.getElementById('group-modal-title-text').innerHTML = `<i data-lucide="plus-square" class="text-[#2997ff] mr-2 w-5 h-5 flex-shrink-0"></i><span class="text-sm font-bold text-white normal-case tracking-normal">Create Group Column</span>`;
                 submitBtn.textContent = "Create Group";
             }
             
@@ -5237,134 +5242,7 @@
         }
 
         function initDragToSelect() {
-            const feed = document.getElementById('task-feed-scroll');
-            if (!feed) return;
-
-            feed.addEventListener('mousedown', (e) => {
-                if (e.button !== 0) return; 
-                
-                if (e.target.closest('button') || 
-                    e.target.closest('input') || 
-                    e.target.closest('textarea') || 
-                    e.target.closest('form') || 
-                    e.target.closest('.group-card') || 
-                    e.target.closest('#inspector-panel') || 
-                    e.target.closest('#sidebar-panel') ||
-                    e.target.closest('#context-menu') ||
-                    e.target.closest('#counter-context-menu') ||
-                    e.target.closest('#group-context-menu') ||
-                    e.target.closest('#feed-context-menu') ||
-                    e.target.closest('#custom-calendar-popup')) {
-                    return;
-                }
-
-                dragSelectActive = true;
-                const rect = feed.getBoundingClientRect();
-                
-                dragSelectStartX = e.clientX - rect.left + feed.scrollLeft;
-                dragSelectStartY = e.clientY - rect.top + feed.scrollTop;
-
-                if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
-                    AppState.selectedTaskIds = [];
-                    AppState.selectedTaskId = null;
-                    closeInspector();
-                    renderTaskFeed();
-                }
-
-                if (marqueeDiv) marqueeDiv.remove();
-                marqueeDiv = document.createElement('div');
-                marqueeDiv.id = 'selection-marquee';
-                marqueeDiv.style.left = `${dragSelectStartX}px`;
-                marqueeDiv.style.top = `${dragSelectStartY}px`;
-                marqueeDiv.style.width = '0px';
-                marqueeDiv.style.height = '0px';
-                feed.appendChild(marqueeDiv);
-            });
-
-            document.addEventListener('mousemove', (e) => {
-                if (!dragSelectActive || !marqueeDiv) return;
-                const rect = feed.getBoundingClientRect();
-
-                const currentX = e.clientX - rect.left + feed.scrollLeft;
-                const currentY = e.clientY - rect.top + feed.scrollTop;
-
-                const x = Math.min(dragSelectStartX, currentX);
-                const y = Math.min(dragSelectStartY, currentY);
-                const w = Math.abs(dragSelectStartX - currentX);
-                const h = Math.abs(dragSelectStartY - currentY);
-
-                marqueeDiv.style.left = `${x}px`;
-                marqueeDiv.style.top = `${y}px`;
-                marqueeDiv.style.width = `${w}px`;
-                marqueeDiv.style.height = `${h}px`;
-
-                const cards = feed.querySelectorAll('.group-card');
-                const marqueeRect = {
-                    left: x,
-                    top: y,
-                    right: x + w,
-                    bottom: y + h
-                };
-
-                cards.forEach(card => {
-                    const taskId = card.getAttribute('data-task-id');
-                    if (!taskId) return;
-
-                    const cardRect = card.getBoundingClientRect();
-                    const cardRelativeLeft = cardRect.left - rect.left + feed.scrollLeft;
-                    const cardRelativeTop = cardRect.top - rect.top + feed.scrollTop;
-                    const cardRelativeRight = cardRelativeLeft + cardRect.width;
-                    const cardRelativeBottom = cardRelativeTop + cardRect.height;
-
-                    const intersects = !(marqueeRect.left > cardRelativeRight ||
-                                         marqueeRect.right < cardRelativeLeft ||
-                                         marqueeRect.top > cardRelativeBottom ||
-                                         marqueeRect.bottom < cardRelativeTop);
-
-                    if (intersects) {
-                        if (!AppState.selectedTaskIds.includes(taskId)) {
-                            AppState.selectedTaskIds.push(taskId);
-                        }
-                    } else {
-                        if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
-                            AppState.selectedTaskIds = AppState.selectedTaskIds.filter(id => id !== taskId);
-                        }
-                    }
-                });
-
-                cards.forEach(card => {
-                    const taskId = card.getAttribute('data-task-id');
-                    if (AppState.selectedTaskIds.includes(taskId)) {
-                        card.classList.add('ring-1', 'ring-[#2997ff]');
-                    } else {
-                        if (AppState.selectedTaskId !== taskId) {
-                            card.classList.remove('ring-1', 'ring-[#2997ff]');
-                        }
-                    }
-                });
-            });
-
-            document.addEventListener('mouseup', () => {
-                if (dragSelectActive) {
-                    dragSelectActive = false;
-                    if (marqueeDiv) {
-                        marqueeDiv.remove();
-                        marqueeDiv = null;
-                    }
-
-                    if (AppState.selectedTaskIds.length === 1) {
-                        AppState.selectedTaskId = AppState.selectedTaskIds[0];
-                        renderInspector();
-                        const inspector = document.getElementById('inspector-panel');
-                        inspector.style.width = '320px';
-                        document.getElementById('inspector-resizer').style.display = 'block';
-                    } else if (AppState.selectedTaskIds.length > 1) {
-                        closeInspector();
-                    }
-
-                    renderTaskFeed();
-                }
-            });
+            // Drag-to-select disabled per user request
         }
 
         window.onload = function() {

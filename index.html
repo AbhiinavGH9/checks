@@ -773,7 +773,10 @@
     <div id="group-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
         <div id="group-modal-container" class="bg-[#121212] rounded-3xl max-w-md w-full mx-4 p-6 shadow-2xl border border-white/[0.08] transform scale-95 transition-transform duration-150 ease-out">
             <div class="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
-                <h3 class="text-xs font-extrabold text-white flex items-center uppercase tracking-wider" id="group-modal-title-text"><i data-lucide="plus-square" class="text-[#2997ff] mr-2 w-4 h-4"></i> Create Group Column</h3>
+                <div id="group-modal-title-text" class="flex items-center space-x-2 text-white">
+                    <i data-lucide="plus-square" class="text-[#2997ff] w-5 h-5 flex-shrink-0"></i>
+                    <span class="text-sm font-bold text-white">Create Group Column</span>
+                </div>
                 <button onclick="closeAddGroupModal()" class="text-gray-400 hover:text-white btn-scale p-1 bg-white/5 rounded-lg">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
@@ -861,12 +864,12 @@
         <div id="calendar-grid-cells" class="grid grid-cols-7 gap-1"></div>
     </div>
 
-    <!-- Mobile Bottom Drawer Backdrop -->
+    <!-- Base UI Mobile Bottom Drawer Backdrop -->
     <div id="mobile-drawer-backdrop" onclick="closeMobileDrawer()" class="fixed inset-0 bg-black/60 z-[200] hidden transition-opacity duration-200 opacity-0"></div>
     
-    <!-- Mobile Bottom Drawer -->
-    <div id="mobile-drawer" class="fixed bottom-0 left-0 right-0 z-[201] hidden transform translate-y-full transition-transform duration-200 ease-out bg-[#141414] rounded-t-2xl border-t border-white/[0.08] max-h-[80vh] flex flex-col overflow-hidden">
-        <div class="w-12 h-1.5 bg-white/20 rounded-full mx-auto my-3 flex-shrink-0"></div>
+    <!-- Base UI Mobile Bottom Drawer Content -->
+    <div id="mobile-drawer" class="fixed bottom-0 left-0 right-0 z-[201] hidden transform translate-y-full transition-transform duration-200 ease-out drawer-content-base rounded-t-2xl max-h-[85vh] flex flex-col overflow-hidden">
+        <div class="drawer-swipe-handle"></div>
         <div id="mobile-drawer-header" class="hidden px-4 pb-3 border-b border-white/[0.04] flex items-center justify-between flex-shrink-0">
             <button onclick="popDrawerScreen()" class="p-1 text-gray-400 hover:text-white flex items-center space-x-1">
                 <i data-lucide="chevron-left" class="w-4 h-4"></i>

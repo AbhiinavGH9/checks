@@ -205,14 +205,27 @@
             color: #FCA5A5;
         }
 
-        /* Drawer Swipe Handle */
+        /* Base UI Drawer Component Tokens & Base Styles */
+        :root {
+            --drawer-inset: 0px;
+            --drawer-bleed-background: #141414;
+            --drawer-overlay-min-opacity: 0.6;
+        }
         .drawer-swipe-handle {
             width: 36px;
             height: 4px;
             border-radius: 9999px;
-            background-color: rgba(255, 255, 255, 0.25);
+            background-color: rgba(255, 255, 255, 0.2);
             margin: 8px auto 12px auto;
             flex-shrink: 0;
+            cursor: grab;
+        }
+        .drawer-content-base {
+            background-color: #141414;
+            color: #FFFFFF;
+            border: none !important;
+            box-shadow: none !important;
+            outline: none !important;
         }
 
         /* Pop-down Menu Animation */
