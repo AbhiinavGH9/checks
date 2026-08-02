@@ -163,10 +163,11 @@
         }
 
         /* Context Menu & Dropdown Menu Styling (Text on left, icon on right) */
-        .ui-menu-content {
+        .ui-menu-content, #sort-dropdown-options, #sort-dropdown-options-mobile, #nav-menu-dropdown-options, #context-menu, #group-context-menu, #feed-context-menu, #group-submenu {
             background-color: #141414;
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
+            border-radius: 12px;
+            padding: 4px !important;
             box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(16px);
         }
@@ -175,7 +176,7 @@
             align-items: center;
             justify-content: space-between;
             width: 100%;
-            padding: 7px 12px;
+            padding: 6px 10px;
             font-size: 12px;
             font-weight: 500;
             color: #D1D5DB;

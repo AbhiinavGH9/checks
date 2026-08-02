@@ -42,26 +42,6 @@
                 <span id="active-tab-badge" oncontextmenu="handleCounterContextMenu(event)" class="ui-badge cursor-pointer select-none" data-variant="secondary">0 items</span>
             </div>
             <div class="flex items-center space-x-2 relative">
-                <div id="nav-menu-dropdown-options" class="hidden w-52 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-50 py-2 text-xs text-gray-200 backdrop-blur-xl">
-                    <button type="button" onclick="openProfileCustomizerModal()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2.5 font-medium">
-                        <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
-                        <span>Account Options</span>
-                    </button>
-                    <div class="border-t border-white/5 my-1"></div>
-                    <button type="button" onclick="triggerImport()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2.5 font-medium">
-                        <i data-lucide="upload" class="w-4 h-4 text-gray-400"></i>
-                        <span>Import Backup</span>
-                    </button>
-                    <button type="button" onclick="exportData()" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2.5 font-medium">
-                        <i data-lucide="download" class="w-4 h-4 text-gray-400"></i>
-                        <span>Export Backup</span>
-                    </button>
-                    <div class="border-t border-white/5 my-1"></div>
-                    <button type="button" onclick="executeLogoutAction()" class="w-full text-left px-4 py-2 text-red-400 hover:bg-red-500/10 transition flex items-center space-x-2.5 font-medium">
-                        <i data-lucide="log-out" class="w-4 h-4 text-red-400"></i>
-                        <span>Disconnect Session</span>
-                    </button>
-                </div>
                 <input type="file" id="import-file-input" class="hidden" accept=".json" onchange="handleImportFile(event)">
             </div>
         </nav>
@@ -263,10 +243,30 @@
                             <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator" aria-orientation="vertical"></div>
 
                             <!-- Options Dropdown (Three Dots) -->
-                            <div class="relative inline-block text-left">
+                            <div class="relative inline-block text-left" id="nav-menu-dropdown-wrapper">
                                 <button onclick="toggleCustomDropdown('nav-menu-dropdown-options', event)" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition flex items-center justify-center" title="More Options">
                                     <i data-lucide="more-horizontal" class="w-4 h-4"></i>
                                 </button>
+                                <div id="nav-menu-dropdown-options" class="hidden absolute right-0 top-full mt-2 w-52 bg-[#161616] border border-white/10 rounded-xl shadow-2xl z-50 py-1 text-xs text-gray-200 backdrop-blur-xl">
+                                    <button type="button" onclick="openProfileCustomizerModal()" class="ui-menu-item">
+                                        <span>Account Options</span>
+                                        <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
+                                    </button>
+                                    <div class="ui-separator my-1" data-orientation="horizontal"></div>
+                                    <button type="button" onclick="triggerImport()" class="ui-menu-item">
+                                        <span>Import Backup</span>
+                                        <i data-lucide="upload" class="w-4 h-4 text-gray-400"></i>
+                                    </button>
+                                    <button type="button" onclick="exportData()" class="ui-menu-item">
+                                        <span>Export Backup</span>
+                                        <i data-lucide="download" class="w-4 h-4 text-gray-400"></i>
+                                    </button>
+                                    <div class="ui-separator my-1" data-orientation="horizontal"></div>
+                                    <button type="button" onclick="executeLogoutAction()" class="ui-menu-item" data-destructive="true">
+                                        <span>Disconnect Session</span>
+                                        <i data-lucide="log-out" class="w-4 h-4 text-red-400"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

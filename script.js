@@ -2062,7 +2062,7 @@
                     }
 
                     const card = document.createElement('div');
-                    card.className = `group-card relative ${cardBg} p-3 rounded-xl hover:bg-[#161616] transition duration-150 border ${isSelected ? 'ring-1 ring-[#2997ff]' : ''}`;
+                    card.className = `group-card relative p-2.5 rounded-lg hover:bg-white/[0.03] transition duration-150 ${isSelected ? 'bg-white/[0.04] ring-1 ring-[#2997ff]' : ''}`;
                     card.setAttribute('data-task-id', task.id); 
                     card.setAttribute('oncontextmenu', `showContextMenu(event, '${task.id}')`);
                     card.onclick = (e) => selectTask(task.id, e);
@@ -2734,17 +2734,17 @@
             if (!submenu) return;
 
             let html = `
-                <button onclick="contextMoveToGroup(null)" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2 font-medium truncate">
+                <button onclick="contextMoveToGroup(null)" class="ui-menu-item">
+                    <span class="truncate">No Group / Ungrouped</span>
                     <span class="w-2 h-2 rounded-full bg-gray-500 flex-shrink-0"></span>
-                    <span>No Group / Ungrouped</span>
                 </button>
             `;
 
             AppState.groups.forEach(g => {
                 html += `
-                    <button onclick="contextMoveToGroup('${g.id}')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center space-x-2 font-medium truncate">
-                        <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${g.color || '#2997ff'}"></span>
+                    <button onclick="contextMoveToGroup('${g.id}')" class="ui-menu-item">
                         <span class="truncate">${escapeHTML(g.title)}</span>
+                        <span class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${g.color || '#2997ff'}"></span>
                     </button>
                 `;
             });
@@ -5091,35 +5091,49 @@
             input.value = '';
         }
 
-        function showToast(title, msg) {
+        function showToast(title, msg, type = 'info') {
             let container = document.getElementById('toast-container');
             if (!container) {
                 container = document.createElement('div');
                 container.id = 'toast-container';
-                container.className = 'fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-xs z-[300] space-y-2.5 pointer-events-none flex flex-col items-center sm:items-end';
+                container.className = 'fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-xs z-[300] space-y-2 pointer-events-none flex flex-col items-center sm:items-end';
                 document.body.appendChild(container);
             }
             const wrapper = document.createElement('div');
-            wrapper.className = "p-[1px] bg-gradient-to-r from-[#2997ff]/40 via-white/10 to-transparent rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.9)] max-w-sm w-full pointer-events-auto opacity-0 transform translate-y-2 transition duration-250 ease-out";
+            wrapper.className = "w-full max-w-sm pointer-events-auto opacity-0 transform translate-y-2 transition-all duration-200 ease-out";
             
+            let iconName = 'info';
+            let iconColorClass = 'text-blue-400 bg-blue-500/10';
+            if (type === 'success') {
+                iconName = 'check-circle';
+                iconColorClass = 'text-emerald-400 bg-emerald-500/10';
+            } else if (type === 'warning') {
+                iconName = 'alert-triangle';
+                iconColorClass = 'text-amber-400 bg-amber-500/10';
+            } else if (type === 'error') {
+                iconName = 'alert-circle';
+                iconColorClass = 'text-red-400 bg-red-500/10';
+            }
+
             const toast = document.createElement('div');
-            toast.className = "px-4 py-2.5 bg-[#141414] text-white rounded-full flex items-center space-x-3 w-full border border-white/10 relative overflow-hidden";
+            toast.className = "px-3.5 py-2 bg-[#181818] text-white rounded-full flex items-center space-x-2.5 w-full";
             toast.innerHTML = `
-                <div class="p-1 rounded-full bg-[#2997ff]/15 text-[#2997ff] flex-shrink-0">
-                    <i data-lucide="info" class="w-3.5 h-3.5"></i>
+                <div class="p-1 rounded-full ${iconColorClass} flex-shrink-0 flex items-center justify-center">
+                    <i data-lucide="${iconName}" class="w-3.5 h-3.5"></i>
                 </div>
-                <div class="flex-1 min-w-0 flex items-center space-x-1.5">
-                    <span class="text-xs font-bold tracking-tight text-white whitespace-nowrap">${escapeHTML(title)}:</span>
-                    <span class="text-[11px] text-gray-300 truncate">${escapeHTML(msg)}</span>
+                <div class="flex-1 min-w-0 flex items-center space-x-1.5 text-xs">
+                    <span class="font-semibold text-white whitespace-nowrap">${escapeHTML(title)}</span>
+                    ${msg ? `<span class="text-gray-400 text-[11px] truncate">${escapeHTML(msg)}</span>` : ''}
                 </div>
-                <button onclick="this.closest('.pointer-events-auto').remove()" class="p-1 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition flex-shrink-0 btn-scale" title="Dismiss Alert">
-                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                <button onclick="this.closest('.pointer-events-auto').remove()" class="p-1 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition flex-shrink-0" title="Dismiss">
+                    <i data-lucide="x" class="w-3 h-3"></i>
                 </button>
             `;
             wrapper.appendChild(toast);
             
             container.appendChild(wrapper);
-            lucide.createIcons();
+            if (window.lucide) window.lucide.createIcons();
+            if (window.hugeicons) window.hugeicons.createIcons();
 
             setTimeout(() => { wrapper.classList.remove('opacity-0', 'translate-y-2'); }, 10);
             setTimeout(() => {
