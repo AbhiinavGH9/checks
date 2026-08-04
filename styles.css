@@ -500,32 +500,54 @@
             border: none !important;
             box-shadow: none !important;
         }
-        /* Individual subtask thread items */
+        /* Subtask threads wrapper */
+        .subtask-threads-wrapper {
+            padding-left: 4px;
+        }
+
+        /* Each subtask item — pseudo-elements draw the thread line */
         .subtask-thread-item {
             position: relative;
+            padding-left: 18px;
         }
-        .subtask-thread-track {
+
+        /* Non-last: full-height vertical bar at left */
+        .subtask-thread-item:not(.subtask-thread-item--last)::before {
+            content: '';
             position: absolute;
-            left: 3px;
+            left: 5px;
             top: 0;
             bottom: 0;
             width: 2px;
-            border-left: 2px solid;
-            border-radius: 2px;
-            opacity: 0.35;
-            pointer-events: none;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 1px;
         }
-        .subtask-thread-item:first-child .subtask-thread-track {
+
+        /* Non-last: horizontal branch from bar to content at midpoint */
+        .subtask-thread-item:not(.subtask-thread-item--last)::after {
+            content: '';
+            position: absolute;
+            left: 5px;
             top: 50%;
-            border-radius: 2px 2px 2px 2px;
+            transform: translateY(-1px);
+            width: 11px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 0 1px 1px 0;
         }
-        .subtask-thread-item:last-child .subtask-thread-track {
-            bottom: 50%;
-            border-radius: 2px;
-        }
-        .subtask-thread-item:only-child .subtask-thread-track {
-            top: 50%;
-            bottom: 50%;
+
+        /* Last item: rounded L-corner (vertical top half → curves right) */
+        .subtask-thread-item--last::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 0;
+            width: 13px;
+            height: calc(50% + 1px);
+            border-left: 2px solid rgba(255, 255, 255, 0.12);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.12);
+            border-bottom-left-radius: 6px;
+            background: transparent;
         }
 
         /* Archive badge animation */

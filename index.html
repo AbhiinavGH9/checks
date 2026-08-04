@@ -998,7 +998,7 @@
                     <!-- Sort Filter -->
                     <div class="relative" id="archive-sort-wrapper">
                         <button type="button" onclick="toggleArchiveSortDropdown(event)" class="modal-icon-btn" aria-label="Sort Archive" title="Sort">
-                            <i data-lucide="list-filter" class="w-4 h-4"></i>
+                            <i data-lucide="filter" class="w-4 h-4"></i>
                         </button>
                         <div id="archive-sort-dropdown" class="hidden absolute right-0 top-full mt-2 w-48 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-[300] py-2 text-xs text-gray-200 backdrop-blur-xl">
                             <button type="button" onclick="setArchiveSort('recent', event)" class="ui-menu-item w-full text-left flex items-center justify-between px-4 py-2 hover:bg-white/5 hover:text-white transition">
@@ -1006,7 +1006,7 @@
                                 <span id="archive-sort-check-recent" class="text-[#2997ff] hidden"><i data-lucide="check" class="w-3.5 h-3.5"></i></span>
                             </button>
                             <button type="button" onclick="setArchiveSort('oldest', event)" class="ui-menu-item w-full text-left flex items-center justify-between px-4 py-2 hover:bg-white/5 hover:text-white transition">
-                                <span>Date Done (old → new)</span>
+                                <span>Oldest First</span>
                                 <span id="archive-sort-check-oldest" class="text-[#2997ff] hidden"><i data-lucide="check" class="w-3.5 h-3.5"></i></span>
                             </button>
                             <button type="button" onclick="setArchiveSort('subtasks', event)" class="ui-menu-item w-full text-left flex items-center justify-between px-4 py-2 hover:bg-white/5 hover:text-white transition">
