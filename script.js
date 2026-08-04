@@ -3661,8 +3661,8 @@
             hideFeedContextMenu();
             const target = e ? e.target : null;
             if (target && typeof target.closest === 'function') {
-                const ignoreGlobalClose = target.closest('.mctx-panel, .ui-button-group, #mobile-header-groups-wrapper, #mobile-action-section-header, #task-modal-container, #group-modal-container, #sort-dropdown-options, #sort-dropdown-options-mobile, #nav-menu-dropdown-options, #nav-menu-dropdown-options-mobile');
-                if (ignoreGlobalClose) {
+                const isInsideMenu = target.closest('.mctx-panel, #sort-dropdown-options, #sort-dropdown-options-mobile, #nav-menu-dropdown-options, #nav-menu-dropdown-options-mobile');
+                if (isInsideMenu) {
                     return;
                 }
                 if (!target.closest('#custom-calendar-popup') && !target.closest('#ins-task-date-btn') && !target.closest('#new-task-date-btn')) {
@@ -5171,6 +5171,13 @@
             const backdrop = document.getElementById('archive-modal-backdrop');
             const container = document.getElementById('archive-modal-container');
             if (!backdrop || !container) return;
+
+            hideFloatingElement(document.getElementById('sort-dropdown-options'));
+            hideFloatingElement(document.getElementById('sort-dropdown-options-mobile'));
+            hideFloatingElement(document.getElementById('nav-menu-dropdown-options'));
+            hideFloatingElement(document.getElementById('nav-menu-dropdown-options-mobile'));
+            closeMobileCtxMenu();
+            closeMobileDrawer();
 
             renderArchiveModalList();
             backdrop.classList.remove('hidden');
