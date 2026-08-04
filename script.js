@@ -2463,7 +2463,7 @@
                                             <div class="mt-1 flex items-center flex-wrap gap-1.5">
                                                 <p class="text-[10px] ${subtextClass} warp-text whitespace-pre-line">${escapeHTML(shortDesc)}</p>
                                                 ${isDescLong ? `
-                                                    <button type="button" onclick="event.stopPropagation(); event.preventDefault(); openNoteModal('${task.id}', 'desc', event);" class="ui-badge hover:bg-[#2997ff]/20 hover:text-white transition cursor-pointer" style="background-color: rgba(41, 151, 255, 0.12); color: #2997ff; border-color: rgba(41, 151, 255, 0.25);">
+                                                    <button type="button" class="open-more-btn ui-badge hover:bg-[#2997ff]/20 hover:text-white transition cursor-pointer" data-task-id="${task.id}" data-type="desc" style="background-color: rgba(41, 151, 255, 0.12); color: #2997ff; border-color: rgba(41, 151, 255, 0.25);">
                                                         <span>(...more)</span>
                                                     </button>
                                                 ` : ''}
@@ -2521,7 +2521,7 @@
                                                             <span class="truncate">${escapeHTML(shortText)}</span>
                                                         </span>
                                                         ${isLong ? `
-                                                            <button type="button" onclick="event.stopPropagation(); event.preventDefault(); openNoteModal('${task.id}', ${idx}, event);" class="ui-badge hover:bg-[#2997ff]/20 hover:text-white transition cursor-pointer" style="background-color: rgba(41, 151, 255, 0.12); color: #2997ff; border-color: rgba(41, 151, 255, 0.25);">
+                                                            <button type="button" class="open-more-btn ui-badge hover:bg-[#2997ff]/20 hover:text-white transition cursor-pointer" data-task-id="${task.id}" data-type="${idx}" style="background-color: rgba(41, 151, 255, 0.12); color: #2997ff; border-color: rgba(41, 151, 255, 0.25);">
                                                                 <span>(...more)</span>
                                                             </button>
                                                         ` : ''}
@@ -2559,6 +2559,16 @@
                             </div>
                         </div>
                     `;
+
+                    card.querySelectorAll('.open-more-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            const tId = btn.getAttribute('data-task-id');
+                            const type = btn.getAttribute('data-type');
+                            openNoteModal(tId, type, e);
+                        });
+                    });
                     cardsContainer.appendChild(card);
                 });
             }
@@ -5019,17 +5029,20 @@
             }, 10);
         }
         function openNoteModal(taskId, type, event) {
-            if (event) event.stopPropagation();
+            if (event && event.stopPropagation) event.stopPropagation();
+            if (event && event.preventDefault) event.preventDefault();
             const task = AppState.tasks.find(t => t.id === taskId);
             if (!task) return;
 
             let fullText = '';
             let titleText = 'Details';
+            const numIdx = parseInt(type, 10);
+
             if (type === 'desc') {
                 fullText = task.description || '';
                 titleText = 'Full Description';
-            } else if (typeof type === 'number' && task.notes && task.notes[type]) {
-                fullText = task.notes[type].text || '';
+            } else if (!isNaN(numIdx) && task.notes && task.notes[numIdx]) {
+                fullText = task.notes[numIdx].text || '';
                 titleText = 'Short Note Details';
             } else {
                 fullText = String(type || '');
