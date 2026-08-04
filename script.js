@@ -3601,10 +3601,18 @@
             if (badgeDone) badgeDone.textContent = AppState.tasks.filter(t => t.done).length;
 
             const activeBadgePill = document.getElementById('active-tab-badge');
+            const activeBadgePillMobile = document.getElementById('active-tab-badge-mobile');
+
             if (AppState.counterTargetPolicy === 'tasks') {
                 const taskTally = AppState.tasks.filter(t => !t.done).length;
-                activeBadgePill.textContent = `${taskTally} active tasks`;
-                activeBadgePill.className = "px-2.5 py-0.5 bg-blue-500/10 text-blue-400 text-[11px] font-semibold rounded-full border border-blue-500/20 transition-all duration-350 cursor-pointer select-none";
+                if (activeBadgePill) {
+                    activeBadgePill.textContent = `${taskTally} active tasks`;
+                    activeBadgePill.className = "px-2.5 py-1 bg-blue-500/10 text-blue-400 text-[11px] font-semibold rounded-full border border-blue-500/20 transition-all duration-350 cursor-pointer select-none";
+                }
+                if (activeBadgePillMobile) {
+                    activeBadgePillMobile.textContent = `${taskTally}`;
+                    activeBadgePillMobile.className = "px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[11px] font-semibold rounded-full border border-blue-500/20 transition-all duration-350 cursor-pointer select-none min-w-[20px] text-center";
+                }
             } else {
                 let subtaskTally = 0;
                 AppState.tasks.forEach(t => {
@@ -3612,8 +3620,14 @@
                         subtaskTally += t.subtasks.filter(s => !s.done).length;
                     }
                 });
-                activeBadgePill.textContent = `${subtaskTally} active subtasks`;
-                activeBadgePill.className = "px-2.5 py-0.5 bg-purple-500/10 text-purple-400 text-[11px] font-semibold rounded-full border border-purple-500/20 transition-all duration-350 cursor-pointer select-none";
+                if (activeBadgePill) {
+                    activeBadgePill.textContent = `${subtaskTally} active subtasks`;
+                    activeBadgePill.className = "px-2.5 py-1 bg-purple-500/10 text-purple-400 text-[11px] font-semibold rounded-full border border-purple-500/20 transition-all duration-350 cursor-pointer select-none";
+                }
+                if (activeBadgePillMobile) {
+                    activeBadgePillMobile.textContent = `${subtaskTally}`;
+                    activeBadgePillMobile.className = "px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[11px] font-semibold rounded-full border border-purple-500/20 transition-all duration-350 cursor-pointer select-none min-w-[20px] text-center";
+                }
             }
 
             renderProjectsList();
