@@ -100,6 +100,11 @@
             border-radius: var(--radius);
         }
 
+        button, [role="button"] {
+            min-width: 24px;
+            min-height: 24px;
+        }
+
         /* Button Group Component Styles (Shadcn / Base UI) */
         .ui-button-group {
             display: inline-flex;

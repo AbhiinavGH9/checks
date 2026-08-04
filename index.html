@@ -2,7 +2,7 @@
 <html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Anv Checks</title>
     <link rel="icon" type="image/x-icon" href="./favicon.png">
     <link rel="apple-touch-icon" href="./favicon.png">
@@ -167,7 +167,7 @@
                     
                     <!-- Left Floating Group: Sidebar Toggle & Page Title Pill -->
                     <div class="flex items-center gap-2 pointer-events-auto">
-                        <button onclick="toggleSidebarCollapse()" id="sidebar-uncollapse-btn" class="p-2 bg-[#121212]/90 hover:bg-[#1A1A1A] border border-white/10 text-gray-200 hover:text-white rounded-full transition shadow-lg backdrop-blur-xl flex items-center justify-center flex-shrink-0" title="Toggle Sidebar">
+                        <button onclick="toggleSidebarCollapse()" id="sidebar-uncollapse-btn" class="p-2 bg-[#121212]/90 hover:bg-[#1A1A1A] border border-white/10 text-gray-200 hover:text-white rounded-full transition shadow-lg backdrop-blur-xl flex items-center justify-center flex-shrink-0 min-w-10 min-h-10" title="Toggle Sidebar" aria-label="Toggle sidebar">
                             <i data-lucide="sidebar" class="w-4 h-4"></i>
                         </button>
 
@@ -222,7 +222,7 @@
 
                             <!-- Sort Dropdown -->
                             <div class="relative inline-block text-left" id="sort-dropdown-wrapper">
-                                <button onclick="toggleCustomDropdown('sort-dropdown-options', event)" class="flex items-center space-x-1.5 rounded-full px-3 py-1.5 text-xs text-gray-200 hover:bg-white/10 transition font-medium">
+                                <button onclick="toggleCustomDropdown('sort-dropdown-options', event)" class="flex items-center space-x-1.5 rounded-full px-3 py-1.5 text-xs text-gray-200 hover:bg-white/10 transition font-medium min-h-10" aria-label="Sort tasks">
                                     <span class="text-gray-400 font-normal">Sort:</span>
                                     <span id="selected-sort-label">Date created</span>
                                     <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-400"></i>
@@ -256,7 +256,7 @@
 
                             <!-- Options Dropdown (Three Dots) -->
                             <div class="relative inline-block text-left" id="nav-menu-dropdown-wrapper">
-                                <button onclick="toggleCustomDropdown('nav-menu-dropdown-options', event)" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition flex items-center justify-center" title="More Options">
+                                <button onclick="toggleCustomDropdown('nav-menu-dropdown-options', event)" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition flex items-center justify-center min-w-10 min-h-10" title="More Options" aria-label="More options">
                                     <i data-lucide="more-horizontal" class="w-4 h-4"></i>
                                 </button>
                                 <div id="nav-menu-dropdown-options" class="hidden absolute right-0 top-full mt-2 w-52 bg-[#161616] border border-white/10 rounded-xl shadow-2xl z-50 py-1 text-xs text-gray-200 backdrop-blur-xl">
@@ -321,7 +321,7 @@
                                     <i data-lucide="search" class="w-4 h-4"></i>
                                 </button>
                                 <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator"></div>
-                                <button onclick="toggleCustomDropdown('sort-dropdown-options-mobile', event)" class="p-2 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center relative" title="Sort">
+                                <button onclick="toggleCustomDropdown('sort-dropdown-options-mobile', event)" class="p-2 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center relative min-w-10 min-h-10" title="Sort" aria-label="Sort tasks">
                                     <i data-lucide="arrow-up-down" class="w-4 h-4"></i>
                                 </button>
                                 <div id="sort-dropdown-options-mobile" class="hidden absolute right-6 top-10 w-44 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-50 py-2 text-xs text-gray-200 backdrop-blur-xl">
@@ -346,7 +346,7 @@
                                 <!-- Mobile Active Tasks Counter Pill (Shrinked to count badge) -->
                                 <span id="active-tab-badge-mobile" onclick="handleCounterContextMenu(event)" oncontextmenu="handleCounterContextMenu(event)" class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[11px] font-semibold rounded-full border border-blue-500/20 transition-all duration-350 cursor-pointer select-none min-w-[20px] text-center" data-variant="secondary">0</span>
                                 <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator"></div>
-                                <button onclick="toggleCustomDropdown('nav-menu-dropdown-options-mobile', event)" class="p-2 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center" title="More Options">
+                                <button onclick="toggleCustomDropdown('nav-menu-dropdown-options-mobile', event)" class="p-2 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center min-w-10 min-h-10" title="More Options" aria-label="More options">
                                     <i data-lucide="more-horizontal" class="w-4 h-4"></i>
                                 </button>
                                 <div id="nav-menu-dropdown-options-mobile" class="hidden absolute right-0 top-full mt-2 w-48 bg-[#161616] border border-white/10 rounded-xl shadow-2xl z-50 py-1 text-xs text-gray-200 backdrop-blur-xl">
@@ -692,7 +692,7 @@
             <div class="task-modal-main-col flex flex-col justify-between flex-shrink-0" style="width: 440px; min-width: 440px;">
                 <div class="modal-header">
                     <div class="modal-header__lead">
-                        <button type="button" id="task-modal-back-btn" onclick="handleTaskModalBackStep()" class="hidden modal-icon-btn mr-1" title="Back">
+                        <button type="button" id="task-modal-back-btn" onclick="if (window.innerWidth < 768) { closeAddTaskModal(true); } else { handleTaskModalBackStep(); }" class="hidden modal-icon-btn mr-1" title="Back" aria-label="Close task creation">
                             <i data-lucide="chevron-left" class="w-4 h-4 text-[#2997ff]"></i>
                         </button>
                         <i data-lucide="plus-circle" class="w-4 h-4 text-[#2997ff]"></i>
@@ -850,7 +850,7 @@
         </div>
     </div>
 
-    <div id="project-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
+    <div id="project-modal-backdrop" onclick="if(event.target === this) closeProjectModal()" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
         <div id="project-modal-container" class="modal-shell max-w-md w-full mx-4 shadow-2xl border border-white/[0.08] transform scale-95 transition-transform duration-150 ease-out">
             <div class="modal-header">
                 <div id="project-modal-title" class="modal-header__lead">

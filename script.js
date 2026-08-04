@@ -4417,6 +4417,10 @@
         function toggleCustomDropdown(menuId, event) {
             if (event) event.stopPropagation();
             const allDropdowns = ['sort-dropdown-options', 'sort-dropdown-options-mobile', 'ins-project-dropdown-options', 'ins-group-dropdown-options', 'ins-autodelete-options', 'new-task-project-options', 'new-task-group-options', 'new-task-autodelete-options', 'nav-menu-dropdown-options', 'nav-menu-dropdown-options-mobile'];
+            const triggerBtn = (event && event.currentTarget) || (event && event.target && event.target.closest('button'));
+            if (triggerBtn) {
+                triggerBtn.setAttribute('aria-expanded', 'false');
+            }
             allDropdowns.forEach(id => {
                 if (id !== menuId) {
                     const el = document.getElementById(id);
@@ -4428,30 +4432,36 @@
             if (!targetMenu) return;
 
             const isModalDropdown = ['new-task-project-options', 'new-task-group-options', 'new-task-autodelete-options'].includes(menuId);
+            const anchorBtn = (event && event.currentTarget) || (event && event.target && event.target.closest('button'));
+            const isHidden = targetMenu.classList.contains('hidden');
 
             if (window.innerWidth < 768) {
-                hideFloatingElement(targetMenu);
-                const anchorBtn = (event && event.currentTarget) || (event && event.target && event.target.closest('button'));
-                lucide.createIcons();
-                const menuDef = parseMenuDOMToDefinition(targetMenu, getMenuTitle(menuId));
-                const ctxItems = _convertDrawerDefToCtxItems(menuDef);
-                MobileCtxMenu.open(ctxItems, anchorBtn);
+                if (isHidden) {
+                    hideFloatingElement(targetMenu);
+                    lucide.createIcons();
+                    const menuDef = parseMenuDOMToDefinition(targetMenu, getMenuTitle(menuId));
+                    const ctxItems = _convertDrawerDefToCtxItems(menuDef);
+                    MobileCtxMenu.open(ctxItems, anchorBtn);
+                    if (anchorBtn) anchorBtn.setAttribute('aria-expanded', 'true');
+                } else {
+                    hideFloatingElement(targetMenu);
+                    if (anchorBtn) anchorBtn.setAttribute('aria-expanded', 'false');
+                }
             } else {
-                const isHidden = targetMenu.classList.contains('hidden');
                 if (isHidden) {
                     targetMenu.classList.remove('hidden');
                     if (!isModalDropdown) {
-                        const triggerBtn = (event && event.currentTarget) || (event && event.target && event.target.closest('button'));
-                        const rect = triggerBtn ? triggerBtn.getBoundingClientRect() : { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
-                        if (menuId === 'nav-menu-dropdown-options' && triggerBtn) {
-                            const rect = triggerBtn.getBoundingClientRect();
+                        const rect = anchorBtn ? anchorBtn.getBoundingClientRect() : { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
+                        if (menuId === 'nav-menu-dropdown-options' && anchorBtn) {
                             positionFloatingElement(targetMenu, rect, { margin: 6, alignRight: true });
                         } else {
                             positionFloatingElement(targetMenu, rect);
                         }
                     }
+                    if (anchorBtn) anchorBtn.setAttribute('aria-expanded', 'true');
                 } else {
                     hideFloatingElement(targetMenu);
+                    if (anchorBtn) anchorBtn.setAttribute('aria-expanded', 'false');
                 }
             }
         }
@@ -5620,6 +5630,10 @@
             ['sort-marker-' + option, 'sort-marker-' + option + '-mobile'].forEach(id => {
                 const marker = document.getElementById(id);
                 if (marker) marker.classList.remove('hidden');
+            });
+
+            document.querySelectorAll('[aria-label="Sort tasks"]').forEach(btn => {
+                btn.setAttribute('aria-expanded', 'false');
             });
 
             renderTaskFeed();
