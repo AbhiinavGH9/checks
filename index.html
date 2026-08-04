@@ -291,13 +291,11 @@
                             </button>
                         </div>
 
-                        <!-- Mobile Header Action Groups (Disappears when search is open) -->
-                        <div id="mobile-header-groups-wrapper" class="flex items-center justify-between space-x-2 w-full">
-                            <!-- Group 1: Task Creation (Full button with text), Add Group, Archive -->
+                            <!-- Group 1: Task Creation (+ Tasks), Add Group, Archive -->
                             <div class="ui-button-group border border-white/10 bg-[#121212]/90 rounded-full p-1 flex items-center shadow-lg backdrop-blur-xl" role="group">
-                                <button onclick="openAddTaskModal()" class="btn-scale flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold bg-[#2997ff] text-black hover:bg-[#0066cc] hover:text-white rounded-full transition" title="Create a new task">
-                                    <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
-                                    <span>New Task</span>
+                                <button onclick="openAddTaskModal()" class="btn-scale flex items-center space-x-1.5 px-3 py-1 text-xs font-bold bg-[#2997ff] text-black hover:bg-[#0066cc] hover:text-white rounded-full transition" title="Create a new task">
+                                    <i data-lucide="plus-circle" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                                    <span class="whitespace-nowrap">Tasks</span>
                                 </button>
                                 <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator"></div>
                                 <button onclick="openAddGroupModal()" class="p-2 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="Add Group">
@@ -609,7 +607,7 @@
     </div>
 
     <!-- Toggling task counter parameter context window -->
-    <div id="counter-context-menu" class="hidden fixed bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-[100] py-2 w-56 text-xs text-gray-200 animate-fade-in backdrop-blur-xl">
+    <div id="counter-context-menu" class="hidden fixed bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-[100] p-1 w-56 text-xs text-gray-200 animate-fade-in backdrop-blur-xl">
         <button onclick="changeCounterTargetPolicy('tasks')" class="ui-menu-item w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium">
             <span>Quantify Parent Tasks</span>
             <span id="counter-policy-tasks-marker" class="text-[#2997ff] hidden"><i data-lucide="check" class="w-3.5 h-3.5"></i></span>

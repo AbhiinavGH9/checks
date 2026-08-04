@@ -174,7 +174,7 @@
         }
 
         /* Context Menu & Dropdown Menu Styling (Text on left, icon on right) */
-        .ui-menu-content, #sort-dropdown-options, #sort-dropdown-options-mobile, #nav-menu-dropdown-options, #context-menu, #group-context-menu, #feed-context-menu, #group-submenu {
+        .ui-menu-content, #sort-dropdown-options, #sort-dropdown-options-mobile, #nav-menu-dropdown-options, #context-menu, #group-context-menu, #feed-context-menu, #group-submenu, #counter-context-menu {
             background-color: #141414;
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 12px;
