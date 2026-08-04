@@ -2457,17 +2457,17 @@
                                     </div>
                                     ${task.description ? (() => {
                                         const rawDesc = task.description || '';
-                                        const isDescLong = rawDesc.length > 60;
-                                        const shortDesc = isDescLong ? rawDesc.substring(0, 60).trim() + '...' : rawDesc;
+                                        const isDescLong = rawDesc.length > 50;
+                                        const shortDesc = isDescLong ? rawDesc.substring(0, 50).trim() + '...' : rawDesc;
                                         return `
-                                            <p class="text-[10px] ${subtextClass} mt-1 warp-text whitespace-pre-line flex items-baseline flex-wrap">
-                                                <span>${escapeHTML(shortDesc)}</span>
+                                            <div class="mt-1 flex items-center flex-wrap gap-1.5">
+                                                <p class="text-[10px] ${subtextClass} warp-text whitespace-pre-line">${escapeHTML(shortDesc)}</p>
                                                 ${isDescLong ? `
-                                                    <button type="button" onclick="openNoteModal('${escapeHTML(rawDesc).replace(/'/g, "\\'").replace(/\n/g, "\\n")}', event)" class="text-[10px] text-[#2997ff] hover:underline font-semibold flex-shrink-0 ml-1">
-                                                        (...more)
+                                                    <button type="button" onclick="openNoteModal('${task.id}', 'desc', event)" class="ui-badge hover:bg-[#2997ff]/20 hover:text-white transition cursor-pointer" style="background-color: rgba(41, 151, 255, 0.12); color: #2997ff; border-color: rgba(41, 151, 255, 0.25);">
+                                                        <span>(...more)</span>
                                                     </button>
                                                 ` : ''}
-                                            </p>
+                                            </div>
                                         `;
                                     })() : ''}
                                     
@@ -2510,10 +2510,10 @@
                                     </div>
                                     ${task.notes && task.notes.length > 0 ? `
                                         <div class="flex flex-col gap-1 mt-2">
-                                            ${task.notes.map(n => {
+                                            ${task.notes.map((n, idx) => {
                                                 const rawText = n.text || '';
-                                                const isLong = rawText.length > 35;
-                                                const shortText = isLong ? rawText.substring(0, 35).trim() + '...' : rawText;
+                                                const isLong = rawText.length > 30;
+                                                const shortText = isLong ? rawText.substring(0, 30).trim() + '...' : rawText;
                                                 return `
                                                     <div class="flex items-center space-x-1.5 max-w-full">
                                                         <span class="ui-badge w-fit max-w-full" style="${task.done ? 'background-color: rgba(255,255,255,0.04); color: #6b7280; border-color: rgba(255,255,255,0.06);' : 'background-color: rgba(234, 179, 8, 0.12); color: #facc15; border-color: rgba(234, 179, 8, 0.25);'}">
@@ -2521,8 +2521,8 @@
                                                             <span class="truncate">${escapeHTML(shortText)}</span>
                                                         </span>
                                                         ${isLong ? `
-                                                            <button type="button" onclick="openNoteModal('${escapeHTML(rawText).replace(/'/g, "\\'")}', event)" class="text-[10px] text-[#2997ff] hover:underline font-semibold flex-shrink-0 ml-1">
-                                                                (...more)
+                                                            <button type="button" onclick="openNoteModal('${task.id}', ${idx}, event)" class="ui-badge hover:bg-[#2997ff]/20 hover:text-white transition cursor-pointer" style="background-color: rgba(41, 151, 255, 0.12); color: #2997ff; border-color: rgba(41, 151, 255, 0.25);">
+                                                                <span>(...more)</span>
                                                             </button>
                                                         ` : ''}
                                                     </div>
@@ -5018,14 +5018,31 @@
                 if (window.hugeicons) window.hugeicons.createIcons();
             }, 10);
         }
-        function openNoteModal(fullText, event) {
+        function openNoteModal(taskId, type, event) {
             if (event) event.stopPropagation();
+            const task = AppState.tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            let fullText = '';
+            let titleText = 'Details';
+            if (type === 'desc') {
+                fullText = task.description || '';
+                titleText = 'Full Description';
+            } else if (typeof type === 'number' && task.notes && task.notes[type]) {
+                fullText = task.notes[type].text || '';
+                titleText = 'Short Note Details';
+            } else {
+                fullText = String(type || '');
+            }
+
             const backdrop = document.getElementById('note-modal-backdrop');
             const container = document.getElementById('note-modal-container');
             const textEl = document.getElementById('note-modal-full-text');
+            const titleEl = container ? container.querySelector('.modal-header__lead h2') : null;
             if (!backdrop || !container || !textEl) return;
 
-            textEl.textContent = fullText || '';
+            if (titleEl) titleEl.textContent = titleText;
+            textEl.textContent = fullText;
             backdrop.classList.remove('hidden');
             setTimeout(() => {
                 backdrop.classList.remove('opacity-0');
