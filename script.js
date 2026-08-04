@@ -2463,7 +2463,7 @@
                                             <div class="mt-1 flex items-center flex-wrap gap-1.5">
                                                 <p class="text-[10px] ${subtextClass} warp-text whitespace-pre-line">${escapeHTML(shortDesc)}</p>
                                                 ${isDescLong ? `
-                                                    <button type="button" onclick="openNoteModal('${task.id}', 'desc', event)" class="ui-badge hover:bg-[#2997ff]/20 hover:text-white transition cursor-pointer" style="background-color: rgba(41, 151, 255, 0.12); color: #2997ff; border-color: rgba(41, 151, 255, 0.25);">
+                                                    <button type="button" onclick="event.stopPropagation(); event.preventDefault(); openNoteModal('${task.id}', 'desc', event);" class="ui-badge hover:bg-[#2997ff]/20 hover:text-white transition cursor-pointer" style="background-color: rgba(41, 151, 255, 0.12); color: #2997ff; border-color: rgba(41, 151, 255, 0.25);">
                                                         <span>(...more)</span>
                                                     </button>
                                                 ` : ''}
@@ -2521,7 +2521,7 @@
                                                             <span class="truncate">${escapeHTML(shortText)}</span>
                                                         </span>
                                                         ${isLong ? `
-                                                            <button type="button" onclick="openNoteModal('${task.id}', ${idx}, event)" class="ui-badge hover:bg-[#2997ff]/20 hover:text-white transition cursor-pointer" style="background-color: rgba(41, 151, 255, 0.12); color: #2997ff; border-color: rgba(41, 151, 255, 0.25);">
+                                                            <button type="button" onclick="event.stopPropagation(); event.preventDefault(); openNoteModal('${task.id}', ${idx}, event);" class="ui-badge hover:bg-[#2997ff]/20 hover:text-white transition cursor-pointer" style="background-color: rgba(41, 151, 255, 0.12); color: #2997ff; border-color: rgba(41, 151, 255, 0.25);">
                                                                 <span>(...more)</span>
                                                             </button>
                                                         ` : ''}
