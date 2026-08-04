@@ -39,12 +39,6 @@
             
             <aside id="sidebar-panel" class="bg-[#0F0F0F] flex flex-col justify-between flex-shrink-0 relative overflow-hidden transition-[width] duration-200" style="width: 280px;">
                 <div class="p-4 flex-1 overflow-y-auto space-y-6">
-                    
-                    <div class="flex items-center space-x-2">
-                        <button onclick="toggleSidebarCollapse()" class="btn-scale p-2 bg-white/5 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition flex-shrink-0" title="Collapse Sidebar">
-                            <i data-lucide="sidebar" class="w-4 h-4"></i>
-                        </button>
-                    </div>
 
                     <div class="space-y-1">
                         <h3 class="text-[10px] font-bold tracking-widest uppercase text-gray-500 px-3 mb-2">Workspace</h3>
@@ -168,8 +162,8 @@
 
             <section class="flex-1 flex flex-col bg-[#0A0A0A] relative overflow-hidden" id="task-feed-scroll" ondblclick="handleFeedDoubleClick(event)" oncontextmenu="handleFeedContextMenu(event)">
                 
-                <!-- Floating Floating Header Bar Container -->
-                <div class="px-4 py-3 md:px-6 md:py-4 flex items-center justify-between gap-3 flex-shrink-0 z-30 bg-transparent pointer-events-none">
+                <!-- Floating Header Bar Container -->
+                <div class="px-4 py-3 md:px-6 md:py-4 flex flex-wrap items-center justify-between gap-3 flex-shrink-0 z-30 bg-transparent pointer-events-none">
                     
                     <!-- Left Floating Group: Sidebar Toggle & Page Title Pill -->
                     <div class="flex items-center gap-2 pointer-events-auto">
@@ -252,8 +246,8 @@
 
                             <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator" aria-orientation="vertical"></div>
 
-                            <!-- Active Tasks Counter Pill (Moved right beside Sort) -->
-                            <span id="active-tab-badge" oncontextmenu="handleCounterContextMenu(event)" class="px-2.5 py-1 bg-blue-500/10 text-blue-400 text-[11px] font-semibold rounded-full border border-blue-500/20 transition-all duration-350 cursor-pointer select-none" data-variant="secondary">0 active tasks</span>
+                            <!-- Active Tasks Counter Pill (Normal click opens context menu) -->
+                            <span id="active-tab-badge" onclick="handleCounterContextMenu(event)" oncontextmenu="handleCounterContextMenu(event)" class="px-2.5 py-1 bg-blue-500/10 text-blue-400 text-[11px] font-semibold rounded-full border border-blue-500/20 transition-all duration-350 cursor-pointer select-none" data-variant="secondary">0 active tasks</span>
 
                             <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator" aria-orientation="vertical"></div>
 
@@ -287,7 +281,7 @@
                     </div>
 
                     <!-- Mobile Grouped Floating Action Header Section -->
-                    <div id="mobile-action-section-header" class="flex md:hidden items-center justify-end space-x-2 text-[#2997ff] w-auto pointer-events-auto">
+                    <div id="mobile-action-section-header" class="flex md:hidden items-center justify-end space-x-2 text-[#2997ff] w-full ml-auto pointer-events-auto">
                         <!-- Mobile Search active replacement bar -->
                         <div id="mobile-search-active-container" class="hidden flex-1 items-center bg-[#121212]/90 border border-white/10 rounded-full px-3 py-1.5 shadow-lg backdrop-blur-xl transition-all">
                             <i data-lucide="search" class="w-3.5 h-3.5 text-[#2997ff] mr-2 flex-shrink-0"></i>
@@ -298,7 +292,7 @@
                         </div>
 
                         <!-- Mobile Header Action Groups (Disappears when search is open) -->
-                        <div id="mobile-header-groups-wrapper" class="flex items-center space-x-2">
+                        <div id="mobile-header-groups-wrapper" class="flex items-center space-x-2 ml-auto">
                             <!-- Group 1: Task Creation, Add Group, Archive -->
                             <div class="ui-button-group border border-white/10 bg-[#121212]/90 rounded-full p-1 flex items-center shadow-lg backdrop-blur-xl" role="group">
                                 <button onclick="openAddTaskModal()" class="p-2 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="New Task">
