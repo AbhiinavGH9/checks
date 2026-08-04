@@ -185,14 +185,14 @@
 
                         <!-- Group 1: Creation Actions (New Task + Add Group + Archive) -->
                         <div class="ui-button-group border border-white/10 bg-[#121212]/90 rounded-full p-1.5 flex items-center shadow-lg backdrop-blur-xl" role="group" aria-label="Task & Group Creation Button Group">
-                            <button onclick="openAddTaskModal()" class="btn-scale flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold bg-[#2997ff] text-black hover:bg-[#0066cc] hover:text-white rounded-full transition" title="Create a new task">
+                            <button onclick="openAddTaskModal(event)" class="btn-scale flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold bg-[#2997ff] text-black hover:bg-[#0066cc] hover:text-white rounded-full transition" title="Create a new task">
                                 <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
                                 <span>New Task</span>
                             </button>
 
                             <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator" aria-orientation="vertical"></div>
 
-                            <button onclick="openAddGroupModal()" class="btn-scale flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/10 hover:text-white rounded-full transition" title="Add custom Group column">
+                            <button onclick="openAddGroupModal(event)" class="btn-scale flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/10 hover:text-white rounded-full transition" title="Add custom Group column">
                                 <i data-lucide="plus-square" class="w-3.5 h-3.5 text-[#2997ff]"></i>
                                 <span>Add Group</span>
                             </button>
@@ -298,12 +298,12 @@
                         <div id="mobile-header-groups-wrapper" class="flex items-center justify-between gap-1.5 w-full">
                             <!-- Group 1: Task Creation (+ Tasks), Add Group, Archive -->
                             <div class="ui-button-group border border-white/10 bg-[#121212]/90 rounded-full p-1 flex items-center shadow-lg backdrop-blur-xl" role="group">
-                                <button onclick="openAddTaskModal()" class="btn-scale flex items-center space-x-1.5 px-2.5 py-1.5 text-xs font-bold bg-[#2997ff] text-black hover:bg-[#0066cc] hover:text-white rounded-full transition" title="Create a new task">
+                                <button onclick="openAddTaskModal(event)" class="btn-scale flex items-center space-x-1.5 px-2.5 py-1.5 text-xs font-bold bg-[#2997ff] text-black hover:bg-[#0066cc] hover:text-white rounded-full transition" title="Create a new task">
                                     <i data-lucide="plus-circle" class="w-3.5 h-3.5 flex-shrink-0"></i>
                                     <span class="whitespace-nowrap">Tasks</span>
                                 </button>
                                 <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator"></div>
-                                <button onclick="openAddGroupModal()" class="p-2 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="Add Group">
+                                <button onclick="openAddGroupModal(event)" class="p-2 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="Add Group">
                                     <i data-lucide="plus-square" class="w-4 h-4 text-[#2997ff]"></i>
                                 </button>
                                 <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator"></div>
@@ -325,10 +325,22 @@
                                     <i data-lucide="arrow-up-down" class="w-4 h-4"></i>
                                 </button>
                                 <div id="sort-dropdown-options-mobile" class="hidden absolute right-6 top-10 w-44 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-50 py-2 text-xs text-gray-200 backdrop-blur-xl">
-                                    <button type="button" onclick="selectSortOption('created', 'Date created')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition">Date created</button>
-                                    <button type="button" onclick="selectSortOption('due', 'Due date')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition">Due date</button>
-                                    <button type="button" onclick="selectSortOption('priority', 'Priority level')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition">Priority level</button>
-                                    <button type="button" onclick="selectSortOption('alphabetical', 'Alphabetical')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition">Alphabetical</button>
+                                    <button type="button" onclick="selectSortOption('created', 'Date created')" class="ui-menu-item w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium">
+                                        <span>Date created</span>
+                                        <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-created-mobile"><i data-lucide="check" class="w-3.5 h-3.5"></i></span>
+                                    </button>
+                                    <button type="button" onclick="selectSortOption('due', 'Due date')" class="ui-menu-item w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium">
+                                        <span>Due date</span>
+                                        <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-due-mobile"><i data-lucide="check" class="w-3.5 h-3.5"></i></span>
+                                    </button>
+                                    <button type="button" onclick="selectSortOption('priority', 'Priority level')" class="ui-menu-item w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium">
+                                        <span>Priority level</span>
+                                        <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-priority-mobile"><i data-lucide="check" class="w-3.5 h-3.5"></i></span>
+                                    </button>
+                                    <button type="button" onclick="selectSortOption('alphabetical', 'Alphabetical')" class="ui-menu-item w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition flex items-center justify-between font-medium">
+                                        <span>Alphabetical</span>
+                                        <span class="checkbox-marker text-[#2997ff] hidden" id="sort-marker-alphabetical-mobile"><i data-lucide="check" class="w-3.5 h-3.5"></i></span>
+                                    </button>
                                 </div>
                                 <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator"></div>
                                 <!-- Mobile Active Tasks Counter Pill (Shrinked to count badge) -->

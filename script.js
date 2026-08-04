@@ -2519,13 +2519,6 @@
             groupSection.className = "space-y-3 p-4 bg-white/[0.01] border border-white/[0.03] rounded-2xl transition duration-150 relative";
 
             const isUngrouped = (groupId === 'ungrouped');
-            
-            if (!isUngrouped) {
-                groupSection.setAttribute('draggable', 'true');
-                groupSection.setAttribute('ondragstart', `dragGroup(event, '${groupId}')`);
-                groupSection.setAttribute('ondragover', 'allowGroupDrop(event)');
-                groupSection.setAttribute('ondrop', `dropGroup(event, '${groupId}')`);
-            }
 
             let navigationButtons = '';
             if (!isUngrouped && AppState.groups.length > 1) {
@@ -2768,38 +2761,6 @@
                     }
                 }
             }
-        }
-
-        function dragGroup(event, groupId) {
-            if (groupId === 'ungrouped') {
-                event.preventDefault();
-                return;
-            }
-            event.dataTransfer.setData('text/plain', groupId);
-            event.dataTransfer.setData('drag-type', 'group');
-        }
-
-        function allowGroupDrop(event) {
-            event.preventDefault();
-        }
-
-        function dropGroup(event, targetGroupId) {
-            event.preventDefault();
-            const dragType = event.dataTransfer.getData('drag-type');
-            if (dragType !== 'group') return;
-
-            const sourceGroupId = event.dataTransfer.getData('text/plain');
-            if (sourceGroupId === targetGroupId) return;
-
-            const sourceIndex = AppState.groups.findIndex(g => g.id === sourceGroupId);
-            const targetIndex = AppState.groups.findIndex(g => g.id === targetGroupId);
-            if (sourceIndex === -1 || targetIndex === -1) return;
-
-            const [movedGroup] = AppState.groups.splice(sourceIndex, 1);
-            AppState.groups.splice(targetIndex, 0, movedGroup);
-
-            syncDeviceDataChannels();
-            showToast('Groups Arranged', 'Group column configurations saved.');
         }
 
         function moveGroupColumn(groupId, direction, event) {
@@ -3700,6 +3661,10 @@
             hideFeedContextMenu();
             const target = e ? e.target : null;
             if (target && typeof target.closest === 'function') {
+                const ignoreGlobalClose = target.closest('.mctx-panel, .ui-button-group, #mobile-header-groups-wrapper, #mobile-action-section-header, #task-modal-container, #group-modal-container, #sort-dropdown-options, #sort-dropdown-options-mobile, #nav-menu-dropdown-options, #nav-menu-dropdown-options-mobile');
+                if (ignoreGlobalClose) {
+                    return;
+                }
                 if (!target.closest('#custom-calendar-popup') && !target.closest('#ins-task-date-btn') && !target.closest('#new-task-date-btn')) {
                     closeCalendarPopup();
                 }
@@ -3711,7 +3676,7 @@
                     !target.closest('#new-task-group-container') &&
                     !target.closest('#new-task-autodelete-container') &&
                     !target.closest('nav')) {
-                    const allDropdowns = ['sort-dropdown-options', 'ins-project-dropdown-options', 'ins-group-dropdown-options', 'ins-autodelete-options', 'new-task-project-options', 'new-task-group-options', 'new-task-autodelete-options', 'nav-menu-dropdown-options'];
+                    const allDropdowns = ['sort-dropdown-options', 'sort-dropdown-options-mobile', 'ins-project-dropdown-options', 'ins-group-dropdown-options', 'ins-autodelete-options', 'new-task-project-options', 'new-task-group-options', 'new-task-autodelete-options', 'nav-menu-dropdown-options', 'nav-menu-dropdown-options-mobile'];
                     allDropdowns.forEach(id => {
                         const el = document.getElementById(id);
                         if (el) hideFloatingElement(el);
@@ -3906,7 +3871,11 @@
 
 
 
-        function openAddTaskModal() {
+        function openAddTaskModal(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
             const backdrop = document.getElementById('task-modal-backdrop');
             const container = document.getElementById('task-modal-container');
             const panel = document.getElementById('new-task-customization-panel');
@@ -4447,7 +4416,7 @@
 
         function toggleCustomDropdown(menuId, event) {
             if (event) event.stopPropagation();
-            const allDropdowns = ['sort-dropdown-options', 'ins-project-dropdown-options', 'ins-group-dropdown-options', 'ins-autodelete-options', 'new-task-project-options', 'new-task-group-options', 'new-task-autodelete-options', 'nav-menu-dropdown-options'];
+            const allDropdowns = ['sort-dropdown-options', 'sort-dropdown-options-mobile', 'ins-project-dropdown-options', 'ins-group-dropdown-options', 'ins-autodelete-options', 'new-task-project-options', 'new-task-group-options', 'new-task-autodelete-options', 'nav-menu-dropdown-options', 'nav-menu-dropdown-options-mobile'];
             allDropdowns.forEach(id => {
                 if (id !== menuId) {
                     const el = document.getElementById(id);
@@ -5449,7 +5418,11 @@
             }
         }
 
-        function openAddGroupModal() {
+        function openAddGroupModal(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
             const backdrop = document.getElementById('group-modal-backdrop');
             const container = document.getElementById('group-modal-container');
             const submitBtn = document.getElementById('group-submit-btn');
@@ -5625,16 +5598,22 @@
 
         function selectSortOption(option, label) {
             AppState.sortBy = option;
-            document.getElementById('selected-sort-label').textContent = label;
+            const desktopLabel = document.getElementById('selected-sort-label');
+            if (desktopLabel) desktopLabel.textContent = label;
             
             const menu = document.getElementById('sort-dropdown-options');
             if (menu) hideFloatingElement(menu);
+            const mobileMenu = document.getElementById('sort-dropdown-options-mobile');
+            if (mobileMenu) hideFloatingElement(mobileMenu);
+            closeMobileCtxMenu();
 
             document.querySelectorAll('.checkbox-marker').forEach(marker => {
                 marker.classList.add('hidden');
             });
-            const activeMarker = document.getElementById(`sort-marker-${option}`);
-            if (activeMarker) activeMarker.classList.remove('hidden');
+            ['sort-marker-' + option, 'sort-marker-' + option + '-mobile'].forEach(id => {
+                const marker = document.getElementById(id);
+                if (marker) marker.classList.remove('hidden');
+            });
 
             renderTaskFeed();
         }
