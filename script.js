@@ -188,7 +188,8 @@
 
             // Metric tracking variables
             metricCardCollapsed: true,
-            counterTargetPolicy: 'tasks' // Can be 'tasks' or 'subtasks'
+            counterTargetPolicy: 'tasks', // Can be 'tasks' or 'subtasks'
+            archiveSortMode: 'recent' // 'recent' | 'oldest' | 'subtasks'
         };
 
         // Mobile header search helpers
@@ -2418,13 +2419,14 @@
                     let subtasksHTML = '';
                     if (task.subtasks && task.subtasks.length > 0) {
                         subtasksHTML = `
-                            <div class="mt-2.5 pt-2 subtask-thread-line space-y-1.5">
-                                ${task.subtasks.map(s => {
+                            <div class="mt-2.5 pt-1.5 space-y-1 pl-1">
+                                ${task.subtasks.map((s, si) => {
                                     const subtaskAccent = task.done ? '#7a7a7a' : accentColor;
                                     const subBorderColor = `border-color: ${subtaskAccent};`;
                                     const subBgColor = s.done ? `background-color: ${subtaskAccent};` : `background-color: transparent;`;
                                     return `
-                                        <div class="flex items-center space-x-2.5 px-1 py-1 rounded hover:bg-white/[0.03] transition">
+                                        <div class="subtask-thread-item flex items-center space-x-2.5 px-1 py-0.5 rounded hover:bg-white/[0.03] transition">
+                                            <div class="subtask-thread-track" style="border-color: rgba(255,255,255,0.10);"></div>
                                             <button onclick="toggleCardSubtaskDone('${task.id}', '${s.id}', event)" class="w-3.5 h-3.5 rounded-full border flex items-center justify-center flex-shrink-0 transition-all duration-150" style="${subBorderColor} ${subBgColor}">
                                                 ${s.done ? `<i data-lucide="check" class="w-2.5 h-2.5 text-[#0A0A0A] font-extrabold tick-animation"></i>` : ''}
                                             </button>
@@ -5059,7 +5061,7 @@
             const listEl = document.getElementById('archive-modal-tasks-list');
             if (!listEl) return;
 
-            const completedTasks = AppState.tasks.filter(t => t.done);
+            let completedTasks = AppState.tasks.filter(t => t.done);
             if (completedTasks.length === 0) {
                 listEl.innerHTML = `
                     <div class="text-center py-8 text-xs text-gray-500">
@@ -5069,14 +5071,45 @@
                 return;
             }
 
+            // Sort based on archiveSortMode
+            const mode = AppState.archiveSortMode || 'recent';
+            if (mode === 'recent') {
+                completedTasks = completedTasks.slice().sort((a, b) => {
+                    const ta = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+                    const tb = b.completedAt ? new Date(b.completedAt).getTime() : 0;
+                    return tb - ta; // newest first
+                });
+            } else if (mode === 'oldest') {
+                completedTasks = completedTasks.slice().sort((a, b) => {
+                    const ta = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+                    const tb = b.completedAt ? new Date(b.completedAt).getTime() : 0;
+                    return ta - tb; // oldest first
+                });
+            } else if (mode === 'subtasks') {
+                completedTasks = completedTasks.slice().sort((a, b) => {
+                    const sa = (a.subtasks || []).length;
+                    const sb = (b.subtasks || []).length;
+                    return sb - sa; // most subtasks first
+                });
+            }
+
             listEl.innerHTML = completedTasks.map(t => {
+                const subCount = (t.subtasks || []).length;
+                const subDone = (t.subtasks || []).filter(s => s.done).length;
+                const completedDate = t.completedAt ? new Date(t.completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
                 return `
                     <div class="flex items-center justify-between p-3 bg-white/[0.03] rounded-2xl border border-white/[0.05] hover:bg-white/[0.06] transition">
                         <div class="flex items-center space-x-3 min-w-0 flex-1 pr-2">
                             <button onclick="toggleTaskDone('${t.id}'); renderArchiveModalList();" class="w-5 h-5 rounded-full border border-emerald-500 bg-emerald-500 flex items-center justify-center flex-shrink-0 transition">
                                 <i data-lucide="check" class="w-3 h-3 text-[#0A0A0A] font-bold"></i>
                             </button>
-                            <span class="text-xs font-semibold text-gray-400 line-through truncate">${escapeHTML(t.title)}</span>
+                            <div class="min-w-0 flex-1">
+                                <span class="text-xs font-semibold text-gray-400 line-through truncate block">${escapeHTML(t.title)}</span>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    ${completedDate ? `<span class="text-[10px] text-gray-600">${completedDate}</span>` : ''}
+                                    ${subCount > 0 ? `<span class="text-[10px] text-gray-600 flex items-center gap-1"><i data-lucide="list-checks" class="w-2.5 h-2.5"></i>${subDone}/${subCount}</span>` : ''}
+                                </div>
+                            </div>
                         </div>
                         <button onclick="deleteSingleTask('${t.id}'); renderArchiveModalList();" class="p-1.5 text-gray-500 hover:text-red-400 hover:bg-white/10 rounded-full transition flex-shrink-0" title="Delete Task">
                             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
@@ -5085,13 +5118,37 @@
                 `;
             }).join('');
 
+            // Sync checkmarks
+            ['recent', 'oldest', 'subtasks'].forEach(m => {
+                const el = document.getElementById(`archive-sort-check-${m}`);
+                if (el) el.classList.toggle('hidden', mode !== m);
+            });
+
             if (window.lucide) window.lucide.createIcons();
             if (window.hugeicons) window.hugeicons.createIcons();
+        }
+
+        function toggleArchiveSortDropdown(event) {
+            if (event) event.stopPropagation();
+            const dd = document.getElementById('archive-sort-dropdown');
+            if (!dd) return;
+            dd.classList.toggle('hidden');
+            if (!dd.classList.contains('hidden') && window.lucide) window.lucide.createIcons();
+        }
+
+        function setArchiveSort(mode, event) {
+            if (event) event.stopPropagation();
+            AppState.archiveSortMode = mode;
+            const dd = document.getElementById('archive-sort-dropdown');
+            if (dd) dd.classList.add('hidden');
+            renderArchiveModalList();
         }
 
         window.openArchiveModal = openArchiveModal;
         window.closeArchiveModal = closeArchiveModal;
         window.renderArchiveModalList = renderArchiveModalList;
+        window.toggleArchiveSortDropdown = toggleArchiveSortDropdown;
+        window.setArchiveSort = setArchiveSort;
 
         function flashArchiveBadge() {
             const ids = ['archive-badge-desktop', 'archive-badge-mobile'];
@@ -5905,6 +5962,15 @@
                         }
                     }
                 });
+
+                // Close archive sort dropdown if click is outside
+                const archiveSortDD = document.getElementById('archive-sort-dropdown');
+                const archiveSortWrapper = document.getElementById('archive-sort-wrapper');
+                if (archiveSortDD && !archiveSortDD.classList.contains('hidden')) {
+                    if (archiveSortWrapper && !archiveSortWrapper.contains(e.target)) {
+                        archiveSortDD.classList.add('hidden');
+                    }
+                }
 
                 // Close Mobile Drawer if click is outside
                 const drawer = document.getElementById('mobile-drawer');

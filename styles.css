@@ -500,12 +500,32 @@
             border: none !important;
             box-shadow: none !important;
         }
-        .subtask-thread-line {
+        /* Individual subtask thread items */
+        .subtask-thread-item {
             position: relative;
-            padding-left: 16px;
-            border-left: 2px solid rgba(255, 255, 255, 0.10);
-            border-radius: 0 0 0 6px;
-            margin-left: 7px;
+        }
+        .subtask-thread-track {
+            position: absolute;
+            left: 3px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            border-left: 2px solid;
+            border-radius: 2px;
+            opacity: 0.35;
+            pointer-events: none;
+        }
+        .subtask-thread-item:first-child .subtask-thread-track {
+            top: 50%;
+            border-radius: 2px 2px 2px 2px;
+        }
+        .subtask-thread-item:last-child .subtask-thread-track {
+            bottom: 50%;
+            border-radius: 2px;
+        }
+        .subtask-thread-item:only-child .subtask-thread-track {
+            top: 50%;
+            bottom: 50%;
         }
 
         /* Archive badge animation */
