@@ -2074,8 +2074,8 @@
             renderTaskFeed();
             updateGlobalBadges();
 
-            if (window.innerWidth < 768) {
-                closeSidebarMobile();
+            if (window.innerWidth < 768 && !AppState.sidebarCollapsed) {
+                toggleSidebarCollapse();
             }
         }
 
@@ -4878,7 +4878,7 @@
         }
 
         function openNewProjectModal() {
-            if (window.innerWidth < 768) closeSidebarMobile();
+            if (window.innerWidth < 768 && !AppState.sidebarCollapsed) toggleSidebarCollapse();
             const backdrop = document.getElementById('project-modal-backdrop');
             const container = document.getElementById('project-modal-container');
             
