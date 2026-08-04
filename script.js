@@ -322,7 +322,7 @@
             if (!sidebarOverlay) {
                 sidebarOverlay = document.createElement('div');
                 sidebarOverlay.id = 'sidebar-touch-overlay';
-                sidebarOverlay.className = "fixed inset-0 bg-black/60 z-[35] hidden transition-opacity duration-150 pointer-events-auto";
+                sidebarOverlay.className = "fixed inset-0 bg-transparent z-[35] hidden transition-opacity duration-150 pointer-events-none";
                 sidebarOverlay.onclick = () => closeSidebarMobile();
                 document.body.appendChild(sidebarOverlay);
             }
@@ -729,7 +729,7 @@
             if (!sidebarOverlay) {
                 sidebarOverlay = document.createElement('div');
                 sidebarOverlay.id = 'mobile-sidebar-backdrop';
-                sidebarOverlay.className = 'fixed inset-0 bg-black/60 z-[35] hidden opacity-0 transition-opacity duration-150 pointer-events-auto';
+                sidebarOverlay.className = 'fixed inset-0 bg-transparent z-[35] hidden opacity-0 transition-opacity duration-150 pointer-events-none';
                 sidebarOverlay.onclick = () => closeSidebarMobile();
                 document.body.appendChild(sidebarOverlay);
             }

@@ -167,11 +167,11 @@
                     
                     <!-- Left Floating Group: Sidebar Toggle & Page Title Pill -->
                     <div class="flex items-center gap-2 pointer-events-auto">
-                        <button onclick="toggleSidebarCollapse()" id="sidebar-uncollapse-btn" class="p-2 bg-[#121212]/90 hover:bg-[#1A1A1A] border border-white/10 text-gray-200 hover:text-white rounded-full transition shadow-lg backdrop-blur-xl flex items-center justify-center flex-shrink-0" title="Toggle Sidebar">
+                        <button onclick="toggleSidebarCollapse()" id="sidebar-uncollapse-btn" class="p-2 bg-gradient-to-r from-[#2997ff]/20 to-[#2997ff]/10 hover:from-[#2997ff]/30 hover:to-[#2997ff]/20 border border-white/10 text-gray-200 hover:text-white rounded-full transition shadow-lg backdrop-blur-xl flex items-center justify-center flex-shrink-0" title="Toggle Sidebar">
                             <i data-lucide="sidebar" class="w-4 h-4"></i>
                         </button>
 
-                        <div class="px-4 py-1.5 bg-[#121212]/90 border border-white/10 rounded-full shadow-lg backdrop-blur-xl flex items-center space-x-2">
+                        <div class="px-4 py-1.5 bg-gradient-to-r from-[#2997ff]/20 via-[#2997ff]/10 to-transparent border border-white/10 rounded-full shadow-lg backdrop-blur-xl flex items-center space-x-2">
                             <span id="feed-current-title" class="text-xs font-bold text-white tracking-tight">Inbox Feed</span>
                         </div>
                     </div>
@@ -184,7 +184,7 @@
                         </button>
 
                         <!-- Group 1: Creation Actions (New Task + Add Group + Archive) -->
-                        <div class="ui-button-group border border-white/10 bg-[#121212]/90 rounded-full p-1.5 flex items-center shadow-lg backdrop-blur-xl" role="group" aria-label="Task & Group Creation Button Group">
+                        <div class="ui-button-group border border-white/10 bg-gradient-to-r from-[#2997ff]/25 via-[#2997ff]/15 to-[#2997ff]/5 rounded-full p-1.5 flex items-center shadow-lg backdrop-blur-xl" role="group" aria-label="Task & Group Creation Button Group">
                             <button onclick="openAddTaskModal()" class="btn-scale flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold bg-[#2997ff] text-black hover:bg-[#0066cc] hover:text-white rounded-full transition" title="Create a new task">
                                 <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
                                 <span>New Task</span>
@@ -206,7 +206,7 @@
                         </div>
 
                         <!-- Group 2: Search, Sort, Active Tasks Badge & Options Button Group -->
-                        <div class="ui-button-group border border-white/10 bg-[#121212]/90 rounded-full p-1.5 flex items-center relative shadow-lg backdrop-blur-xl" role="group" aria-label="Search & Filter Button Group">
+                        <div class="ui-button-group border border-white/10 bg-gradient-to-r from-[#2997ff]/25 via-[#2997ff]/15 to-[#2997ff]/5 rounded-full p-1.5 flex items-center relative shadow-lg backdrop-blur-xl" role="group" aria-label="Search & Filter Button Group">
                             <!-- Expandable Animated Search Input -->
                             <div class="relative flex items-center transition-all duration-300 ease-out" id="header-search-container" style="width: 32px;">
                                 <button type="button" onclick="toggleHeaderSearch(event)" class="p-1.5 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center flex-shrink-0" title="Search tasks">
