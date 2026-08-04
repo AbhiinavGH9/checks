@@ -35,19 +35,6 @@
 
     <div class="h-full flex flex-col overflow-hidden relative">
 
-        <nav class="bg-[#0D0D0D] border-b border-white/[0.04] px-4 md:px-6 py-3 flex items-center justify-between z-40 flex-shrink-0 relative">
-            <div class="flex items-center space-x-3">
-                <button onclick="toggleSidebarCollapse()" id="sidebar-uncollapse-btn" class="hidden p-1.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-lg transition" title="Open Sidebar">
-                    <i data-lucide="sidebar" class="w-4 h-4"></i>
-                </button>
-                <h1 class="text-sm font-bold tracking-tight text-white mr-1">Anv Checks</h1>
-                <span id="active-tab-badge" oncontextmenu="handleCounterContextMenu(event)" class="ui-badge cursor-pointer select-none" data-variant="secondary">0 items</span>
-            </div>
-            <div class="flex items-center space-x-2 relative">
-                <input type="file" id="import-file-input" class="hidden" accept=".json" onchange="handleImportFile(event)">
-            </div>
-        </nav>
-
         <main class="flex-1 flex overflow-hidden relative bg-[#0A0A0A]">
             
             <aside id="sidebar-panel" class="bg-[#0F0F0F] flex flex-col justify-between flex-shrink-0 relative overflow-hidden transition-[width] duration-200" style="width: 280px;">
@@ -181,20 +168,29 @@
 
             <section class="flex-1 flex flex-col bg-[#0A0A0A] relative overflow-hidden" id="task-feed-scroll" ondblclick="handleFeedDoubleClick(event)" oncontextmenu="handleFeedContextMenu(event)">
                 
-                <div class="px-4 py-3 md:px-6 md:py-4 bg-[#0E0E0E] flex items-center justify-between gap-3 flex-shrink-0 border-b border-white/[0.03]">
-                    <div class="flex items-center space-x-2">
-                        <span id="feed-current-title" class="text-sm font-bold text-white tracking-tight">Inbox Feed</span>
+                <!-- Floating Floating Header Bar Container -->
+                <div class="px-4 py-3 md:px-6 md:py-4 flex items-center justify-between gap-3 flex-shrink-0 z-30 bg-transparent pointer-events-none">
+                    
+                    <!-- Left Floating Group: Sidebar Toggle & Page Title Pill -->
+                    <div class="flex items-center gap-2 pointer-events-auto">
+                        <button onclick="toggleSidebarCollapse()" id="sidebar-uncollapse-btn" class="p-2 bg-[#121212]/90 hover:bg-[#1A1A1A] border border-white/10 text-gray-200 hover:text-white rounded-full transition shadow-lg backdrop-blur-xl flex items-center justify-center flex-shrink-0" title="Toggle Sidebar">
+                            <i data-lucide="sidebar" class="w-4 h-4"></i>
+                        </button>
+
+                        <div class="px-4 py-1.5 bg-[#121212]/90 border border-white/10 rounded-full shadow-lg backdrop-blur-xl flex items-center space-x-2">
+                            <span id="feed-current-title" class="text-xs font-bold text-white tracking-tight">Inbox Feed</span>
+                        </div>
                     </div>
                     
-                    <!-- Desktop Action Section -->
-                    <div class="hidden md:flex flex-wrap items-center gap-2 relative">
-                        <button id="clear-done-archive-btn" onclick="clearCompletedTasks()" class="btn-scale flex items-center space-x-1 px-3 py-1.5 text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition hidden" title="Delete all completed tasks in this folder">
+                    <!-- Desktop Floating Action Groups Section -->
+                    <div class="hidden md:flex items-center gap-3 relative pointer-events-auto">
+                        <button id="clear-done-archive-btn" onclick="clearCompletedTasks()" class="btn-scale flex items-center space-x-1 px-3 py-1.5 text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-full transition shadow-lg backdrop-blur-xl hidden" title="Delete all completed tasks in this folder">
                             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                             <span>Delete All Completed</span>
                         </button>
 
                         <!-- Group 1: Creation Actions (New Task + Add Group + Archive) -->
-                        <div class="ui-button-group border border-white/10 bg-white/[0.03] rounded-full p-1 flex items-center" role="group" aria-label="Task & Group Creation Button Group">
+                        <div class="ui-button-group border border-white/10 bg-[#121212]/90 rounded-full p-1.5 flex items-center shadow-lg backdrop-blur-xl" role="group" aria-label="Task & Group Creation Button Group">
                             <button onclick="openAddTaskModal()" class="btn-scale flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold bg-[#2997ff] text-black hover:bg-[#0066cc] hover:text-white rounded-full transition" title="Create a new task">
                                 <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
                                 <span>New Task</span>
@@ -215,8 +211,8 @@
                             </button>
                         </div>
 
-                        <!-- Group 2: Search, Sort & Options Button Group -->
-                        <div class="ui-button-group border border-white/10 bg-white/[0.03] rounded-full p-1 flex items-center relative" role="group" aria-label="Search & Filter Button Group">
+                        <!-- Group 2: Search, Sort, Active Tasks Badge & Options Button Group -->
+                        <div class="ui-button-group border border-white/10 bg-[#121212]/90 rounded-full p-1.5 flex items-center relative shadow-lg backdrop-blur-xl" role="group" aria-label="Search & Filter Button Group">
                             <!-- Expandable Animated Search Input -->
                             <div class="relative flex items-center transition-all duration-300 ease-out" id="header-search-container" style="width: 32px;">
                                 <button type="button" onclick="toggleHeaderSearch(event)" class="p-1.5 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center flex-shrink-0" title="Search tasks">
@@ -256,6 +252,11 @@
 
                             <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator" aria-orientation="vertical"></div>
 
+                            <!-- Active Tasks Counter Pill (Moved right beside Sort) -->
+                            <span id="active-tab-badge" oncontextmenu="handleCounterContextMenu(event)" class="px-2.5 py-1 bg-blue-500/10 text-blue-400 text-[11px] font-semibold rounded-full border border-blue-500/20 transition-all duration-350 cursor-pointer select-none" data-variant="secondary">0 active tasks</span>
+
+                            <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator" aria-orientation="vertical"></div>
+
                             <!-- Options Dropdown (Three Dots) -->
                             <div class="relative inline-block text-left" id="nav-menu-dropdown-wrapper">
                                 <button onclick="toggleCustomDropdown('nav-menu-dropdown-options', event)" class="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition flex items-center justify-center" title="More Options">
@@ -285,10 +286,10 @@
                         </div>
                     </div>
 
-                    <!-- Mobile Grouped Action Header Section -->
-                    <div id="mobile-action-section-header" class="flex md:hidden items-center justify-end space-x-1.5 text-[#2997ff] w-full">
+                    <!-- Mobile Grouped Floating Action Header Section -->
+                    <div id="mobile-action-section-header" class="flex md:hidden items-center justify-end space-x-2 text-[#2997ff] w-auto pointer-events-auto">
                         <!-- Mobile Search active replacement bar -->
-                        <div id="mobile-search-active-container" class="hidden flex-1 items-center bg-white/5 border border-white/10 rounded-full px-3 py-1 mr-1 transition-all">
+                        <div id="mobile-search-active-container" class="hidden flex-1 items-center bg-[#121212]/90 border border-white/10 rounded-full px-3 py-1.5 shadow-lg backdrop-blur-xl transition-all">
                             <i data-lucide="search" class="w-3.5 h-3.5 text-[#2997ff] mr-2 flex-shrink-0"></i>
                             <input type="text" id="mobile-search-input-active" oninput="handleSearch(this.value)" placeholder="Search tasks..." class="w-full bg-transparent text-xs text-white placeholder-gray-500 focus:outline-none">
                             <button type="button" onclick="closeMobileSearchMode()" class="p-1 text-gray-400 hover:text-white rounded-full ml-1">
@@ -297,29 +298,29 @@
                         </div>
 
                         <!-- Mobile Header Action Groups (Disappears when search is open) -->
-                        <div id="mobile-header-groups-wrapper" class="flex items-center space-x-1.5">
+                        <div id="mobile-header-groups-wrapper" class="flex items-center space-x-2">
                             <!-- Group 1: Task Creation, Add Group, Archive -->
-                            <div class="ui-button-group border border-white/10 bg-white/[0.03] rounded-full p-0.5 flex items-center" role="group">
-                                <button onclick="openAddTaskModal()" class="p-1.5 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="New Task">
+                            <div class="ui-button-group border border-white/10 bg-[#121212]/90 rounded-full p-1 flex items-center shadow-lg backdrop-blur-xl" role="group">
+                                <button onclick="openAddTaskModal()" class="p-2 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="New Task">
                                     <i data-lucide="plus-circle" class="w-4 h-4 text-[#2997ff]"></i>
                                 </button>
-                                <div class="ui-button-group-separator w-[1px] h-3.5 bg-white/10 mx-0.5" role="separator"></div>
-                                <button onclick="openAddGroupModal()" class="p-1.5 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="Add Group">
+                                <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator"></div>
+                                <button onclick="openAddGroupModal()" class="p-2 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="Add Group">
                                     <i data-lucide="plus-square" class="w-4 h-4 text-[#2997ff]"></i>
                                 </button>
-                                <div class="ui-button-group-separator w-[1px] h-3.5 bg-white/10 mx-0.5" role="separator"></div>
-                                <button onclick="openArchiveModal()" class="p-1.5 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="Archive">
+                                <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator"></div>
+                                <button onclick="openArchiveModal()" class="p-2 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="Archive">
                                     <i data-lucide="archive" class="w-4 h-4 text-emerald-400"></i>
                                 </button>
                             </div>
 
                             <!-- Group 2: Search, Sort, Three Dots -->
-                            <div class="ui-button-group border border-white/10 bg-white/[0.03] rounded-full p-0.5 flex items-center relative" role="group">
-                                <button onclick="openMobileSearchMode()" class="p-1.5 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center" title="Search">
+                            <div class="ui-button-group border border-white/10 bg-[#121212]/90 rounded-full p-1 flex items-center relative shadow-lg backdrop-blur-xl" role="group">
+                                <button onclick="openMobileSearchMode()" class="p-2 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center" title="Search">
                                     <i data-lucide="search" class="w-4 h-4"></i>
                                 </button>
-                                <div class="ui-button-group-separator w-[1px] h-3.5 bg-white/10 mx-0.5" role="separator"></div>
-                                <button onclick="toggleCustomDropdown('sort-dropdown-options-mobile', event)" class="p-1.5 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center relative" title="Sort">
+                                <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator"></div>
+                                <button onclick="toggleCustomDropdown('sort-dropdown-options-mobile', event)" class="p-2 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center relative" title="Sort">
                                     <i data-lucide="arrow-up-down" class="w-4 h-4"></i>
                                 </button>
                                 <div id="sort-dropdown-options-mobile" class="hidden absolute right-6 top-10 w-44 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-50 py-2 text-xs text-gray-200 backdrop-blur-xl">
@@ -328,8 +329,8 @@
                                     <button type="button" onclick="selectSortOption('priority', 'Priority level')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition">Priority level</button>
                                     <button type="button" onclick="selectSortOption('alphabetical', 'Alphabetical')" class="w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white transition">Alphabetical</button>
                                 </div>
-                                <div class="ui-button-group-separator w-[1px] h-3.5 bg-white/10 mx-0.5" role="separator"></div>
-                                <button onclick="toggleCustomDropdown('nav-menu-dropdown-options-mobile', event)" class="p-1.5 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center" title="More Options">
+                                <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator"></div>
+                                <button onclick="toggleCustomDropdown('nav-menu-dropdown-options-mobile', event)" class="p-2 text-gray-400 hover:text-white rounded-full transition flex items-center justify-center" title="More Options">
                                     <i data-lucide="more-horizontal" class="w-4 h-4"></i>
                                 </button>
                                 <div id="nav-menu-dropdown-options-mobile" class="hidden absolute right-0 top-full mt-2 w-48 bg-[#161616] border border-white/10 rounded-xl shadow-2xl z-50 py-1 text-xs text-gray-200 backdrop-blur-xl">

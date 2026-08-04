@@ -2082,20 +2082,18 @@
         function toggleSidebarCollapse() {
             const sidebar = document.getElementById('sidebar-panel');
             const resizer = document.getElementById('sidebar-resizer');
-            const uncollapseBtn = document.getElementById('sidebar-uncollapse-btn');
 
             if (!sidebar) return;
 
             if (AppState.sidebarCollapsed) {
                 sidebar.style.width = '280px';
                 if (resizer) resizer.style.display = 'block';
-                if (uncollapseBtn) uncollapseBtn.classList.add('hidden');
+                AppState.sidebarCollapsed = false;
             } else {
                 sidebar.style.width = '0px';
                 if (resizer) resizer.style.display = 'none';
-                if (uncollapseBtn) uncollapseBtn.classList.remove('hidden');
+                AppState.sidebarCollapsed = true;
             }
-            AppState.sidebarCollapsed = !AppState.sidebarCollapsed;
         }
 
         function getFilteredTasks() {
@@ -5749,10 +5747,8 @@
                 AppState.sidebarCollapsed = true;
                 const sidebar = document.getElementById('sidebar-panel');
                 const resizer = document.getElementById('sidebar-resizer');
-                const uncollapseBtn = document.getElementById('sidebar-uncollapse-btn');
                 if (sidebar) sidebar.style.width = '0px';
                 if (resizer) resizer.style.display = 'none';
-                if (uncollapseBtn) uncollapseBtn.classList.remove('hidden');
             }
 
             // Bind draggable bottom sheet gesture logic to all app sheets & modals
