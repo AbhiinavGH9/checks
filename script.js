@@ -2418,13 +2418,13 @@
                     let subtasksHTML = '';
                     if (task.subtasks && task.subtasks.length > 0) {
                         subtasksHTML = `
-                            <div class="mt-2.5 pt-2 subtask-thread-line space-y-1.5">
+                            <div class="subtask-thread-container space-y-1">
                                 ${task.subtasks.map(s => {
                                     const subtaskAccent = task.done ? '#7a7a7a' : accentColor;
                                     const subBorderColor = `border-color: ${subtaskAccent};`;
                                     const subBgColor = s.done ? `background-color: ${subtaskAccent};` : `background-color: transparent;`;
                                     return `
-                                        <div class="flex items-center space-x-2.5 px-1 py-1 rounded hover:bg-white/[0.03] transition">
+                                        <div class="subtask-thread-item flex items-center space-x-2.5 px-1 py-1 rounded hover:bg-white/[0.03] transition">
                                             <button onclick="toggleCardSubtaskDone('${task.id}', '${s.id}', event)" class="w-3.5 h-3.5 rounded-full border flex items-center justify-center flex-shrink-0 transition-all duration-150" style="${subBorderColor} ${subBgColor}">
                                                 ${s.done ? `<i data-lucide="check" class="w-2.5 h-2.5 text-[#0A0A0A] font-extrabold tick-animation"></i>` : ''}
                                             </button>
@@ -5881,7 +5881,8 @@
                     const backdrop = document.getElementById(backdropId);
                     const container = document.getElementById(containerId);
                     if (backdrop && !backdrop.classList.contains('hidden')) {
-                        if (container && !container.contains(e.target) && !e.target.closest(`[onclick*="${backdropId}"]`)) {
+                        const triggerAttr = backdropId.replace('-backdrop', '');
+                        if (container && !container.contains(e.target) && !e.target.closest(`[onclick*="${triggerAttr}"]`)) {
                             closeFn();
                         }
                     }
