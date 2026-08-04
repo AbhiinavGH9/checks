@@ -578,6 +578,73 @@
             100% { opacity: 0; transform: scale(0.7) translateY(-16px); }
         }
 
+        /* ─── Mobile Floating Context Menu (iOS-style) ─── */
+        .mctx-panel {
+            width: calc(100vw * 0.67);
+            min-width: 220px;
+            max-width: 300px;
+            background: rgba(28, 28, 30, 0.97);
+            backdrop-filter: blur(40px) saturate(1.8);
+            -webkit-backdrop-filter: blur(40px) saturate(1.8);
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            border-radius: 18px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.55), 0 8px 24px rgba(0,0,0,0.4),
+                        inset 0 0 0 0.5px rgba(255,255,255,0.06);
+            overflow: hidden;
+            transform-origin: top right;
+            transform: scale(0.88) translateY(-6px);
+            opacity: 0;
+            transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), opacity 0.18s ease-out;
+            pointer-events: none;
+        }
+        .mctx-panel.mctx-open {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .mctx-panel.mctx-closing {
+            transform: scale(0.90) translateY(-4px);
+            opacity: 0;
+            transition: transform 0.15s ease-in, opacity 0.13s ease-in;
+        }
+        .mctx-body { padding: 6px 0; }
+        .mctx-item {
+            display: flex; align-items: center; width: 100%;
+            padding: 11px 16px; font-size: 14px; font-weight: 500;
+            color: rgba(255,255,255,0.92); background: transparent; border: none;
+            text-align: left; cursor: pointer; gap: 12px;
+            -webkit-tap-highlight-color: transparent; transition: background 0.1s;
+        }
+        .mctx-item:active { background: rgba(255,255,255,0.08); }
+        .mctx-item--destructive { color: #ff453a; }
+        .mctx-item-icon {
+            width: 20px; height: 20px; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0; color: rgba(255,255,255,0.55);
+        }
+        .mctx-item--destructive .mctx-item-icon { color: #ff453a; }
+        .mctx-item-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .mctx-item-trail { display: flex; align-items: center; gap: 4px; flex-shrink: 0; color: rgba(255,255,255,0.30); }
+        .mctx-item-check { color: #2997ff; }
+        .mctx-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 4px 0; }
+        .mctx-section-label {
+            padding: 6px 16px 2px; font-size: 11px; font-weight: 600;
+            letter-spacing: 0.04em; text-transform: uppercase; color: rgba(255,255,255,0.35);
+        }
+        .mctx-sub-header {
+            display: flex; align-items: center; padding: 10px 12px 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.06); gap: 8px;
+        }
+        .mctx-back-btn {
+            display: flex; align-items: center; gap: 2px; font-size: 13px;
+            color: #2997ff; background: transparent; border: none; cursor: pointer;
+            padding: 4px 6px; border-radius: 8px; -webkit-tap-highlight-color: transparent;
+        }
+        .mctx-sub-title-text {
+            flex: 1; font-size: 13px; font-weight: 600;
+            color: rgba(255,255,255,0.75); text-align: center; margin-right: 60px;
+        }
+        .mctx-color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
         @media (prefers-reduced-motion: reduce) {
             .sheet-panel, #inspector-panel, .modal-draggable-target {
                 transition: opacity 0.15s linear !important;

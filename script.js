@@ -845,6 +845,204 @@
         let drawerStack = [];
         let drawerMenuDefinition = null;
 
+        // ─── Mobile Floating Context Menu Engine (iOS-style) ───
+        const MobileCtxMenu = (() => {
+            let _subScreens = {}; // id → { title, items[] }
+            let _closeTimer = null;
+
+            function _buildItem(item, bodyEl) {
+                if (item.type === 'divider') {
+                    const d = document.createElement('div');
+                    d.className = 'mctx-divider';
+                    bodyEl.appendChild(d);
+                    return;
+                }
+                if (item.type === 'label') {
+                    const l = document.createElement('div');
+                    l.className = 'mctx-section-label';
+                    l.textContent = item.text;
+                    bodyEl.appendChild(l);
+                    return;
+                }
+                const btn = document.createElement('button');
+                btn.className = 'mctx-item' + (item.destructive ? ' mctx-item--destructive' : '');
+                btn.type = 'button';
+
+                // Icon
+                let iconHTML = '';
+                if (item.icon) {
+                    if (item.icon.startsWith('#') || item.icon.startsWith('rgb')) {
+                        iconHTML = `<div class="mctx-item-icon"><span class="mctx-color-dot" style="background:${item.icon}"></span></div>`;
+                    } else {
+                        iconHTML = `<div class="mctx-item-icon"><i data-lucide="${item.icon}" class="w-4 h-4"></i></div>`;
+                    }
+                }
+
+                // Trail: check or chevron
+                let trailHTML = '';
+                if (item.checked) trailHTML = `<div class="mctx-item-trail mctx-item-check"><i data-lucide="check" class="w-3.5 h-3.5"></i></div>`;
+                else if (item.sub) trailHTML = `<div class="mctx-item-trail"><i data-lucide="chevron-right" class="w-4 h-4"></i></div>`;
+
+                btn.innerHTML = `${iconHTML}<span class="mctx-item-label">${item.label}</span>${trailHTML}`;
+
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (item.sub) {
+                        _openSub(item.sub, item.label);
+                    } else if (item.action) {
+                        closeMobileCtxMenu();
+                        setTimeout(() => item.action(e), 60);
+                    }
+                });
+
+                bodyEl.appendChild(btn);
+            }
+
+            function _positionPanel(panel, anchor) {
+                panel.classList.remove('hidden');
+                const vw = window.innerWidth;
+                const vh = window.innerHeight;
+                const panW = panel.offsetWidth || 250;
+                const panH = panel.offsetHeight || 200;
+
+                const rect = anchor ? anchor.getBoundingClientRect() : { top: vh * 0.3, right: vw * 0.9, bottom: vh * 0.35, left: vw * 0.1 };
+
+                // Position below the anchor if space, else above
+                let top = rect.bottom + 8;
+                if (top + panH > vh - 16) top = rect.top - panH - 8;
+                top = Math.max(12, Math.min(top, vh - panH - 12));
+
+                // Align right edge with anchor right, but clamp to viewport
+                let right = vw - rect.right;
+                right = Math.max(12, Math.min(right, vw - panW - 12));
+                panel.style.top = top + 'px';
+                panel.style.right = right + 'px';
+                panel.style.left = 'auto';
+            }
+
+            function open(items, anchor) {
+                if (window.innerWidth >= 768) return; // desktop only uses regular dropdowns
+                _subScreens = {};
+                // collect sub definitions
+                items.forEach(it => { if (it.sub && it.subItems) _subScreens[it.sub] = { title: it.label, items: it.subItems }; });
+
+                const backdrop = document.getElementById('mctx-backdrop');
+                const panel = document.getElementById('mctx-panel');
+                const body = document.getElementById('mctx-body');
+                if (!backdrop || !panel || !body) return;
+
+                body.innerHTML = '';
+                items.forEach(it => _buildItem(it, body));
+
+                backdrop.classList.remove('hidden');
+                _positionPanel(panel, anchor);
+
+                // Close sub if open
+                const sub = document.getElementById('mctx-sub-panel');
+                if (sub) { sub.classList.add('hidden'); sub.classList.remove('mctx-open'); }
+
+                if (window.lucide) window.lucide.createIcons();
+                void panel.offsetHeight;
+                panel.classList.remove('mctx-closing');
+                panel.classList.add('mctx-open');
+            }
+
+            function _openSub(subId, parentLabel) {
+                const screen = _subScreens[subId];
+                if (!screen) return;
+                const subPanel = document.getElementById('mctx-sub-panel');
+                const subBody = document.getElementById('mctx-sub-body');
+                const subTitle = document.getElementById('mctx-sub-title');
+                if (!subPanel || !subBody) return;
+
+                subBody.innerHTML = '';
+                screen.items.forEach(it => _buildItem(it, subBody));
+                if (subTitle) subTitle.textContent = screen.title || parentLabel;
+
+                const mainPanel = document.getElementById('mctx-panel');
+                const mainRect = mainPanel ? mainPanel.getBoundingClientRect() : null;
+
+                subPanel.classList.remove('hidden');
+                subPanel.style.top = mainRect ? mainRect.top + 'px' : '40px';
+                subPanel.style.right = mainRect ? (window.innerWidth - mainRect.right) + 'px' : '12px';
+                subPanel.style.left = 'auto';
+
+                if (window.lucide) window.lucide.createIcons();
+                void subPanel.offsetHeight;
+                subPanel.classList.remove('mctx-closing');
+                subPanel.classList.add('mctx-open');
+            }
+
+            function closeSub() {
+                const sub = document.getElementById('mctx-sub-panel');
+                if (!sub) return;
+                sub.classList.add('mctx-closing');
+                sub.classList.remove('mctx-open');
+                setTimeout(() => { sub.classList.remove('mctx-closing'); sub.classList.add('hidden'); }, 160);
+            }
+
+            function close() {
+                const backdrop = document.getElementById('mctx-backdrop');
+                const panel = document.getElementById('mctx-panel');
+                const sub = document.getElementById('mctx-sub-panel');
+                if (sub) { sub.classList.add('mctx-closing'); sub.classList.remove('mctx-open'); }
+                if (panel) {
+                    panel.classList.add('mctx-closing');
+                    panel.classList.remove('mctx-open');
+                    clearTimeout(_closeTimer);
+                    _closeTimer = setTimeout(() => {
+                        if (panel) { panel.classList.remove('mctx-closing'); panel.classList.add('hidden'); }
+                        if (sub) { sub.classList.remove('mctx-closing'); sub.classList.add('hidden'); }
+                        if (backdrop) backdrop.classList.add('hidden');
+                    }, 160);
+                } else if (backdrop) backdrop.classList.add('hidden');
+            }
+
+            return { open, close, closeSub };
+        })();
+
+        function closeMobileCtxMenu() { MobileCtxMenu.close(); }
+        function closeMobileCtxSub() { MobileCtxMenu.closeSub(); }
+        window.closeMobileCtxMenu = closeMobileCtxMenu;
+        window.closeMobileCtxSub = closeMobileCtxSub;
+
+        // Helper: open mctx from a DOM menu element + anchor button
+        function openMobileCtxFromDOM(menuEl, title, anchorEl) {
+            if (window.innerWidth >= 768) return false;
+            const menuDef = parseMenuDOMToDefinition(menuEl, title);
+            const items = _convertDrawerDefToCtxItems(menuDef);
+            MobileCtxMenu.open(items, anchorEl);
+            return true;
+        }
+
+        function _convertDrawerDefToCtxItems(menuDef) {
+            const items = [];
+            const root = menuDef.screens['root'];
+            if (!root) return items;
+            root.items.forEach(it => {
+                if (it.type === 'divider') { items.push({ type: 'divider' }); return; }
+                const ctxItem = {
+                    label: it.label,
+                    icon: it.icon || null,
+                    checked: false,
+                    action: it.action || null
+                };
+                if (it.submenu && menuDef.screens[it.submenu]) {
+                    const sub = menuDef.screens[it.submenu];
+                    const subId = it.submenu;
+                    ctxItem.sub = subId;
+                    ctxItem.subItems = sub.items.map(si => ({
+                        label: si.label,
+                        icon: si.icon || null,
+                        action: si.action || null
+                    }));
+                }
+                items.push(ctxItem);
+            });
+            return items;
+        }
+        window.openMobileCtxFromDOM = openMobileCtxFromDOM;
+
         function openMobileDrawer(menuDef) {
             drawerMenuDefinition = menuDef;
             drawerStack = ['root'];
@@ -1859,8 +2057,10 @@
 
             if (window.innerWidth < 768) {
                 hideFloatingElement(menu);
+                const anchorEl = event.target ? event.target.closest('button') || event.currentTarget : null;
                 const menuDef = parseMenuDOMToDefinition(menu, 'Quantification Policy');
-                openMobileDrawer(menuDef);
+                const ctxItems = _convertDrawerDefToCtxItems(menuDef);
+                MobileCtxMenu.open(ctxItems, anchorEl);
             } else {
                 menu.classList.remove('hidden');
                 const syntheticRect = {
@@ -3099,17 +3299,16 @@
 
             if (window.innerWidth < 768) {
                 hideFloatingElement(menu);
+                const anchorEl = event.target ? event.target.closest('.task-card-item') || event.target.closest('button') : null;
                 const menuDef = parseMenuDOMToDefinition(menu, 'Task Options');
-                openMobileDrawer(menuDef);
+                const ctxItems = _convertDrawerDefToCtxItems(menuDef);
+                MobileCtxMenu.open(ctxItems, anchorEl);
             } else {
                 menu.classList.remove('hidden');
                 const syntheticRect = {
-                    left: event.clientX,
-                    top: event.clientY,
-                    right: event.clientX,
-                    bottom: event.clientY,
-                    width: 0,
-                    height: 0
+                    left: event.clientX, top: event.clientY,
+                    right: event.clientX, bottom: event.clientY,
+                    width: 0, height: 0
                 };
                 positionFloatingElement(menu, syntheticRect);
             }
@@ -3227,17 +3426,16 @@
             
             if (window.innerWidth < 768) {
                 hideFloatingElement(menu);
+                const anchorEl = event.target ? event.target.closest('.group-card') || event.target.closest('button') : null;
                 const menuDef = parseMenuDOMToDefinition(menu, 'Group Options');
-                openMobileDrawer(menuDef);
+                const ctxItems = _convertDrawerDefToCtxItems(menuDef);
+                MobileCtxMenu.open(ctxItems, anchorEl);
             } else {
                 menu.classList.remove('hidden');
                 const syntheticRect = {
-                    left: event.clientX,
-                    top: event.clientY,
-                    right: event.clientX,
-                    bottom: event.clientY,
-                    width: 0,
-                    height: 0
+                    left: event.clientX, top: event.clientY,
+                    right: event.clientX, bottom: event.clientY,
+                    width: 0, height: 0
                 };
                 positionFloatingElement(menu, syntheticRect);
             }
@@ -3441,8 +3639,10 @@
 
             if (window.innerWidth < 768) {
                 hideFloatingElement(menu);
+                const anchorEl = event.target ? event.target.closest('button') : null;
                 const menuDef = parseMenuDOMToDefinition(menu, 'Feed Options');
-                openMobileDrawer(menuDef);
+                const ctxItems = _convertDrawerDefToCtxItems(menuDef);
+                MobileCtxMenu.open(ctxItems, anchorEl);
             } else {
                 menu.classList.remove('hidden');
                 const syntheticRect = {
@@ -4262,8 +4462,11 @@
 
             if (window.innerWidth < 768) {
                 hideFloatingElement(targetMenu);
+                const anchorBtn = (event && event.currentTarget) || (event && event.target && event.target.closest('button'));
+                lucide.createIcons();
                 const menuDef = parseMenuDOMToDefinition(targetMenu, getMenuTitle(menuId));
-                openMobileDrawer(menuDef);
+                const ctxItems = _convertDrawerDefToCtxItems(menuDef);
+                MobileCtxMenu.open(ctxItems, anchorBtn);
             } else {
                 const isHidden = targetMenu.classList.contains('hidden');
                 if (isHidden) {

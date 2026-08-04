@@ -1094,6 +1094,23 @@
         <div id="mobile-drawer-body" class="overflow-y-auto flex-1 min-h-0 relative"></div>
     </div>
 
+    <!-- Mobile Floating Context Menu (iOS-style popover) -->
+    <div id="mctx-backdrop" class="fixed inset-0 z-[500] hidden" onclick="closeMobileCtxMenu()"></div>
+    <div id="mctx-panel" class="mctx-panel hidden fixed z-[501]" role="menu" aria-label="Context Menu">
+        <div id="mctx-body" class="mctx-body"></div>
+    </div>
+    <!-- Submenu level panel -->
+    <div id="mctx-sub-panel" class="mctx-panel hidden fixed z-[502]" role="menu">
+        <div class="mctx-sub-header">
+            <button onclick="closeMobileCtxSub()" class="mctx-back-btn">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                <span>Back</span>
+            </button>
+            <span id="mctx-sub-title" class="mctx-sub-title-text"></span>
+        </div>
+        <div id="mctx-sub-body" class="mctx-body"></div>
+    </div>
+
     <div id="toast-container" class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-xs z-[300] space-y-2.5 pointer-events-none flex flex-col items-center sm:items-end"></div>
 
     <script src="supabase.js"></script>
