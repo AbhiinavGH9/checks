@@ -2463,7 +2463,7 @@
                                             <div class="mt-1 flex items-center flex-wrap gap-1.5">
                                                 <p class="text-[10px] ${subtextClass} warp-text whitespace-pre-line">${escapeHTML(shortDesc)}</p>
                                                 ${isDescLong ? `
-                                                    <button type="button" class="open-more-btn ui-badge hover:bg-[#2997ff]/20 hover:text-white transition cursor-pointer" data-task-id="${task.id}" data-type="desc" style="background-color: rgba(41, 151, 255, 0.12); color: #2997ff; border-color: rgba(41, 151, 255, 0.25);">
+                                                    <button type="button" onclick="openNoteModal('${task.id}', 'desc', event)" class="open-more-btn relative z-10 pointer-events-auto ui-badge hover:bg-[#2997ff]/30 hover:text-white transition cursor-pointer" style="background-color: rgba(41, 151, 255, 0.2); color: #2997ff; border-color: rgba(41, 151, 255, 0.4);">
                                                         <span>(...more)</span>
                                                     </button>
                                                 ` : ''}
@@ -2521,7 +2521,7 @@
                                                             <span class="truncate">${escapeHTML(shortText)}</span>
                                                         </span>
                                                         ${isLong ? `
-                                                            <button type="button" class="open-more-btn ui-badge hover:bg-[#2997ff]/20 hover:text-white transition cursor-pointer" data-task-id="${task.id}" data-type="${idx}" style="background-color: rgba(41, 151, 255, 0.12); color: #2997ff; border-color: rgba(41, 151, 255, 0.25);">
+                                                            <button type="button" onclick="openNoteModal('${task.id}', ${idx}, event)" class="open-more-btn relative z-10 pointer-events-auto ui-badge hover:bg-[#2997ff]/30 hover:text-white transition cursor-pointer" style="background-color: rgba(41, 151, 255, 0.2); color: #2997ff; border-color: rgba(41, 151, 255, 0.4);">
                                                                 <span>(...more)</span>
                                                             </button>
                                                         ` : ''}
@@ -2560,15 +2560,6 @@
                         </div>
                     `;
 
-                    card.querySelectorAll('.open-more-btn').forEach(btn => {
-                        btn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            const tId = btn.getAttribute('data-task-id');
-                            const type = btn.getAttribute('data-type');
-                            openNoteModal(tId, type, e);
-                        });
-                    });
                     cardsContainer.appendChild(card);
                 });
             }
