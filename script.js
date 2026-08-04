@@ -2241,6 +2241,7 @@
         function renderTaskFeed() {
             const container = document.getElementById('tasks-list');
             const emptyScreen = document.getElementById('empty-state-screen');
+            if (!container) return;
 
             const clearDoneBtn = document.getElementById('clear-done-archive-btn');
             if (clearDoneBtn) {
@@ -3644,6 +3645,7 @@
 
         function renderProjectsList() {
             const container = document.getElementById('projects-list-container');
+            if (!container) return;
             container.innerHTML = '';
 
             AppState.projects.forEach(p => {
