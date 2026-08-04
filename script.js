@@ -1372,10 +1372,11 @@
             supabaseClient.auth.onAuthStateChange(async (event, session) => {
                 const prevSession = AppState.session;
                 AppState.session = session;
+                const authGuard = document.getElementById('auth-guard-screen');
                 
                 if (session) {
                     localStorage.removeItem('ANV_GUEST_MODE');
-                    document.getElementById('auth-guard-screen').classList.add('hidden');
+                    if (authGuard) authGuard.classList.add('hidden');
                     if (!prevSession) {
                         showToast('Sync Activated', 'Ecosystem multi-device data channels synchronized.');
                         await performInitialDataSync();
@@ -1384,11 +1385,11 @@
                     }
                 } else {
                     if (localStorage.getItem('ANV_GUEST_MODE') === 'true') {
-                        document.getElementById('auth-guard-screen').classList.add('hidden');
+                        if (authGuard) authGuard.classList.add('hidden');
                         checkFiveDayAutoBackup();
                     } else {
                         clearLocalState();
-                        document.getElementById('auth-guard-screen').classList.remove('hidden');
+                        if (authGuard) authGuard.classList.remove('hidden');
                         showToast('Session Closed', 'Local storage device synchronization disconnected.');
                     }
                 }
@@ -2266,17 +2267,19 @@
             const sorted = sortTasks(filtered);
 
             const feedTitle = document.getElementById('feed-current-title');
-            if (AppState.currentTab === 'inbox') {
-                feedTitle.textContent = 'Inbox Feed';
-            } else if (AppState.currentTab === 'today') {
-                feedTitle.textContent = "Today's Agenda";
-            } else if (AppState.currentTab === 'done') {
-                feedTitle.textContent = 'Completed Archive';
-            } else if (AppState.currentTab === 'search') {
-                feedTitle.textContent = `Search matches for: "${AppState.searchQuery}"`;
-            } else {
-                const foundProj = AppState.projects.find(p => p.id === AppState.currentTab);
-                feedTitle.textContent = foundProj ? foundProj.title : 'Collection Folder';
+            if (feedTitle) {
+                if (AppState.currentTab === 'inbox') {
+                    feedTitle.textContent = 'Inbox Feed';
+                } else if (AppState.currentTab === 'today') {
+                    feedTitle.textContent = "Today's Agenda";
+                } else if (AppState.currentTab === 'done') {
+                    feedTitle.textContent = 'Completed Archive';
+                } else if (AppState.currentTab === 'search') {
+                    feedTitle.textContent = `Search matches for: "${AppState.searchQuery}"`;
+                } else {
+                    const foundProj = AppState.projects.find(p => p.id === AppState.currentTab);
+                    feedTitle.textContent = foundProj ? foundProj.title : 'Collection Folder';
+                }
             }
 
             container.innerHTML = '';
