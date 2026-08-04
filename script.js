@@ -2078,16 +2078,25 @@
         function toggleSidebarCollapse() {
             const sidebar = document.getElementById('sidebar-panel');
             const resizer = document.getElementById('sidebar-resizer');
+            const sidebarBackdrop = document.getElementById('mobile-sidebar-backdrop');
 
             if (!sidebar) return;
 
             if (AppState.sidebarCollapsed) {
                 sidebar.style.width = '280px';
                 if (resizer) resizer.style.display = 'block';
+                if (sidebarBackdrop && window.innerWidth < 768) {
+                    sidebarBackdrop.classList.remove('hidden');
+                    void sidebarBackdrop.offsetHeight;
+                    sidebarBackdrop.classList.add('opacity-100');
+                }
                 AppState.sidebarCollapsed = false;
             } else {
                 sidebar.style.width = '0px';
                 if (resizer) resizer.style.display = 'none';
+                if (sidebarBackdrop) {
+                    dismissOverlay(sidebarBackdrop, null, null, 150);
+                }
                 AppState.sidebarCollapsed = true;
             }
         }
@@ -4026,8 +4035,9 @@
             }
 
             if (backdropEl) {
-                backdropEl.classList.remove('opacity-100');
+                backdropEl.classList.remove('opacity-100', 'opacity-85');
                 backdropEl.classList.add('opacity-0');
+                backdropEl.style.pointerEvents = 'none';
             }
             if (containerEl) {
                 containerEl.classList.add('scale-95');
@@ -4041,6 +4051,7 @@
                 if (backdropEl) {
                     backdropEl.classList.add('hidden');
                     backdropEl.classList.remove('opacity-0');
+                    backdropEl.style.pointerEvents = '';
                 }
                 if (containerEl) {
                     containerEl.classList.add('hidden');
@@ -4393,8 +4404,10 @@
 
             const inspector = document.getElementById('inspector-panel');
             const backdrop = document.getElementById('inspector-backdrop');
+            const mobileInspectorBackdrop = document.getElementById('mobile-inspector-backdrop');
 
             dismissOverlay(backdrop, null, null, 200);
+            dismissOverlay(mobileInspectorBackdrop, null, null, 200);
 
             if (inspector && !inspector.classList.contains('hidden')) {
                 const isMobile = window.innerWidth < 768;
