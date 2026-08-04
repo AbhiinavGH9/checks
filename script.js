@@ -822,7 +822,7 @@
                     sidebarOverlay.style.opacity = '';
                     if (isSidebarOpen && deltaX < -60) {
                         closeSidebarMobile();
-                        sidebarOverlay.classList.add('hidden');
+                        dismissOverlay(sidebarOverlay, null, null, 150);
                     } else if (!isSidebarOpen && touchStartX < 35 && deltaX > 60) {
                         openSidebarMobile();
                         sidebarOverlay.classList.remove('hidden');
@@ -830,7 +830,7 @@
                         sidebarOverlay.classList.remove('hidden');
                         sidebarOverlay.classList.add('opacity-100');
                     } else {
-                        sidebarOverlay.classList.add('hidden');
+                        dismissOverlay(sidebarOverlay, null, null, 150);
                     }
                 }
 
@@ -842,7 +842,7 @@
                     inspectorOverlay.style.opacity = '';
                     if (deltaY > 80) {
                         closeInspector();
-                        inspectorOverlay.classList.add('hidden');
+                        dismissOverlay(inspectorOverlay, null, null, 150);
                     } else {
                         inspectorOverlay.classList.remove('hidden');
                         inspectorOverlay.classList.add('opacity-100');
@@ -1063,15 +1063,10 @@
 
             if (!backdrop || !drawer) return;
 
-            backdrop.classList.remove('opacity-100');
-            drawer.classList.add('translate-y-full');
-
-            setTimeout(() => {
-                backdrop.classList.add('hidden');
-                drawer.classList.add('hidden');
+            dismissOverlay(backdrop, drawer, () => {
                 drawerStack = [];
                 drawerMenuDefinition = null;
-            }, 300);
+            }, 200);
         }
 
         function parseMenuDOMToDefinition(menuEl, title = 'Options') {
@@ -1788,9 +1783,7 @@
         function closeProfileCustomizerModal() {
             const backdrop = document.getElementById('profile-customizer-backdrop');
             const container = document.getElementById('profile-customizer-container');
-            backdrop.classList.add('opacity-0');
-            container.classList.add('scale-95');
-            setTimeout(() => { backdrop.classList.add('hidden'); }, 150);
+            dismissOverlay(backdrop, container, null, 150);
         }
 
         function rotateProfileGlyphIcon(direction) {
@@ -3331,11 +3324,10 @@
         function closeHoldModal() {
             const backdrop = document.getElementById('hold-modal-backdrop');
             const container = document.getElementById('hold-modal-container');
-            backdrop.classList.add('opacity-0');
-            container.classList.add('scale-95');
-            setTimeout(() => { backdrop.classList.add('hidden'); }, 150);
-            holdTargetType = null;
-            holdTargetId = null;
+            dismissOverlay(backdrop, container, () => {
+                holdTargetType = null;
+                holdTargetId = null;
+            }, 150);
         }
 
         function toggleHoldUntilInput() {
@@ -4026,6 +4018,38 @@
             setTimeout(openAddGroupModal, 150);
         }
 
+        // Shared Unified Overlay Teardown Path
+        function dismissOverlay(backdropEl, containerEl, onCloseCallback, transitionMs = 150) {
+            if (!backdropEl && !containerEl) {
+                if (onCloseCallback) onCloseCallback();
+                return;
+            }
+
+            if (backdropEl) {
+                backdropEl.classList.remove('opacity-100');
+                backdropEl.classList.add('opacity-0');
+            }
+            if (containerEl) {
+                containerEl.classList.add('scale-95');
+                if (containerEl.classList.contains('translate-y-0')) {
+                    containerEl.classList.remove('translate-y-0');
+                    containerEl.classList.add('translate-y-full');
+                }
+            }
+
+            setTimeout(() => {
+                if (backdropEl) {
+                    backdropEl.classList.add('hidden');
+                    backdropEl.classList.remove('opacity-0');
+                }
+                if (containerEl) {
+                    containerEl.classList.add('hidden');
+                    containerEl.classList.remove('scale-95');
+                }
+                if (onCloseCallback) onCloseCallback();
+            }, transitionMs);
+        }
+
         function closeAddTaskModal(shouldClearDraft = true) {
             const backdrop = document.getElementById('task-modal-backdrop');
             const container = document.getElementById('task-modal-container');
@@ -4044,19 +4068,17 @@
             hideFloatingElement(document.getElementById('new-task-group-options'));
             hideFloatingElement(document.getElementById('new-task-autodelete-options'));
             
-            backdrop.classList.add('opacity-0');
-            container.classList.add('scale-95');
-            setTimeout(() => { backdrop.classList.add('hidden'); }, 150);
-            
-            if (shouldClearDraft) {
-                AppState.draftTask = null;
-                AppState.tempCreateNotes = [];
-                document.getElementById('new-task-title').value = '';
-                document.getElementById('new-task-desc').value = '';
-                const noteInput = document.getElementById('new-task-note-input');
-                if (noteInput) noteInput.value = '';
-                renderNewTaskNotesDraft();
-            }
+            dismissOverlay(backdrop, container, () => {
+                if (shouldClearDraft) {
+                    AppState.draftTask = null;
+                    AppState.tempCreateNotes = [];
+                    document.getElementById('new-task-title').value = '';
+                    document.getElementById('new-task-desc').value = '';
+                    const noteInput = document.getElementById('new-task-note-input');
+                    if (noteInput) noteInput.value = '';
+                    renderNewTaskNotesDraft();
+                }
+            }, 150);
         }
 
         function selectCreatePriority(colorHex) {
@@ -4372,10 +4394,7 @@
             const inspector = document.getElementById('inspector-panel');
             const backdrop = document.getElementById('inspector-backdrop');
 
-            if (backdrop) {
-                backdrop.classList.remove('opacity-100');
-                setTimeout(() => backdrop.classList.add('hidden'), 200);
-            }
+            dismissOverlay(backdrop, null, null, 200);
 
             if (inspector && !inspector.classList.contains('hidden')) {
                 const isMobile = window.innerWidth < 768;
@@ -4869,10 +4888,9 @@
         function closeDeleteModal() {
             const backdrop = document.getElementById('delete-modal-backdrop');
             const container = document.getElementById('delete-modal-container');
-            backdrop.classList.add('opacity-0');
-            container.classList.add('scale-95');
-            setTimeout(() => { backdrop.classList.add('hidden'); }, 150);
-            deleteActionCallback = null;
+            dismissOverlay(backdrop, container, () => {
+                deleteActionCallback = null;
+            }, 150);
         }
 
         document.getElementById('delete-confirm-btn').onclick = function() {
@@ -4978,10 +4996,7 @@
         function closeArchiveModal() {
             const backdrop = document.getElementById('archive-modal-backdrop');
             const container = document.getElementById('archive-modal-container');
-            if (!backdrop || !container) return;
-            backdrop.classList.add('opacity-0');
-            container.classList.add('scale-95');
-            setTimeout(() => { backdrop.classList.add('hidden'); }, 150);
+            dismissOverlay(backdrop, container, null, 150);
         }
 
         function renderArchiveModalList() {
@@ -5025,11 +5040,10 @@
         function closeProjectModal() {
             const backdrop = document.getElementById('project-modal-backdrop');
             const container = document.getElementById('project-modal-container');
-            backdrop.classList.add('opacity-0');
-            container.classList.add('scale-95');
-            setTimeout(() => { backdrop.classList.add('hidden'); }, 150);
-            AppState.editingProjectId = null;
-            document.getElementById('new-project-title').value = '';
+            dismissOverlay(backdrop, container, () => {
+                AppState.editingProjectId = null;
+                document.getElementById('new-project-title').value = '';
+            }, 150);
         }
 
         function selectPresetColor(colorHex) {
@@ -5174,11 +5188,7 @@
         function closeAddGroupModal() {
             const backdrop = document.getElementById('group-modal-backdrop');
             const container = document.getElementById('group-modal-container');
-            const submitBtn = document.getElementById('group-submit-btn');
-            backdrop.classList.add('opacity-0');
-            container.classList.add('scale-95');
-            setTimeout(() => {
-                backdrop.classList.add('hidden');
+            dismissOverlay(backdrop, container, () => {
                 if (AppState.returningToTaskModal) {
                     AppState.returningToTaskModal = false;
                     setTimeout(openAddTaskModal, 150);
