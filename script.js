@@ -2455,16 +2455,7 @@
                                         ${task.icon && !task.done ? '<i data-lucide="' + task.icon + '" class="w-3.5 h-3.5 flex-shrink-0" style="color: ' + accentColor + ';"></i>' : ''}
                                         <h4 class="text-xs leading-snug warp-text ${textClass}">${escapeHTML(task.title)}</h4>
                                     </div>
-                                    ${task.description ? (() => {
-                                        const rawDesc = task.description || '';
-                                        const isDescLong = rawDesc.length > 50;
-                                        const shortDesc = isDescLong ? rawDesc.substring(0, 50).trim() + '...' : rawDesc;
-                                        return `
-                                            <p onclick="openNoteModal('${task.id}', 'desc', event)" class="text-[10px] ${subtextClass} mt-1 warp-text whitespace-pre-line cursor-pointer hover:text-gray-200 hover:underline transition" title="Click to view full description">
-                                                ${escapeHTML(shortDesc)}
-                                            </p>
-                                        `;
-                                    })() : ''}
+                                    ${task.description ? `<p class="text-[10px] ${subtextClass} mt-1 warp-text whitespace-pre-line">${escapeHTML(task.description)}</p>` : ''}
                                     
                                     <div class="flex flex-wrap gap-1.5 mt-2 items-center">
                                         <span class="ui-badge" style="background-color: ${task.done ? 'rgba(255,255,255,0.04)' : accentColor + '20'}; color: ${task.done ? '#6b7280' : accentColor}; border-color: ${task.done ? 'rgba(255,255,255,0.06)' : accentColor + '30'};">
@@ -2510,10 +2501,17 @@
                                                 const isLong = rawText.length > 30;
                                                 const shortText = isLong ? rawText.substring(0, 30).trim() + '...' : rawText;
                                                 return `
-                                                    <span onclick="openNoteModal('${task.id}', ${idx}, event)" class="ui-badge w-fit max-w-full cursor-pointer hover:border-yellow-400/50 transition" style="${task.done ? 'background-color: rgba(255,255,255,0.04); color: #6b7280; border-color: rgba(255,255,255,0.06);' : 'background-color: rgba(234, 179, 8, 0.12); color: #facc15; border-color: rgba(234, 179, 8, 0.25);'}" title="Click to view note">
-                                                        <i data-lucide="sticky-note" class="w-3 h-3 flex-shrink-0"></i>
-                                                        <span class="truncate">${escapeHTML(shortText)}</span>
-                                                    </span>
+                                                    <div class="flex items-center space-x-1.5 max-w-full">
+                                                        <span class="ui-badge w-fit max-w-full" style="${task.done ? 'background-color: rgba(255,255,255,0.04); color: #6b7280; border-color: rgba(255,255,255,0.06);' : 'background-color: rgba(234, 179, 8, 0.12); color: #facc15; border-color: rgba(234, 179, 8, 0.25);'}">
+                                                            <i data-lucide="sticky-note" class="w-3 h-3 flex-shrink-0"></i>
+                                                            <span class="truncate">${escapeHTML(shortText)}</span>
+                                                        </span>
+                                                        ${isLong ? `
+                                                            <button type="button" onclick="openNoteModal('${task.id}', ${idx}, event)" class="ui-badge hover:bg-[#2997ff]/20 hover:text-white transition cursor-pointer" style="background-color: rgba(41, 151, 255, 0.12); color: #2997ff; border-color: rgba(41, 151, 255, 0.25);">
+                                                                <span>(...more)</span>
+                                                            </button>
+                                                        ` : ''}
+                                                    </div>
                                                 `;
                                             }).join('')}
                                         </div>
@@ -2547,7 +2545,6 @@
                             </div>
                         </div>
                     `;
-
                     cardsContainer.appendChild(card);
                 });
             }
@@ -5008,20 +5005,17 @@
             }, 10);
         }
         function openNoteModal(taskId, type, event) {
-            if (event && event.stopPropagation) event.stopPropagation();
-            if (event && event.preventDefault) event.preventDefault();
+            if (event) event.stopPropagation();
             const task = AppState.tasks.find(t => t.id === taskId);
             if (!task) return;
 
             let fullText = '';
             let titleText = 'Details';
-            const numIdx = parseInt(type, 10);
-
             if (type === 'desc') {
                 fullText = task.description || '';
                 titleText = 'Full Description';
-            } else if (!isNaN(numIdx) && task.notes && task.notes[numIdx]) {
-                fullText = task.notes[numIdx].text || '';
+            } else if (typeof type === 'number' && task.notes && task.notes[type]) {
+                fullText = task.notes[type].text || '';
                 titleText = 'Short Note Details';
             } else {
                 fullText = String(type || '');
