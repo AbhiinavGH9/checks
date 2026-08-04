@@ -2455,7 +2455,21 @@
                                         ${task.icon && !task.done ? '<i data-lucide="' + task.icon + '" class="w-3.5 h-3.5 flex-shrink-0" style="color: ' + accentColor + ';"></i>' : ''}
                                         <h4 class="text-xs leading-snug warp-text ${textClass}">${escapeHTML(task.title)}</h4>
                                     </div>
-                                    ${task.description ? `<p class="text-[10px] ${subtextClass} mt-1 warp-text whitespace-pre-line">${escapeHTML(task.description)}</p>` : ''}
+                                    ${task.description ? (() => {
+                                        const rawDesc = task.description || '';
+                                        const isDescLong = rawDesc.length > 60;
+                                        const shortDesc = isDescLong ? rawDesc.substring(0, 60).trim() + '...' : rawDesc;
+                                        return `
+                                            <p class="text-[10px] ${subtextClass} mt-1 warp-text whitespace-pre-line flex items-baseline flex-wrap">
+                                                <span>${escapeHTML(shortDesc)}</span>
+                                                ${isDescLong ? `
+                                                    <button type="button" onclick="openNoteModal('${escapeHTML(rawDesc).replace(/'/g, "\\'").replace(/\n/g, "\\n")}', event)" class="text-[10px] text-[#2997ff] hover:underline font-semibold flex-shrink-0 ml-1">
+                                                        (...more)
+                                                    </button>
+                                                ` : ''}
+                                            </p>
+                                        `;
+                                    })() : ''}
                                     
                                     <div class="flex flex-wrap gap-1.5 mt-2 items-center">
                                         <span class="ui-badge" style="background-color: ${task.done ? 'rgba(255,255,255,0.04)' : accentColor + '20'}; color: ${task.done ? '#6b7280' : accentColor}; border-color: ${task.done ? 'rgba(255,255,255,0.06)' : accentColor + '30'};">
