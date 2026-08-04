@@ -2078,7 +2078,7 @@
         function toggleSidebarCollapse() {
             const sidebar = document.getElementById('sidebar-panel');
             const resizer = document.getElementById('sidebar-resizer');
-            const sidebarBackdrop = document.getElementById('mobile-sidebar-backdrop');
+            const sidebarBackdrop = document.getElementById('mobile-sidebar-backdrop') || document.getElementById('sidebar-touch-overlay');
 
             if (!sidebar) return;
 
@@ -2096,6 +2096,10 @@
                 if (resizer) resizer.style.display = 'none';
                 if (sidebarBackdrop) {
                     dismissOverlay(sidebarBackdrop, null, null, 150);
+                }
+                const extraBackdrop = document.getElementById('mobile-sidebar-backdrop');
+                if (extraBackdrop && extraBackdrop !== sidebarBackdrop) {
+                    dismissOverlay(extraBackdrop, null, null, 150);
                 }
                 AppState.sidebarCollapsed = true;
             }
@@ -4405,9 +4409,11 @@
             const inspector = document.getElementById('inspector-panel');
             const backdrop = document.getElementById('inspector-backdrop');
             const mobileInspectorBackdrop = document.getElementById('mobile-inspector-backdrop');
+            const touchInspectorBackdrop = document.getElementById('inspector-touch-overlay');
 
             dismissOverlay(backdrop, null, null, 200);
             dismissOverlay(mobileInspectorBackdrop, null, null, 200);
+            dismissOverlay(touchInspectorBackdrop, null, null, 200);
 
             if (inspector && !inspector.classList.contains('hidden')) {
                 const isMobile = window.innerWidth < 768;
