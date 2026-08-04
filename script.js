@@ -377,16 +377,10 @@
 
                 if (isDraggingSidebar && sidebar) {
                     if (isSidebarOpen && deltaX < 0) {
-                        const progress = Math.max(0, Math.min(1, 1 + (deltaX / 280)));
                         sidebar.style.transform = `translateX(${deltaX}px)`;
-                        sidebarOverlay.classList.remove('hidden');
-                        sidebarOverlay.style.opacity = progress;
                     } else if (!isSidebarOpen && deltaX > 0) {
-                        const progress = Math.max(0, Math.min(1, deltaX / 280));
                         sidebar.classList.remove('hidden');
                         sidebar.style.transform = `translateX(${-280 + deltaX}px)`;
-                        sidebarOverlay.classList.remove('hidden');
-                        sidebarOverlay.style.opacity = progress;
                     }
                 }
 
@@ -411,18 +405,10 @@
 
                 if (isDraggingSidebar && sidebar) {
                     sidebar.style.transform = '';
-                    sidebarOverlay.style.opacity = '';
                     if (isSidebarOpen && deltaX < -60) {
                         closeSidebarMobile();
-                        sidebarOverlay.classList.add('hidden');
                     } else if (!isSidebarOpen && touchStartX < 35 && deltaX > 60) {
                         openSidebarMobile();
-                        sidebarOverlay.classList.remove('hidden');
-                    } else if (isSidebarOpen) {
-                        sidebarOverlay.classList.remove('hidden');
-                        sidebarOverlay.classList.add('opacity-[#100]');
-                    } else {
-                        sidebarOverlay.classList.add('hidden');
                     }
                 }
 
@@ -2085,11 +2071,6 @@
             if (AppState.sidebarCollapsed) {
                 sidebar.style.width = '280px';
                 if (resizer) resizer.style.display = 'block';
-                if (sidebarBackdrop && window.innerWidth < 768) {
-                    sidebarBackdrop.classList.remove('hidden');
-                    void sidebarBackdrop.offsetHeight;
-                    sidebarBackdrop.classList.add('opacity-100');
-                }
                 AppState.sidebarCollapsed = false;
             } else {
                 sidebar.style.width = '0px';
