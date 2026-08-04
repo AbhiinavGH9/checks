@@ -5803,6 +5803,89 @@
 
             initSupabaseAuth();
 
+            // Global Click-Outside Dismissal Listener
+            document.addEventListener('click', (e) => {
+                const isClickInside = (selector) => {
+                    const el = typeof selector === 'string' ? document.querySelector(selector) : selector;
+                    return el && !el.classList.contains('hidden') && el.contains(e.target);
+                };
+
+                // Close modals if click is outside modal shell container
+                const modalBackdrops = [
+                    { backdropId: 'task-modal-backdrop', containerId: 'task-modal-container', closeFn: () => closeAddTaskModal(true) },
+                    { backdropId: 'project-modal-backdrop', containerId: 'project-modal-container', closeFn: closeProjectModal },
+                    { backdropId: 'group-modal-backdrop', containerId: 'group-modal-container', closeFn: closeAddGroupModal },
+                    { backdropId: 'delete-modal-backdrop', containerId: 'delete-modal-container', closeFn: closeDeleteModal },
+                    { backdropId: 'hold-modal-backdrop', containerId: 'hold-modal-container', closeFn: closeHoldModal },
+                    { backdropId: 'archive-modal-backdrop', containerId: 'archive-modal-container', closeFn: closeArchiveModal },
+                    { backdropId: 'profile-customizer-backdrop', containerId: 'profile-customizer-container', closeFn: closeProfileCustomizerModal }
+                ];
+
+                modalBackdrops.forEach(({ backdropId, containerId, closeFn }) => {
+                    const backdrop = document.getElementById(backdropId);
+                    const container = document.getElementById(containerId);
+                    if (backdrop && !backdrop.classList.contains('hidden')) {
+                        if (container && !container.contains(e.target) && !e.target.closest(`[onclick*="${backdropId}"]`)) {
+                            closeFn();
+                        }
+                    }
+                });
+
+                // Close Mobile Drawer if click is outside
+                const drawer = document.getElementById('mobile-drawer');
+                const drawerBackdrop = document.getElementById('mobile-drawer-backdrop');
+                if (drawer && !drawer.classList.contains('hidden') && !drawer.contains(e.target)) {
+                    if (drawerBackdrop && !drawerBackdrop.contains(e.target)) {
+                        closeMobileDrawer();
+                    }
+                }
+
+                // Close Inspector Panel if open and click is outside inspector panel & inspector toggles
+                const inspector = document.getElementById('inspector-panel');
+                if (inspector && !inspector.classList.contains('hidden') && AppState.selectedTaskId !== null) {
+                    if (!inspector.contains(e.target) && !e.target.closest('#inspector-backdrop') && !e.target.closest('[data-task-id]') && !e.target.closest('.task-card-item')) {
+                        closeInspector();
+                    }
+                }
+
+                // Close Mobile Sidebar on mobile if expanded and click is outside sidebar & sidebar toggle button
+                if (window.innerWidth < 768 && !AppState.sidebarCollapsed) {
+                    const sidebar = document.getElementById('sidebar-panel');
+                    const toggleBtn = document.getElementById('sidebar-uncollapse-btn');
+                    if (sidebar && !sidebar.contains(e.target) && (!toggleBtn || !toggleBtn.contains(e.target))) {
+                        closeSidebarMobile();
+                    }
+                }
+
+                // Close all floating dropdowns and context menus if click is outside
+                const floatingMenus = [
+                    'sort-dropdown-options',
+                    'nav-menu-dropdown-options',
+                    'new-task-project-options',
+                    'new-task-group-options',
+                    'new-task-autodelete-options',
+                    'ins-project-dropdown-options',
+                    'ins-group-dropdown-options',
+                    'ins-autodelete-options',
+                    'counter-context-menu',
+                    'context-menu',
+                    'group-submenu',
+                    'group-context-menu',
+                    'feed-context-menu',
+                    'custom-calendar-popup'
+                ];
+
+                floatingMenus.forEach(id => {
+                    const menu = document.getElementById(id);
+                    if (menu && !menu.classList.contains('hidden') && !menu.contains(e.target)) {
+                        const toggleTrigger = e.target.closest(`[onclick*="${id}"]`);
+                        if (!toggleTrigger) {
+                            hideFloatingElement(menu);
+                        }
+                    }
+                });
+            });
+
             switchTab('inbox');
             lucide.createIcons(); 
             setInterval(checkAndAutoDeleteTasks, 10000);
