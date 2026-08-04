@@ -2460,14 +2460,9 @@
                                         const isDescLong = rawDesc.length > 50;
                                         const shortDesc = isDescLong ? rawDesc.substring(0, 50).trim() + '...' : rawDesc;
                                         return `
-                                            <div class="mt-1 flex items-center flex-wrap gap-1.5">
-                                                <p class="text-[10px] ${subtextClass} warp-text whitespace-pre-line">${escapeHTML(shortDesc)}</p>
-                                                ${isDescLong ? `
-                                                    <button type="button" onclick="openNoteModal('${task.id}', 'desc', event)" class="open-more-btn relative z-10 pointer-events-auto ui-badge hover:bg-[#2997ff]/30 hover:text-white transition cursor-pointer" style="background-color: rgba(41, 151, 255, 0.2); color: #2997ff; border-color: rgba(41, 151, 255, 0.4);">
-                                                        <span>(...more)</span>
-                                                    </button>
-                                                ` : ''}
-                                            </div>
+                                            <p onclick="openNoteModal('${task.id}', 'desc', event)" class="text-[10px] ${subtextClass} mt-1 warp-text whitespace-pre-line cursor-pointer hover:text-gray-200 hover:underline transition" title="Click to view full description">
+                                                ${escapeHTML(shortDesc)}
+                                            </p>
                                         `;
                                     })() : ''}
                                     
@@ -2515,17 +2510,10 @@
                                                 const isLong = rawText.length > 30;
                                                 const shortText = isLong ? rawText.substring(0, 30).trim() + '...' : rawText;
                                                 return `
-                                                    <div class="flex items-center space-x-1.5 max-w-full">
-                                                        <span class="ui-badge w-fit max-w-full" style="${task.done ? 'background-color: rgba(255,255,255,0.04); color: #6b7280; border-color: rgba(255,255,255,0.06);' : 'background-color: rgba(234, 179, 8, 0.12); color: #facc15; border-color: rgba(234, 179, 8, 0.25);'}">
-                                                            <i data-lucide="sticky-note" class="w-3 h-3 flex-shrink-0"></i>
-                                                            <span class="truncate">${escapeHTML(shortText)}</span>
-                                                        </span>
-                                                        ${isLong ? `
-                                                            <button type="button" onclick="openNoteModal('${task.id}', ${idx}, event)" class="open-more-btn relative z-10 pointer-events-auto ui-badge hover:bg-[#2997ff]/30 hover:text-white transition cursor-pointer" style="background-color: rgba(41, 151, 255, 0.2); color: #2997ff; border-color: rgba(41, 151, 255, 0.4);">
-                                                                <span>(...more)</span>
-                                                            </button>
-                                                        ` : ''}
-                                                    </div>
+                                                    <span onclick="openNoteModal('${task.id}', ${idx}, event)" class="ui-badge w-fit max-w-full cursor-pointer hover:border-yellow-400/50 transition" style="${task.done ? 'background-color: rgba(255,255,255,0.04); color: #6b7280; border-color: rgba(255,255,255,0.06);' : 'background-color: rgba(234, 179, 8, 0.12); color: #facc15; border-color: rgba(234, 179, 8, 0.25);'}" title="Click to view note">
+                                                        <i data-lucide="sticky-note" class="w-3 h-3 flex-shrink-0"></i>
+                                                        <span class="truncate">${escapeHTML(shortText)}</span>
+                                                    </span>
                                                 `;
                                             }).join('')}
                                         </div>
