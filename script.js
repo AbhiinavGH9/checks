@@ -1906,12 +1906,14 @@
             const inspector = document.getElementById('inspector-panel');
             const inspectorResizer = document.getElementById('inspector-resizer');
 
-            sidebarResizer.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                sidebarResizer.classList.add('active');
-                document.addEventListener('mousemove', resizeSidebar);
-                document.addEventListener('mouseup', stopResizeSidebar);
-            });
+            if (sidebarResizer) {
+                sidebarResizer.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    sidebarResizer.classList.add('active');
+                    document.addEventListener('mousemove', resizeSidebar);
+                    document.addEventListener('mouseup', stopResizeSidebar);
+                });
+            }
 
             function resizeSidebar(e) {
                 const currentWidth = e.clientX;
@@ -3484,22 +3486,25 @@
             hideContextMenu();
             hideGroupContextMenu();
             hideFeedContextMenu();
-            if (!e.target.closest('#custom-calendar-popup') && !e.target.closest('#ins-task-date-btn') && !e.target.closest('#new-task-date-btn')) {
-                closeCalendarPopup();
-            }
-            if (!e.target.closest('#sort-dropdown-wrapper') && 
-                !e.target.closest('#project-dropdown-container') && 
-                !e.target.closest('#ins-group-dropdown-container') && 
-                !e.target.closest('#ins-autodelete-dropdown-container') && 
-                !e.target.closest('#new-task-project-container') && 
-                !e.target.closest('#new-task-group-container') &&
-                !e.target.closest('#new-task-autodelete-container') &&
-                !e.target.closest('nav')) {
-                const allDropdowns = ['sort-dropdown-options', 'ins-project-dropdown-options', 'ins-group-dropdown-options', 'ins-autodelete-options', 'new-task-project-options', 'new-task-group-options', 'new-task-autodelete-options', 'nav-menu-dropdown-options'];
-                allDropdowns.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) hideFloatingElement(el);
-                });
+            const target = e ? e.target : null;
+            if (target && typeof target.closest === 'function') {
+                if (!target.closest('#custom-calendar-popup') && !target.closest('#ins-task-date-btn') && !target.closest('#new-task-date-btn')) {
+                    closeCalendarPopup();
+                }
+                if (!target.closest('#sort-dropdown-wrapper') && 
+                    !target.closest('#project-dropdown-container') && 
+                    !target.closest('#ins-group-dropdown-container') && 
+                    !target.closest('#ins-autodelete-dropdown-container') && 
+                    !target.closest('#new-task-project-container') && 
+                    !target.closest('#new-task-group-container') &&
+                    !target.closest('#new-task-autodelete-container') &&
+                    !target.closest('nav')) {
+                    const allDropdowns = ['sort-dropdown-options', 'ins-project-dropdown-options', 'ins-group-dropdown-options', 'ins-autodelete-options', 'new-task-project-options', 'new-task-group-options', 'new-task-autodelete-options', 'nav-menu-dropdown-options'];
+                    allDropdowns.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) hideFloatingElement(el);
+                    });
+                }
             }
             if (activeFloatingElement && activeFloatingElement.classList.contains('hidden')) {
                 activeFloatingElement = null;
