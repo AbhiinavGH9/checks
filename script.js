@@ -2496,12 +2496,24 @@
                                     </div>
                                     ${task.notes && task.notes.length > 0 ? `
                                         <div class="flex flex-col gap-1 mt-2">
-                                            ${task.notes.map(n => `
-                                                <span class="ui-badge w-fit max-w-full" style="${task.done ? 'background-color: rgba(255,255,255,0.04); color: #6b7280; border-color: rgba(255,255,255,0.06);' : 'background-color: rgba(234, 179, 8, 0.12); color: #facc15; border-color: rgba(234, 179, 8, 0.25);'}">
-                                                    <i data-lucide="sticky-note" class="w-3 h-3 flex-shrink-0"></i>
-                                                    <span class="truncate">${escapeHTML(n.text)}</span>
-                                                </span>
-                                            `).join('')}
+                                            ${task.notes.map(n => {
+                                                const rawText = n.text || '';
+                                                const isLong = rawText.length > 35;
+                                                const shortText = isLong ? rawText.substring(0, 35).trim() + '...' : rawText;
+                                                return `
+                                                    <div class="flex items-center space-x-1.5 max-w-full">
+                                                        <span class="ui-badge w-fit max-w-full" style="${task.done ? 'background-color: rgba(255,255,255,0.04); color: #6b7280; border-color: rgba(255,255,255,0.06);' : 'background-color: rgba(234, 179, 8, 0.12); color: #facc15; border-color: rgba(234, 179, 8, 0.25);'}">
+                                                            <i data-lucide="sticky-note" class="w-3 h-3 flex-shrink-0"></i>
+                                                            <span class="truncate">${escapeHTML(shortText)}</span>
+                                                        </span>
+                                                        ${isLong ? `
+                                                            <button type="button" onclick="openNoteModal('${escapeHTML(rawText).replace(/'/g, "\\'")}', event)" class="text-[10px] text-[#2997ff] hover:underline font-semibold flex-shrink-0 ml-1">
+                                                                (...more)
+                                                            </button>
+                                                        ` : ''}
+                                                    </div>
+                                                `;
+                                            }).join('')}
                                         </div>
                                     ` : ''}
                                     ${subtasksHTML}
@@ -4992,6 +5004,30 @@
                 if (window.hugeicons) window.hugeicons.createIcons();
             }, 10);
         }
+        function openNoteModal(fullText, event) {
+            if (event) event.stopPropagation();
+            const backdrop = document.getElementById('note-modal-backdrop');
+            const container = document.getElementById('note-modal-container');
+            const textEl = document.getElementById('note-modal-full-text');
+            if (!backdrop || !container || !textEl) return;
+
+            textEl.textContent = fullText || '';
+            backdrop.classList.remove('hidden');
+            setTimeout(() => {
+                backdrop.classList.remove('opacity-0');
+                container.classList.remove('scale-95');
+                if (window.lucide) window.lucide.createIcons();
+            }, 10);
+        }
+
+        function closeNoteModal() {
+            const backdrop = document.getElementById('note-modal-backdrop');
+            const container = document.getElementById('note-modal-container');
+            dismissOverlay(backdrop, container, null, 150);
+        }
+
+        window.openNoteModal = openNoteModal;
+        window.closeNoteModal = closeNoteModal;
 
         function closeArchiveModal() {
             const backdrop = document.getElementById('archive-modal-backdrop');
@@ -5798,6 +5834,7 @@
             makeModalDraggable(document.getElementById('group-modal-container'), closeAddGroupModal);
             makeModalDraggable(document.getElementById('archive-modal-container'), closeArchiveModal);
             makeModalDraggable(document.getElementById('profile-customizer-container'), closeProfileCustomizerModal);
+            makeModalDraggable(document.getElementById('note-modal-container'), closeNoteModal);
             makeModalDraggable(document.getElementById('mobile-drawer'), closeMobileDrawer);
             makeModalDraggable(document.getElementById('inspector-panel'), closeInspector, { axis: 'auto' });
 
@@ -5818,7 +5855,8 @@
                     { backdropId: 'delete-modal-backdrop', containerId: 'delete-modal-container', closeFn: closeDeleteModal },
                     { backdropId: 'hold-modal-backdrop', containerId: 'hold-modal-container', closeFn: closeHoldModal },
                     { backdropId: 'archive-modal-backdrop', containerId: 'archive-modal-container', closeFn: closeArchiveModal },
-                    { backdropId: 'profile-customizer-backdrop', containerId: 'profile-customizer-container', closeFn: closeProfileCustomizerModal }
+                    { backdropId: 'profile-customizer-backdrop', containerId: 'profile-customizer-container', closeFn: closeProfileCustomizerModal },
+                    { backdropId: 'note-modal-backdrop', containerId: 'note-modal-container', closeFn: closeNoteModal }
                 ];
 
                 modalBackdrops.forEach(({ backdropId, containerId, closeFn }) => {
