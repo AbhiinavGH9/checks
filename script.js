@@ -2146,8 +2146,10 @@
                 const totalCount = AppState.tasks.length;
                 const completedCount = AppState.tasks.filter(t => t.done).length;
                 const percent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-                document.getElementById('streak-tasks-percentage').textContent = `${percent}%`;
-                document.getElementById('streak-progress-fill').style.width = `${percent}%`;
+                const elPercent = document.getElementById('streak-tasks-percentage');
+                const elFill = document.getElementById('streak-progress-fill');
+                if (elPercent) elPercent.textContent = `${percent}%`;
+                if (elFill) elFill.style.width = `${percent}%`;
                 return;
             }
 
@@ -2230,12 +2232,17 @@
             const completedCount = AppState.tasks.filter(t => t.done).length;
             const percent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
-            document.getElementById('streak-tasks-done').textContent = completedCount;
-            document.getElementById('streak-tasks-total').textContent = totalCount;
-            document.getElementById('streak-tasks-percentage').textContent = `${percent}%`;
-            document.getElementById('streak-progress-fill').style.width = `${percent}%`;
+            const elDone = document.getElementById('streak-tasks-done');
+            const elTotal = document.getElementById('streak-tasks-total');
+            const elPercent = document.getElementById('streak-tasks-percentage');
+            const elFill = document.getElementById('streak-progress-fill');
 
-            lucide.createIcons();
+            if (elDone) elDone.textContent = completedCount;
+            if (elTotal) elTotal.textContent = totalCount;
+            if (elPercent) elPercent.textContent = `${percent}%`;
+            if (elFill) elFill.style.width = `${percent}%`;
+
+            if (window.lucide) lucide.createIcons();
         }
 
         function renderTaskFeed() {
