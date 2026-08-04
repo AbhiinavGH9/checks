@@ -502,17 +502,38 @@
         }
         .subtask-thread-line {
             position: relative;
-            padding-left: 20px;
+            padding-left: 16px;
+            border-left: 2px solid rgba(255, 255, 255, 0.10);
+            border-radius: 0 0 0 6px;
+            margin-left: 7px;
         }
-        .subtask-thread-line::before {
-            content: '';
+
+        /* Archive badge animation */
+        .archive-badge-anim {
             position: absolute;
-            left: 7px;
             top: -6px;
-            bottom: 12px;
-            width: 2px;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 1px;
+            right: -4px;
+            background: #34d399;
+            color: #0a0a0a;
+            font-size: 9px;
+            font-weight: 800;
+            line-height: 1;
+            padding: 2px 5px;
+            border-radius: 99px;
+            pointer-events: none;
+            opacity: 0;
+            transform: scale(0.6) translateY(4px);
+            z-index: 10;
+        }
+        .archive-badge-anim.archive-badge-pop {
+            animation: archive-badge-burst 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes archive-badge-burst {
+            0%   { opacity: 0; transform: scale(0.6) translateY(4px); }
+            18%  { opacity: 1; transform: scale(1.25) translateY(-8px); }
+            55%  { opacity: 1; transform: scale(1) translateY(-12px); }
+            85%  { opacity: 0.6; transform: scale(0.9) translateY(-14px); }
+            100% { opacity: 0; transform: scale(0.7) translateY(-16px); }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -953,46 +974,6 @@
                 height: 100% !important;
                 overflow-y: auto !important;
             }
-        }
-
-        /* YouTube-style Nested Subtask Thread Connectors */
-        .subtask-thread-container {
-            position: relative;
-            margin-top: 8px;
-            padding-left: 20px;
-        }
-
-        /* Vertical continuous spine line */
-        .subtask-thread-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            bottom: 12px;
-            left: 7px;
-            width: 2px;
-            background-color: rgba(255, 255, 255, 0.15);
-            border-radius: 1px;
-        }
-
-        /* Thread Item Row */
-        .subtask-thread-item {
-            position: relative;
-            display: flex;
-            items-center;
-            padding: 2px 0;
-        }
-
-        /* Horizontal branch connecting spine to item */
-        .subtask-thread-item::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: -13px;
-            width: 10px;
-            height: 2px;
-            background-color: rgba(255, 255, 255, 0.15);
-            border-radius: 1px;
-            transform: translateY(-50%);
         }
 
         /* Shadcn / Typeset Styling System */

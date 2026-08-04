@@ -199,10 +199,13 @@
 
                             <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator" aria-orientation="vertical"></div>
 
-                            <button onclick="openArchiveModal()" class="btn-scale flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/10 hover:text-white rounded-full transition" title="View Completed Tasks Archive">
-                                <i data-lucide="archive" class="w-3.5 h-3.5 text-emerald-400"></i>
-                                <span>Archive</span>
-                            </button>
+                            <div class="relative" id="archive-btn-desktop-wrapper">
+                                <button onclick="openArchiveModal(event)" class="btn-scale flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/10 hover:text-white rounded-full transition" title="View Completed Tasks Archive">
+                                    <i data-lucide="archive" class="w-3.5 h-3.5 text-emerald-400"></i>
+                                    <span>Archive</span>
+                                </button>
+                                <span id="archive-badge-desktop" class="archive-badge-anim hidden"></span>
+                            </div>
                         </div>
 
                         <!-- Group 2: Search, Sort, Active Tasks Badge & Options Button Group -->
@@ -304,9 +307,12 @@
                                     <i data-lucide="plus-square" class="w-4 h-4 text-[#2997ff]"></i>
                                 </button>
                                 <div class="ui-button-group-separator w-[1px] h-4 bg-white/10 mx-1" role="separator"></div>
-                                <button onclick="openArchiveModal()" class="p-2 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="Archive">
-                                    <i data-lucide="archive" class="w-4 h-4 text-emerald-400"></i>
-                                </button>
+                                <div class="relative" id="archive-btn-mobile-wrapper">
+                                    <button onclick="openArchiveModal(event)" class="p-2 text-gray-200 hover:bg-white/10 rounded-full transition flex items-center justify-center" title="Archive">
+                                        <i data-lucide="archive" class="w-4 h-4 text-emerald-400"></i>
+                                    </button>
+                                    <span id="archive-badge-mobile" class="archive-badge-anim hidden"></span>
+                                </div>
                             </div>
 
                             <!-- Group 2: Search, Sort, Active Badge, Three Dots -->
@@ -1005,8 +1011,6 @@
                 </button>
             </div>
         </div>
-    </div>
-
     <!-- Note Details Modal / Sheet -->
     <div id="note-modal-backdrop" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[220] flex items-center justify-center hidden opacity-0 transition-opacity duration-150 ease-out">
         <div id="note-modal-container" class="modal-shell max-w-md w-full mx-4 shadow-2xl border border-white/[0.08] transform scale-95 transition-transform duration-150 ease-out flex flex-col">

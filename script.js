@@ -2418,13 +2418,13 @@
                     let subtasksHTML = '';
                     if (task.subtasks && task.subtasks.length > 0) {
                         subtasksHTML = `
-                            <div class="subtask-thread-container space-y-1">
+                            <div class="mt-2.5 pt-2 subtask-thread-line space-y-1.5">
                                 ${task.subtasks.map(s => {
                                     const subtaskAccent = task.done ? '#7a7a7a' : accentColor;
                                     const subBorderColor = `border-color: ${subtaskAccent};`;
                                     const subBgColor = s.done ? `background-color: ${subtaskAccent};` : `background-color: transparent;`;
                                     return `
-                                        <div class="subtask-thread-item flex items-center space-x-2.5 px-1 py-1 rounded hover:bg-white/[0.03] transition">
+                                        <div class="flex items-center space-x-2.5 px-1 py-1 rounded hover:bg-white/[0.03] transition">
                                             <button onclick="toggleCardSubtaskDone('${task.id}', '${s.id}', event)" class="w-3.5 h-3.5 rounded-full border flex items-center justify-center flex-shrink-0 transition-all duration-150" style="${subBorderColor} ${subBgColor}">
                                                 ${s.done ? `<i data-lucide="check" class="w-2.5 h-2.5 text-[#0A0A0A] font-extrabold tick-animation"></i>` : ''}
                                             </button>
@@ -4323,6 +4323,7 @@
                         showToast('Task Completed', `"${task.title}" has been moved to Archive.`, 'success');
                         if (AppState.selectedTaskId === taskId) closeInspector();
                         renderTaskFeed();
+                        flashArchiveBadge();
                     }, 300);
                 } else {
                     setTaskDone(task, !task.done);
@@ -4991,7 +4992,8 @@
             selectPresetIcon(project.icon || 'smile');
         }
 
-        function openArchiveModal() {
+        function openArchiveModal(event) {
+            if (event) event.stopPropagation();
             const backdrop = document.getElementById('archive-modal-backdrop');
             const container = document.getElementById('archive-modal-container');
             if (!backdrop || !container) return;
@@ -5090,6 +5092,23 @@
         window.openArchiveModal = openArchiveModal;
         window.closeArchiveModal = closeArchiveModal;
         window.renderArchiveModalList = renderArchiveModalList;
+
+        function flashArchiveBadge() {
+            const ids = ['archive-badge-desktop', 'archive-badge-mobile'];
+            ids.forEach(id => {
+                const badge = document.getElementById(id);
+                if (!badge) return;
+                badge.textContent = '+1';
+                badge.classList.remove('hidden');
+                badge.classList.add('archive-badge-pop');
+                clearTimeout(badge._hideTimer);
+                badge._hideTimer = setTimeout(() => {
+                    badge.classList.remove('archive-badge-pop');
+                    badge.classList.add('hidden');
+                }, 1200);
+            });
+        }
+        window.flashArchiveBadge = flashArchiveBadge;
 
         function closeProjectModal() {
             const backdrop = document.getElementById('project-modal-backdrop');
@@ -5881,8 +5900,7 @@
                     const backdrop = document.getElementById(backdropId);
                     const container = document.getElementById(containerId);
                     if (backdrop && !backdrop.classList.contains('hidden')) {
-                        const triggerAttr = backdropId.replace('-backdrop', '');
-                        if (container && !container.contains(e.target) && !e.target.closest(`[onclick*="${triggerAttr}"]`)) {
+                        if (container && !container.contains(e.target) && !e.target.closest(`[onclick*="${backdropId}"]`)) {
                             closeFn();
                         }
                     }
