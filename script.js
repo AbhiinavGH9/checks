@@ -2406,11 +2406,11 @@
                     let subtextClass = 'text-gray-400';
 
                     if (task.done) {
-                        cardBg = 'bg-[#121212]/40 border-white/[0.01] opacity-50';
+                        cardBg = 'bg-transparent border-none opacity-100';
                         textClass = 'line-through text-gray-500 font-normal';
                         subtextClass = 'text-gray-600';
                     } else if (task.isHeldTask) {
-                        cardBg = 'bg-amber-500/[0.08] border-amber-500/30 opacity-70';
+                        cardBg = 'bg-transparent border-none opacity-100';
                         textClass = 'text-gray-300 font-semibold';
                         subtextClass = 'text-gray-500';
                     }
@@ -2438,6 +2438,7 @@
 
                     const card = document.createElement('div');
                     card.className = `group-card relative py-2.5 px-3 rounded-xl transition duration-150 hover:bg-white/[0.02] ${isSelected ? 'ring-1 ring-[#2997ff]/60 bg-white/[0.03]' : ''}`;
+                    card.style.cssText = "background: transparent !important; border: none !important; box-shadow: none !important; opacity: 1 !important;";
                     card.setAttribute('data-task-id', task.id); 
                     card.setAttribute('oncontextmenu', `showContextMenu(event, '${task.id}')`);
                     card.onclick = (e) => selectTask(task.id, e);

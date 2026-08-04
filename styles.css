@@ -53,6 +53,13 @@
             --modal-section-gap: 16px;
         }
 
+        .group-card {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            opacity: 1 !important;
+        }
+
         .light-mode {
             --background: oklch(1 0 0);
             --foreground: oklch(0.145 0 0);
