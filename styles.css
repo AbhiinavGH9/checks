@@ -764,15 +764,7 @@
             white-space: normal;
         }
 
-        .dragging {
-            opacity: 0.4;
-            border: 2px dashed #2997ff !important;
-        }
 
-        .drag-over {
-            background-color: rgba(41, 151, 255, 0.05) !important;
-            border-color: #2997ff !important;
-        }
 
         .tick-animation {
             animation: tick-scale-pop 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards;

@@ -221,91 +221,7 @@
         window.closeMobileSearchMode = closeMobileSearchMode;
 
         // Unified Draggable Sheet Controller Logic (Supports Y-axis bottom sheet & X-axis right side sheet)
-        function makeModalDraggable(containerEl, onCloseCallback, options = {}) {
-            if (!containerEl || containerEl.dataset.dragInitialized) return;
-            containerEl.dataset.dragInitialized = 'true';
-
-            let startPos = 0;
-            let currentPos = 0;
-            let isDragging = false;
-            let panelDimension = 0;
-            let samples = [];
-
-            const getAxis = () => {
-                if (options.axis === 'x') return 'x';
-                if (options.axis === 'y') return 'y';
-                return window.innerWidth < 768 ? 'y' : 'x';
-            };
-
-            const handleZone = containerEl.querySelector('.sheet-handle-zone, .drawer-swipe-handle, .sheet-header, .inspector-handle-zone-x, [data-drag-handle]') || containerEl;
-
-            const getPoint = (e, axis) => {
-                const p = e.touches ? e.touches[0] : e;
-                return axis === 'y' ? p.clientY : p.clientX;
-            };
-
-            const onStart = (e) => {
-                const scrollable = e.target.closest('.overflow-y-auto');
-                if (scrollable && scrollable.scrollTop > 0) return;
-                
-                const axis = getAxis();
-                isDragging = true;
-                startPos = getPoint(e, axis);
-                currentPos = startPos;
-                panelDimension = axis === 'y' ? (containerEl.offsetHeight || 400) : (containerEl.offsetWidth || 400);
-                samples = [{ p: startPos, t: performance.now() }];
-                containerEl.style.transition = 'none';
-            };
-
-            const onMove = (e) => {
-                if (!isDragging) return;
-                const axis = getAxis();
-                const p = getPoint(e, axis);
-                currentPos = p;
-                let delta = p - startPos;
-                if (delta < 0) delta = delta / 4; // Dampened resistance moving away from closed edge
-
-                const pos = delta > 0 ? delta : 0;
-                containerEl.style.transform = axis === 'y' ? `translateY(${pos}px)` : `translateX(${pos}px)`;
-
-                const now = performance.now();
-                samples.push({ p, t: now });
-                samples = samples.filter(s => now - s.t < 100);
-
-                if (e.cancelable) e.preventDefault();
-            };
-
-            const onEnd = () => {
-                if (!isDragging) return;
-                isDragging = false;
-                const axis = getAxis();
-                containerEl.style.transition = 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)';
-
-                const distance = Math.max(0, currentPos - startPos);
-                let velocity = 0;
-                if (samples.length >= 2) {
-                    const first = samples[0];
-                    const last = samples[samples.length - 1];
-                    const dt = last.t - first.t || 1;
-                    velocity = (last.p - first.p) / dt;
-                }
-
-                if (distance > panelDimension * 0.35 || (velocity > 0.6 && distance > 10)) {
-                    containerEl.style.transform = axis === 'y' ? `translateY(${panelDimension}px)` : `translateX(${panelDimension}px)`;
-                    setTimeout(() => {
-                        containerEl.style.transform = '';
-                        if (onCloseCallback) onCloseCallback();
-                    }, 200);
-                } else {
-                    containerEl.style.transform = axis === 'y' ? 'translateY(0px)' : 'translateX(0px)';
-                }
-            };
-
-            handleZone.addEventListener('pointerdown', onStart);
-            window.addEventListener('pointermove', onMove, { passive: false });
-            window.addEventListener('pointerup', onEnd);
-            window.addEventListener('pointercancel', onEnd);
-        }
+        // makeModalDraggable completely removed per user request
 
         // Attach touch gesture inspectors and sidebars
         (function initTouchGestureController() {
@@ -1024,7 +940,7 @@
                 const ctxItem = {
                     label: it.label,
                     icon: it.icon || null,
-                    checked: false,
+                    checked: it.checked || false,
                     action: it.action || null
                 };
                 if (it.submenu && menuDef.screens[it.submenu]) {
@@ -1034,6 +950,7 @@
                     ctxItem.subItems = sub.items.map(si => ({
                         label: si.label,
                         icon: si.icon || null,
+                        checked: si.checked || false,
                         action: si.action || null
                     }));
                 }
@@ -1265,14 +1182,24 @@
             Array.from(menuEl.children).forEach(child => {
                 if (child.tagName === 'BUTTON') {
                     const label = child.innerText.trim();
-                    const iconEl = child.querySelector('i');
+                    const checkboxMarker = child.querySelector('.checkbox-marker') || child.querySelector('[id*="-marker"]');
+                    const isCheckbox = !!checkboxMarker;
+                    const isActive = checkboxMarker ? !checkboxMarker.classList.contains('hidden') : false;
+                    
+                    let iconEl = null;
+                    const allIcons = child.querySelectorAll('i');
+                    for (let i = 0; i < allIcons.length; i++) {
+                        if (!checkboxMarker || !checkboxMarker.contains(allIcons[i])) {
+                            iconEl = allIcons[i];
+                            break;
+                        }
+                    }
                     const iconName = iconEl ? iconEl.getAttribute('data-lucide') : null;
-                    const isCheckbox = child.querySelector('.checkbox-marker') || child.querySelector('[id*="marker"]');
-                    const isActive = isCheckbox ? !isCheckbox.classList.contains('hidden') : false;
 
                     screens.root.items.push({
                         label: label,
-                        icon: iconName || (isActive ? 'check' : null),
+                        icon: iconName,
+                        checked: isActive,
                         action: () => child.click()
                     });
                 } else if (child.classList.contains('border-t') || child.tagName === 'HR') {
@@ -2845,8 +2772,8 @@
 
             renderCalendarGrid();
 
-            const triggerBtn = event.currentTarget;
-            const rect = triggerBtn.getBoundingClientRect();
+            const triggerBtn = (event && event.currentTarget && typeof event.currentTarget.getBoundingClientRect === 'function') ? event.currentTarget : (event && event.target && typeof event.target.closest === 'function' ? event.target.closest('button') : null);
+            const rect = (triggerBtn && typeof triggerBtn.getBoundingClientRect === 'function') ? triggerBtn.getBoundingClientRect() : { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
             const popup = document.getElementById('custom-calendar-popup');
             
             if (window.innerWidth < 768) {
@@ -3312,8 +3239,8 @@
             submenu.innerHTML = html;
             lucide.createIcons();
 
-            const triggerBtn = (event && event.currentTarget) || (event && event.target && event.target.closest('button'));
-            const btnRect = triggerBtn ? triggerBtn.getBoundingClientRect() : { right: event.clientX, top: event.clientY, bottom: event.clientY + 30 };
+            const triggerBtn = (event && event.currentTarget && typeof event.currentTarget.getBoundingClientRect === 'function') ? event.currentTarget : (event && event.target && typeof event.target.closest === 'function' ? event.target.closest('button') : null);
+            const btnRect = (triggerBtn && typeof triggerBtn.getBoundingClientRect === 'function') ? triggerBtn.getBoundingClientRect() : { right: event.clientX, top: event.clientY, bottom: event.clientY + 30 };
             
             positionFloatingElement(submenu, {
                 left: btnRect.right + 4,
@@ -3669,6 +3596,10 @@
                     closeCalendarPopup();
                 }
                 if (!target.closest('#sort-dropdown-wrapper') && 
+                    !target.closest('#sort-dropdown-options-mobile') &&
+                    !target.closest('#nav-menu-dropdown-wrapper') && 
+                    !target.closest('#nav-menu-dropdown-options-mobile') &&
+                    !target.closest('#mobile-header-groups-wrapper') &&
                     !target.closest('#project-dropdown-container') && 
                     !target.closest('#ins-group-dropdown-container') && 
                     !target.closest('#ins-autodelete-dropdown-container') && 
@@ -4417,8 +4348,8 @@
         function toggleCustomDropdown(menuId, event) {
             if (event) event.stopPropagation();
             const allDropdowns = ['sort-dropdown-options', 'sort-dropdown-options-mobile', 'ins-project-dropdown-options', 'ins-group-dropdown-options', 'ins-autodelete-options', 'new-task-project-options', 'new-task-group-options', 'new-task-autodelete-options', 'nav-menu-dropdown-options', 'nav-menu-dropdown-options-mobile'];
-            const triggerBtn = (event && event.currentTarget) || (event && event.target && event.target.closest('button'));
-            if (triggerBtn) {
+            const triggerBtn = (event && event.currentTarget && typeof event.currentTarget.setAttribute === 'function') ? event.currentTarget : (event && event.target && typeof event.target.closest === 'function' ? event.target.closest('button') : null);
+            if (triggerBtn && typeof triggerBtn.setAttribute === 'function') {
                 triggerBtn.setAttribute('aria-expanded', 'false');
             }
             allDropdowns.forEach(id => {
@@ -4432,7 +4363,7 @@
             if (!targetMenu) return;
 
             const isModalDropdown = ['new-task-project-options', 'new-task-group-options', 'new-task-autodelete-options'].includes(menuId);
-            const anchorBtn = (event && event.currentTarget) || (event && event.target && event.target.closest('button'));
+            const anchorBtn = (event && event.currentTarget && typeof event.currentTarget.getBoundingClientRect === 'function') ? event.currentTarget : (event && event.target && typeof event.target.closest === 'function' ? event.target.closest('button') : null);
             const isHidden = targetMenu.classList.contains('hidden');
 
             if (window.innerWidth < 768) {
@@ -6125,15 +6056,7 @@
                 if (resizer) resizer.style.display = 'none';
             }
 
-            // Bind draggable bottom sheet gesture logic to all app sheets & modals
-            makeModalDraggable(document.getElementById('task-modal-container'), () => closeAddTaskModal(true));
-            makeModalDraggable(document.getElementById('project-modal-container'), closeProjectModal);
-            makeModalDraggable(document.getElementById('group-modal-container'), closeAddGroupModal);
-            makeModalDraggable(document.getElementById('archive-modal-container'), closeArchiveModal);
-            makeModalDraggable(document.getElementById('profile-customizer-container'), closeProfileCustomizerModal);
-            makeModalDraggable(document.getElementById('note-modal-container'), closeNoteModal);
-            makeModalDraggable(document.getElementById('mobile-drawer'), closeMobileDrawer);
-            makeModalDraggable(document.getElementById('inspector-panel'), closeInspector, { axis: 'auto' });
+            // Draggable bottom sheet gestures removed per user request
 
             initSupabaseAuth();
 
@@ -6158,9 +6081,8 @@
 
                 modalBackdrops.forEach(({ backdropId, containerId, closeFn }) => {
                     const backdrop = document.getElementById(backdropId);
-                    const container = document.getElementById(containerId);
                     if (backdrop && !backdrop.classList.contains('hidden')) {
-                        if (container && !container.contains(e.target) && !e.target.closest(`[onclick*="${backdropId}"]`)) {
+                        if (e.target === backdrop) {
                             closeFn();
                         }
                     }
